@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Search, Menu, X } from 'lucide-react';
+import { Search, Menu, X, User, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -63,11 +63,23 @@ export function Header() {
               <Search className="w-5 h-5" />
             </Button>
             
-            <Link to="/admin">
+            {/* Login Button */}
+            <Link to="/login" className="hidden sm:block">
               <Button 
-                className="hidden sm:flex bg-[#FF4444] hover:bg-[#FF5555] text-white font-label font-semibold text-sm px-5 h-10 rounded-xl glow-red transition-all duration-200 hover:scale-[0.98]"
+                variant="ghost"
+                className="text-[#A8A29E] hover:text-white hover:bg-white/5 font-body text-sm gap-2"
               >
-                Admin Portal
+                <LogIn className="w-4 h-4" />
+                Đăng nhập
+              </Button>
+            </Link>
+
+            {/* Register/Sign Up Button */}
+            <Link to="/register" className="hidden sm:block">
+              <Button 
+                className="bg-gradient-to-r from-[#00D9FF] to-[#00B8D9] hover:from-[#00E5FF] hover:to-[#00C9E5] text-[#0A1628] font-semibold text-sm px-4 h-10 rounded-xl transition-all duration-200 hover:scale-[0.98] shadow-lg shadow-[#00D9FF]/20"
+              >
+                Đăng ký
               </Button>
             </Link>
 
@@ -103,13 +115,24 @@ export function Header() {
                 {item.label}
               </Link>
             ))}
-            <Link to="/admin" onClick={() => setIsMenuOpen(false)}>
-              <Button 
-                className="w-full mt-2 bg-[#FF4444] hover:bg-[#FF5555] text-white font-label font-semibold text-sm h-10 rounded-xl"
-              >
-                Admin Portal
-              </Button>
-            </Link>
+            <div className="flex gap-2 mt-2">
+              <Link to="/login" className="flex-1" onClick={() => setIsMenuOpen(false)}>
+                <Button 
+                  variant="outline"
+                  className="w-full border-white/20 text-white hover:bg-white/10 font-semibold text-sm h-10 rounded-xl"
+                >
+                  <LogIn className="w-4 h-4 mr-2" />
+                  Đăng nhập
+                </Button>
+              </Link>
+              <Link to="/register" className="flex-1" onClick={() => setIsMenuOpen(false)}>
+                <Button 
+                  className="w-full bg-gradient-to-r from-[#00D9FF] to-[#00B8D9] text-[#0A1628] font-semibold text-sm h-10 rounded-xl"
+                >
+                  Đăng ký
+                </Button>
+              </Link>
+            </div>
           </nav>
         </div>
       )}

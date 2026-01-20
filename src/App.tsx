@@ -11,11 +11,23 @@ const LeaguesPage = lazy(() => import("@/pages/LeaguesPage"));
 const AnalyticsPage = lazy(() => import("@/pages/AnalyticsPage"));
 const ComparePage = lazy(() => import("@/pages/ComparePage"));
 
+// Auth pages
+const LoginPage = lazy(() => import("@/pages/auth/LoginPage"));
+const RegisterPage = lazy(() => import("@/pages/auth/RegisterPage"));
+const ForgotPasswordPage = lazy(() => import("@/pages/auth/ForgotPasswordPage"));
+
+// User pages
+const ProfilePage = lazy(() => import("@/pages/ProfilePage"));
+const NotFoundPage = lazy(() => import("@/pages/NotFoundPage"));
+
 // Admin pages
 const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
 const AdminPlayersPage = lazy(() => import("@/pages/admin/AdminPlayersPage"));
 const AdminMatchesPage = lazy(() => import("@/pages/admin/AdminMatchesPage"));
 const AdminRatingsPage = lazy(() => import("@/pages/admin/AdminRatingsPage"));
+const AdminLeaguesPage = lazy(() => import("@/pages/admin/AdminLeaguesPage"));
+const AdminContentPage = lazy(() => import("@/pages/admin/AdminContentPage"));
+const AdminSettingsPage = lazy(() => import("@/pages/admin/AdminSettingsPage"));
 
 // Loading component
 function PageLoader() {
@@ -23,7 +35,9 @@ function PageLoader() {
     <div className="min-h-screen bg-[#0A1628] flex items-center justify-center">
       <div className="flex flex-col items-center gap-4">
         <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#FF4444] to-[#FF6666] flex items-center justify-center animate-pulse">
-          <span className="font-display font-extrabold text-white text-xl">VN</span>
+          <span className="font-display font-extrabold text-white text-xl">
+            VN
+          </span>
         </div>
         <p className="text-[#A8A29E] font-body">Loading...</p>
       </div>
@@ -36,7 +50,10 @@ function App() {
     <Suspense fallback={<PageLoader />}>
       <Routes>
         {/* Public Routes */}
-        <Route path="/" element={<HomePage />} />
+        <Route
+          path="/"
+          element={<HomePage />}
+        />
         <Route path="/players" element={<PlayersPage />} />
         <Route path="/players/:playerId" element={<PlayerDetailPage />} />
         <Route path="/matches" element={<MatchesPage />} />
@@ -47,14 +64,26 @@ function App() {
         <Route path="/analytics/:articleId" element={<AnalyticsPage />} />
         <Route path="/compare" element={<ComparePage />} />
 
+        {/* Auth Routes */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+
+        {/* User Routes */}
+        <Route path="/profile" element={<ProfilePage />} />
+
         {/* Admin Routes */}
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/admin/players" element={<AdminPlayersPage />} />
         <Route path="/admin/matches" element={<AdminMatchesPage />} />
-        <Route path="/admin/leagues" element={<AdminDashboard />} />
+        <Route path="/admin/leagues" element={<AdminLeaguesPage />} />
+        <Route path="/admin/leagues/:leagueId" element={<AdminLeaguesPage />} />
         <Route path="/admin/ratings" element={<AdminRatingsPage />} />
-        <Route path="/admin/content" element={<AdminDashboard />} />
-        <Route path="/admin/settings" element={<AdminDashboard />} />
+        <Route path="/admin/content" element={<AdminContentPage />} />
+        <Route path="/admin/settings" element={<AdminSettingsPage />} />
+
+        {/* 404 Not Found */}
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Suspense>
   );

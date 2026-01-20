@@ -79,7 +79,7 @@ export function HeroSection() {
             >
               <span className="w-2 h-2 rounded-full bg-[#00D9FF] animate-pulse" />
               <span className="text-sm font-label text-[#A8A29E] uppercase tracking-wider">
-                Season 2024 Active
+                Season 2025 Active
               </span>
             </motion.div>
 
