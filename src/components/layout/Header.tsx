@@ -18,19 +18,19 @@ export function Header() {
   const location = useLocation();
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 glass-card border-b border-white/5">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border shadow-sm">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF4444] to-[#FF6666] flex items-center justify-center">
-              <span className="font-display font-extrabold text-foreground text-lg">VN</span>
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF4444] to-[#FF6666] flex items-center justify-center shadow-md">
+              <span className="font-display font-extrabold text-white text-lg">VN</span>
             </div>
             <div className="hidden sm:block">
               <h1 className="font-display font-bold text-lg text-foreground leading-tight">
                 Player Rating
               </h1>
-              <p className="text-xs text-[#A8A29E] font-label uppercase tracking-wider">
+              <p className="text-xs text-muted-foreground font-label uppercase tracking-wider">
                 Vietnamese Football
               </p>
             </div>
@@ -45,8 +45,8 @@ export function Header() {
                 className={cn(
                   "px-4 py-2 rounded-lg font-body text-sm font-medium transition-all duration-200",
                   location.pathname === item.path
-                    ? "bg-white/10 text-foreground"
-                    : "text-[#A8A29E] hover:text-foreground hover:bg-white/5"
+                    ? "bg-accent text-accent-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                 )}
               >
                 {item.label}
@@ -59,7 +59,7 @@ export function Header() {
             <Button
               variant="ghost"
               size="icon"
-              className="text-[#A8A29E] hover:text-foreground hover:bg-white/5"
+              className="text-muted-foreground hover:text-foreground hover:bg-accent/50"
             >
               <Search className="w-5 h-5" />
             </Button>
@@ -71,7 +71,7 @@ export function Header() {
             <Link to="/login" className="hidden sm:block">
               <Button 
                 variant="ghost"
-                className="text-[#A8A29E] hover:text-foreground hover:bg-white/5 font-body text-sm gap-2"
+                className="text-muted-foreground hover:text-foreground hover:bg-accent/50 font-body text-sm gap-2"
               >
                 <LogIn className="w-4 h-4" />
                 Đăng nhập
@@ -81,7 +81,7 @@ export function Header() {
             {/* Register/Sign Up Button */}
             <Link to="/register" className="hidden sm:block">
               <Button 
-                className="bg-gradient-to-r from-[#00D9FF] to-[#00B8D9] hover:from-[#00E5FF] hover:to-[#00C9E5] text-foreground font-semibold text-sm px-4 h-10 rounded-xl transition-all duration-200 hover:scale-[0.98] shadow-lg shadow-[#00D9FF]/20"
+                className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80 text-primary-foreground font-semibold text-sm px-4 h-10 rounded-xl transition-all duration-200 hover:scale-[0.98] shadow-lg"
               >
                 Đăng ký
               </Button>
@@ -91,7 +91,7 @@ export function Header() {
             <Button
               variant="ghost"
               size="icon"
-              className="lg:hidden text-[#A8A29E] hover:text-foreground hover:bg-white/5"
+              className="lg:hidden text-muted-foreground hover:text-foreground hover:bg-accent/50"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
               {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -102,7 +102,7 @@ export function Header() {
 
       {/* Mobile Navigation */}
       {isMenuOpen && (
-        <div className="lg:hidden glass-card border-t border-white/5 animate-fade-in">
+        <div className="lg:hidden bg-background/95 backdrop-blur-sm border-t border-border animate-fade-in shadow-lg">
           <nav className="container mx-auto px-4 py-4 flex flex-col gap-1">
             {navItems.map((item) => (
               <Link
@@ -112,8 +112,8 @@ export function Header() {
                 className={cn(
                   "px-4 py-3 rounded-lg font-body text-sm font-medium transition-all duration-200",
                   location.pathname === item.path
-                    ? "bg-white/10 text-foreground"
-                    : "text-[#A8A29E] hover:text-foreground hover:bg-white/5"
+                    ? "bg-accent text-accent-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                 )}
               >
                 {item.label}
@@ -123,7 +123,7 @@ export function Header() {
               <Link to="/login" className="flex-1" onClick={() => setIsMenuOpen(false)}>
                 <Button 
                   variant="outline"
-                  className="w-full border-white/20 text-foreground hover:bg-white/10 font-semibold text-sm h-10 rounded-xl"
+                  className="w-full border-border text-foreground hover:bg-accent/50 font-semibold text-sm h-10 rounded-xl"
                 >
                   <LogIn className="w-4 h-4 mr-2" />
                   Đăng nhập
@@ -131,7 +131,7 @@ export function Header() {
               </Link>
               <Link to="/register" className="flex-1" onClick={() => setIsMenuOpen(false)}>
                 <Button 
-                  className="w-full bg-gradient-to-r from-[#00D9FF] to-[#00B8D9] text-foreground font-semibold text-sm h-10 rounded-xl"
+                  className="w-full bg-gradient-to-r from-primary to-primary/90 text-primary-foreground font-semibold text-sm h-10 rounded-xl shadow-lg"
                 >
                   Đăng ký
                 </Button>

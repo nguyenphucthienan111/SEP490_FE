@@ -111,7 +111,7 @@ export default function PlayerDetailPage() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <Link to="/players" className="inline-flex items-center gap-2 text-[#A8A29E] hover:text-foreground transition-colors mb-8">
+            <Link to="/players" className="inline-flex items-center gap-2 text-slate-600 dark:text-[#A8A29E] hover:text-foreground transition-colors mb-8">
               <ArrowLeft className="w-4 h-4" />
               <span className="font-label text-sm">Back to Players</span>
             </Link>
@@ -127,7 +127,7 @@ export default function PlayerDetailPage() {
             <div className="flex flex-col lg:flex-row gap-8">
               {/* Player Image & Basic Info */}
               <div className="flex flex-col sm:flex-row gap-6">
-                <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-2xl overflow-hidden bg-white/5 flex-shrink-0">
+                <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-2xl overflow-hidden bg-slate-100 dark:bg-white/5 flex-shrink-0">
                   <img
                     src={player.photoUrl}
                     alt={player.name}
@@ -138,21 +138,21 @@ export default function PlayerDetailPage() {
                   <div className="flex items-center gap-3 mb-2">
                     <span className={cn(
                       "px-3 py-1 rounded-full text-xs font-label font-semibold uppercase tracking-wider border",
-                      player.position === 'forward' && 'position-forward',
-                      player.position === 'midfielder' && 'position-midfielder',
-                      player.position === 'defender' && 'position-defender',
-                      player.position === 'goalkeeper' && 'position-goalkeeper'
+                      player.position === 'forward' && 'bg-red-50 text-red-700 border-red-200 dark:bg-red-500/20 dark:text-red-400 dark:border-red-500/30',
+                      player.position === 'midfielder' && 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-cyan-500/20 dark:text-cyan-400 dark:border-cyan-500/30',
+                      player.position === 'defender' && 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/20 dark:text-amber-400 dark:border-amber-500/30',
+                      player.position === 'goalkeeper' && 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-500/20 dark:text-purple-400 dark:border-purple-500/30'
                     )}>
                       {player.position}
                     </span>
-                    <span className="text-[#A8A29E] text-sm">#{player.number}</span>
+                    <span className="text-slate-600 dark:text-[#A8A29E] text-sm">#{player.number}</span>
                   </div>
                   <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-foreground mb-2">
                     {player.name}
                   </h1>
-                  <p className="text-lg text-[#A8A29E] mb-4">{player.team}</p>
+                  <p className="text-lg text-slate-600 dark:text-[#A8A29E] mb-4">{player.team}</p>
                   
-                  <div className="flex flex-wrap gap-4 text-sm text-[#A8A29E]">
+                  <div className="flex flex-wrap gap-4 text-sm text-slate-600 dark:text-[#A8A29E]">
                     <span>{player.nationality}</span>
                     <span>•</span>
                     <span>{player.age} years</span>
@@ -197,13 +197,13 @@ export default function PlayerDetailPage() {
                     <span className="font-mono-data text-4xl font-bold text-foreground">
                       {player.rating.toFixed(1)}
                     </span>
-                    <span className="text-xs text-[#A8A29E] uppercase tracking-wider">Rating</span>
+                    <span className="text-xs text-slate-600 dark:text-[#A8A29E] uppercase tracking-wider">Rating</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <TrendingUp className="w-5 h-5 text-green-400" />
                   <span className="font-mono-data text-lg text-green-400">+0.3</span>
-                  <span className="text-xs text-[#A8A29E]">Last 5 games</span>
+                  <span className="text-xs text-slate-600 dark:text-[#A8A29E]">Last 5 games</span>
                 </div>
               </div>
             </div>
@@ -230,8 +230,8 @@ export default function PlayerDetailPage() {
                   { label: 'Pass Accuracy', value: `${player.stats.passAccuracy}%` },
                   { label: 'Yellow Cards', value: player.stats.yellowCards },
                 ].map((stat, index) => (
-                  <div key={stat.label} className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
-                    <span className="text-[#A8A29E] text-sm">{stat.label}</span>
+                  <div key={stat.label} className="flex items-center justify-between py-2 border-b border-slate-200 dark:border-white/5 last:border-0">
+                    <span className="text-slate-600 dark:text-[#A8A29E] text-sm">{stat.label}</span>
                     <span className="font-mono-data text-lg font-semibold text-foreground">{stat.value}</span>
                   </div>
                 ))}
@@ -284,7 +284,7 @@ export default function PlayerDetailPage() {
               <h3 className="font-label font-bold text-foreground uppercase tracking-wider text-sm mb-6">
                 Rating Breakdown
               </h3>
-              <p className="text-sm text-[#A8A29E] mb-4">
+              <p className="text-sm text-slate-600 dark:text-[#A8A29E] mb-4">
                 Contributions from last match performance
               </p>
               <div className="space-y-3">
@@ -311,14 +311,14 @@ export default function PlayerDetailPage() {
                             {contrib.positive ? '+' : ''}{contrib.value.toFixed(1)}
                           </span>
                           {expandedContribution === contrib.category ? (
-                            <ChevronUp className="w-4 h-4 text-[#A8A29E]" />
+                            <ChevronUp className="w-4 h-4 text-slate-600 dark:text-[#A8A29E]" />
                           ) : (
-                            <ChevronDown className="w-4 h-4 text-[#A8A29E]" />
+                            <ChevronDown className="w-4 h-4 text-slate-600 dark:text-[#A8A29E]" />
                           )}
                         </div>
                       </div>
                       {/* Progress Bar */}
-                      <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+                      <div className="h-1.5 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden">
                         <div 
                           className={cn(
                             "h-full rounded-full transition-all duration-500",
@@ -335,7 +335,7 @@ export default function PlayerDetailPage() {
                         exit={{ opacity: 0, height: 0 }}
                         className="pl-5 py-2"
                       >
-                        <p className="text-xs text-[#A8A29E]">{contrib.description}</p>
+                        <p className="text-xs text-slate-600 dark:text-[#A8A29E]">{contrib.description}</p>
                       </motion.div>
                     )}
                   </div>

@@ -119,7 +119,7 @@ export default function AdminRatingsPage() {
             <h1 className="font-display font-extrabold text-3xl text-foreground mb-1">
               Rating Engine Configuration
             </h1>
-            <p className="text-[#A8A29E]">
+            <p className="text-slate-600 dark:text-[#A8A29E]">
               Adjust position-aware weighting schemes for player ratings.
             </p>
           </div>
@@ -127,7 +127,7 @@ export default function AdminRatingsPage() {
             <Button
               variant="outline"
               onClick={handleReset}
-              className="border-[#A8A29E]/50 text-[#A8A29E] hover:bg-white/5"
+              className="border-[#A8A29E]/50 text-slate-600 dark:text-[#A8A29E] hover:bg-slate-100 dark:bg-white/5"
             >
               <RefreshCw className="w-4 h-4 mr-2" />
               Reset to Default
@@ -135,7 +135,7 @@ export default function AdminRatingsPage() {
             <Button 
               onClick={handleSave}
               disabled={!hasChanges}
-              className="bg-[#FF4444] hover:bg-[#FF5555] text-white font-label font-semibold px-6 h-11 rounded-xl disabled:opacity-50"
+              className="bg-[#FF4444] hover:bg-[#FF5555] text-slate-900 dark:text-white font-label font-semibold px-6 h-11 rounded-xl disabled:opacity-50"
             >
               <Save className="w-4 h-4 mr-2" />
               Save Changes
@@ -150,12 +150,12 @@ export default function AdminRatingsPage() {
           transition={{ duration: 0.5, delay: 0.1 }}
           className="glass-card rounded-2xl p-6 flex items-start gap-4"
         >
-          <div className="w-10 h-10 rounded-xl bg-[#00D9FF]/10 flex items-center justify-center flex-shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-[#00D9FF]/10 flex items-center justify-center flex-shrink-0">
             <Info className="w-5 h-5 text-[#00D9FF]" />
           </div>
           <div>
             <h3 className="font-body font-semibold text-foreground mb-1">How Weighting Works</h3>
-            <p className="text-sm text-[#A8A29E] leading-relaxed">
+            <p className="text-sm text-slate-600 dark:text-[#A8A29E] leading-relaxed">
               Each statistic contributes to the final player rating based on its weight (0.0 to 1.0). 
               Higher weights mean that statistic has more impact on the final rating. Weights are position-specific 
               to ensure fair comparisons between players in similar roles.
@@ -181,7 +181,7 @@ export default function AdminRatingsPage() {
                     position === 'midfielder' ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' :
                     position === 'defender' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
                     'bg-purple-500/20 text-purple-400 border border-purple-500/30'
-                  : "bg-white/5 text-[#A8A29E] hover:bg-white/10 border border-transparent"
+                  : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-[#A8A29E] hover:bg-slate-200 dark:bg-white/10 border border-transparent"
               )}
             >
               {position}
@@ -218,9 +218,9 @@ export default function AdminRatingsPage() {
                   step="0.1"
                   value={value}
                   onChange={(e) => updateWeight(stat, parseFloat(e.target.value))}
-                  className="w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#00D9FF] [&::-webkit-slider-thumb]:cursor-pointer"
+                  className="w-full h-2 bg-slate-200 dark:bg-white/10 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#00D9FF] [&::-webkit-slider-thumb]:cursor-pointer"
                 />
-                <div className="flex justify-between text-xs text-[#A8A29E]">
+                <div className="flex justify-between text-xs text-slate-600 dark:text-[#A8A29E]">
                   <span>Low Impact</span>
                   <span>High Impact</span>
                 </div>
@@ -245,8 +245,8 @@ export default function AdminRatingsPage() {
               .sort(([, a], [, b]) => b - a)
               .map(([stat, value]) => (
                 <div key={stat} className="flex items-center gap-4">
-                  <span className="text-sm text-[#A8A29E] w-32">{statLabels[stat]}</span>
-                  <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
+                  <span className="text-sm text-slate-600 dark:text-[#A8A29E] w-32">{statLabels[stat]}</span>
+                  <div className="flex-1 h-2 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-gradient-to-r from-[#FF4444] to-[#00D9FF] rounded-full transition-all duration-300"
                       style={{ width: `${value * 100}%` }}

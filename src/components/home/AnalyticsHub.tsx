@@ -8,7 +8,7 @@ export function AnalyticsHub() {
   const otherArticles = articles.slice(1);
 
   return (
-    <section className="py-20 relative bg-gradient-to-b from-transparent via-[#1A0F2E]/20 to-transparent">
+    <section className="py-20 relative bg-gradient-to-b from-transparent via-slate-100 dark:via-[#1A0F2E]/20 to-transparent">
       <div className="container mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -21,7 +21,7 @@ export function AnalyticsHub() {
             <h2 className="font-display font-extrabold text-3xl sm:text-4xl text-foreground mb-2">
               Analytics Hub
             </h2>
-            <p className="text-[#A8A29E] max-w-md">
+            <p className="text-slate-600 dark:text-[#A8A29E] max-w-md">
               Data-driven insights and in-depth analysis from our team of experts.
             </p>
           </div>
@@ -50,12 +50,12 @@ export function AnalyticsHub() {
                     alt={featuredArticle.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-midnight-navy via-transparent to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-800 dark:from-midnight-navy via-transparent to-transparent" />
                   <div className="absolute top-4 left-4 flex flex-wrap gap-2">
                     {featuredArticle.tags.slice(0, 2).map((tag) => (
                       <span
                         key={tag}
-                        className="px-3 py-1 bg-[#FF4444]/90 rounded-full text-xs font-label font-semibold text-white"
+                        className="px-3 py-1 bg-[#FF4444]/90 rounded-full text-xs font-label font-semibold text-slate-900 dark:text-white"
                       >
                         {tag}
                       </span>
@@ -67,11 +67,11 @@ export function AnalyticsHub() {
                   <h3 className="font-display font-bold text-xl sm:text-2xl text-foreground mb-3 group-hover:text-[#FF4444] transition-colors line-clamp-2">
                     {featuredArticle.title}
                   </h3>
-                  <p className="text-[#A8A29E] text-sm leading-relaxed mb-4 line-clamp-3">
+                  <p className="text-slate-600 dark:text-[#A8A29E] text-sm leading-relaxed mb-4 line-clamp-3">
                     {featuredArticle.excerpt}
                   </p>
 
-                  <div className="flex items-center gap-4 text-xs text-[#A8A29E]">
+                  <div className="flex items-center gap-4 text-xs text-slate-600 dark:text-[#A8A29E]">
                     <div className="flex items-center gap-1.5">
                       <User className="w-3.5 h-3.5" />
                       <span>{featuredArticle.author}</span>
@@ -112,7 +112,7 @@ export function AnalyticsHub() {
                           {article.tags.slice(0, 2).map((tag) => (
                             <span
                               key={tag}
-                              className="px-2 py-0.5 bg-[#00D9FF]/10 rounded-full text-xs font-label text-[#00D9FF]"
+                              className="px-2 py-0.5 bg-blue-100 dark:bg-[#00D9FF]/10 rounded-full text-xs font-label text-[#00D9FF]"
                             >
                               {tag}
                             </span>
@@ -123,7 +123,7 @@ export function AnalyticsHub() {
                         </h3>
                       </div>
 
-                      <div className="flex items-center gap-3 text-xs text-[#A8A29E] mt-2">
+                      <div className="flex items-center gap-3 text-xs text-slate-600 dark:text-[#A8A29E] mt-2">
                         <span>{article.author}</span>
                         <span>•</span>
                         <span>{new Date(article.publishedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>

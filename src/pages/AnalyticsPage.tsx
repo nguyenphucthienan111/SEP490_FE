@@ -22,7 +22,7 @@ export default function AnalyticsPage() {
             <h1 className="font-display font-extrabold text-4xl sm:text-5xl text-foreground mb-3">
               Analytics Hub
             </h1>
-            <p className="text-[#A8A29E] text-lg max-w-2xl">
+            <p className="text-slate-600 dark:text-[#A8A29E] text-lg max-w-2xl">
               Data-driven insights, in-depth analysis, and expert commentary on Vietnamese football.
             </p>
           </motion.div>
@@ -43,8 +43,8 @@ export default function AnalyticsPage() {
                       alt={featuredArticle.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-r from-midnight-navy via-transparent to-transparent lg:block hidden" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-midnight-navy via-transparent to-transparent lg:hidden" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-slate-800 dark:from-midnight-navy via-transparent to-transparent lg:block hidden" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-800 dark:from-midnight-navy via-transparent to-transparent lg:hidden" />
                   </div>
                   <div className="p-8 lg:p-12 flex flex-col justify-center">
                     <div className="flex flex-wrap gap-2 mb-4">
@@ -60,10 +60,10 @@ export default function AnalyticsPage() {
                     <h2 className="font-display font-bold text-2xl sm:text-3xl text-foreground mb-4 group-hover:text-[#FF4444] transition-colors">
                       {featuredArticle.title}
                     </h2>
-                    <p className="text-[#A8A29E] leading-relaxed mb-6">
+                    <p className="text-slate-600 dark:text-[#A8A29E] leading-relaxed mb-6">
                       {featuredArticle.excerpt}
                     </p>
-                    <div className="flex items-center gap-6 text-sm text-[#A8A29E]">
+                    <div className="flex items-center gap-6 text-sm text-slate-600 dark:text-[#A8A29E]">
                       <div className="flex items-center gap-2">
                         <User className="w-4 h-4" />
                         <span>{featuredArticle.author}</span>
@@ -107,7 +107,7 @@ export default function AnalyticsPage() {
                         alt={article.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-midnight-navy via-transparent to-transparent" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-800 dark:from-midnight-navy via-transparent to-transparent" />
                       <div className="absolute top-4 left-4 flex flex-wrap gap-2">
                         {article.tags.slice(0, 2).map((tag) => (
                           <span
@@ -123,10 +123,10 @@ export default function AnalyticsPage() {
                       <h3 className="font-display font-bold text-lg text-foreground mb-3 group-hover:text-[#00D9FF] transition-colors line-clamp-2">
                         {article.title}
                       </h3>
-                      <p className="text-sm text-[#A8A29E] leading-relaxed mb-4 line-clamp-2">
+                      <p className="text-sm text-slate-600 dark:text-[#A8A29E] leading-relaxed mb-4 line-clamp-2">
                         {article.excerpt}
                       </p>
-                      <div className="flex items-center justify-between text-xs text-[#A8A29E]">
+                      <div className="flex items-center justify-between text-xs text-slate-600 dark:text-[#A8A29E]">
                         <div className="flex items-center gap-2">
                           <User className="w-3.5 h-3.5" />
                           <span>{article.author}</span>
@@ -151,11 +151,11 @@ export default function AnalyticsPage() {
             <h2 className="font-display font-bold text-2xl sm:text-3xl text-foreground mb-4">
               Want Deeper Insights?
             </h2>
-            <p className="text-[#A8A29E] max-w-xl mx-auto mb-8">
+            <p className="text-slate-600 dark:text-[#A8A29E] max-w-xl mx-auto mb-8">
               Explore individual player profiles for comprehensive performance data, historical trends, and detailed rating breakdowns.
             </p>
             <Link to="/players">
-              <button className="inline-flex items-center gap-2 bg-[#FF4444] hover:bg-[#FF5555] text-white font-label font-semibold px-8 py-3 rounded-xl glow-red transition-all duration-200 group">
+              <button className="inline-flex items-center gap-2 bg-[#FF4444] hover:bg-[#FF5555] text-slate-900 dark:text-white font-label font-semibold px-8 py-3 rounded-xl glow-red transition-all duration-200 group">
                 Explore Player Database
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>

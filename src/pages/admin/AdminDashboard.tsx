@@ -67,7 +67,7 @@ export default function AdminDashboard() {
           <h1 className="font-display font-extrabold text-3xl text-foreground mb-2">
             Dashboard
           </h1>
-          <p className="text-[#A8A29E]">
+          <p className="text-slate-600 dark:text-[#A8A29E]">
             Welcome back! Here's an overview of your platform.
           </p>
         </motion.div>
@@ -84,12 +84,12 @@ export default function AdminDashboard() {
               <Link to={stat.href}>
                 <div className="glass-card rounded-2xl p-6 hover:translate-y-[-2px] hover:shadow-lg transition-all duration-200 group">
                   <div className="flex items-start justify-between mb-4">
-                    <div className="w-12 h-12 rounded-xl bg-[#FF4444]/10 flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-xl bg-red-100 dark:bg-[#FF4444]/10 flex items-center justify-center">
                       <stat.icon className="w-6 h-6 text-[#FF4444]" />
                     </div>
                     <div className={`flex items-center gap-1 text-xs font-mono-data ${
                       stat.changeType === 'positive' ? 'text-green-400' : 
-                      stat.changeType === 'negative' ? 'text-red-400' : 'text-[#A8A29E]'
+                      stat.changeType === 'negative' ? 'text-red-400' : 'text-slate-600 dark:text-[#A8A29E]'
                     }`}>
                       {stat.changeType === 'positive' && <ArrowUpRight className="w-3 h-3" />}
                       {stat.changeType === 'negative' && <ArrowDownRight className="w-3 h-3" />}
@@ -99,7 +99,7 @@ export default function AdminDashboard() {
                   <p className="font-mono-data text-3xl font-bold text-foreground mb-1">
                     {stat.value}
                   </p>
-                  <p className="text-sm text-[#A8A29E] group-hover:text-foreground transition-colors">
+                  <p className="text-sm text-slate-600 dark:text-[#A8A29E] group-hover:text-foreground transition-colors">
                     {stat.label}
                   </p>
                 </div>
@@ -120,8 +120,8 @@ export default function AdminDashboard() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {quickActions.map((action) => (
               <Link key={action.label} to={action.href}>
-                <div className="glass-card rounded-xl p-4 hover:bg-white/5 transition-colors flex items-center gap-3 group">
-                  <div className="w-10 h-10 rounded-lg bg-[#00D9FF]/10 flex items-center justify-center">
+                <div className="glass-card rounded-xl p-4 hover:bg-slate-100 dark:bg-white/5 transition-colors flex items-center gap-3 group">
+                  <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-[#00D9FF]/10 flex items-center justify-center">
                     <action.icon className="w-5 h-5 text-[#00D9FF]" />
                   </div>
                   <span className="font-body font-medium text-foreground group-hover:text-[#00D9FF] transition-colors">
@@ -149,7 +149,7 @@ export default function AdminDashboard() {
               {recentActivity.map((activity, index) => (
                 <div 
                   key={index}
-                  className="flex items-start gap-4 py-3 border-b border-white/5 last:border-0"
+                  className="flex items-start gap-4 py-3 border-b border-slate-200 dark:border-white/5 last:border-0"
                 >
                   <div className={`w-2 h-2 rounded-full mt-2 ${
                     activity.type === 'match' ? 'bg-[#00D9FF]' :
@@ -158,9 +158,9 @@ export default function AdminDashboard() {
                   }`} />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-foreground">{activity.action}</p>
-                    <p className="text-xs text-[#A8A29E] truncate">{activity.target}</p>
+                    <p className="text-xs text-slate-600 dark:text-[#A8A29E] truncate">{activity.target}</p>
                   </div>
-                  <span className="text-xs text-[#A8A29E] whitespace-nowrap">{activity.time}</span>
+                  <span className="text-xs text-slate-600 dark:text-[#A8A29E] whitespace-nowrap">{activity.time}</span>
                 </div>
               ))}
             </div>
@@ -185,12 +185,12 @@ export default function AdminDashboard() {
               {players.slice(0, 5).map((player, index) => (
                 <div 
                   key={player.id}
-                  className="flex items-center gap-4 py-3 border-b border-white/5 last:border-0"
+                  className="flex items-center gap-4 py-3 border-b border-slate-200 dark:border-white/5 last:border-0"
                 >
-                  <span className="font-mono-data text-lg font-bold text-[#A8A29E] w-6">
+                  <span className="font-mono-data text-lg font-bold text-slate-600 dark:text-[#A8A29E] w-6">
                     {index + 1}
                   </span>
-                  <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center overflow-hidden">
+                  <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-white/5 flex items-center justify-center overflow-hidden">
                     <img 
                       src={player.photoUrl} 
                       alt={player.name}
@@ -199,7 +199,7 @@ export default function AdminDashboard() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{player.name}</p>
-                    <p className="text-xs text-[#A8A29E]">{player.team}</p>
+                    <p className="text-xs text-slate-600 dark:text-[#A8A29E]">{player.team}</p>
                   </div>
                   <span className="font-mono-data text-lg font-bold text-[#00D9FF]">
                     {player.rating.toFixed(1)}

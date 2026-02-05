@@ -26,7 +26,7 @@ function PlayerCard({ player, index }: { player: Player; index: number }) {
       <Link to={`/players/${player.id}`}>
         <div className="group glass-card rounded-2xl overflow-hidden hover:translate-y-[-4px] hover:shadow-xl transition-all duration-300 cursor-pointer border border-transparent hover:border-[#FF4444]/20">
           {/* Player Header */}
-          <div className="relative h-28 bg-gradient-to-br from-dark-purple to-midnight-navy p-4">
+          <div className="relative h-28 bg-gradient-to-br from-slate-200 dark:from-dark-purple to-slate-300 dark:to-midnight-navy p-4">
             <div className="absolute top-4 left-4">
               <span className="font-mono-data text-5xl font-extralight text-foreground/10">
                 #{player.number}
@@ -36,7 +36,7 @@ function PlayerCard({ player, index }: { player: Player; index: number }) {
               <TrendingUp className="w-3.5 h-3.5 text-green-400" />
               <span className="text-xs text-green-400 font-mono-data">+0.1</span>
             </div>
-            <div className="absolute -bottom-8 right-4 w-16 h-16 rounded-xl overflow-hidden border-3 border-background bg-white/5">
+            <div className="absolute -bottom-8 right-4 w-16 h-16 rounded-xl overflow-hidden border-3 border-background bg-slate-100 dark:bg-white/5">
               <img
                 src={player.photoUrl}
                 alt={player.name}
@@ -52,7 +52,7 @@ function PlayerCard({ player, index }: { player: Player; index: number }) {
                 <h3 className="font-display font-bold text-base text-foreground truncate group-hover:text-[#FF4444] transition-colors">
                   {player.name}
                 </h3>
-                <p className="text-xs text-[#A8A29E] truncate">{player.team}</p>
+                <p className="text-xs text-slate-600 dark:text-[#A8A29E] truncate">{player.team}</p>
               </div>
               <div className="flex flex-col items-end">
                 <span className="font-mono-data text-xl font-bold text-foreground">
@@ -64,34 +64,34 @@ function PlayerCard({ player, index }: { player: Player; index: number }) {
             <div className="flex items-center gap-2 mb-3">
               <span className={cn(
                 "inline-flex px-2.5 py-0.5 rounded-full text-xs font-label font-semibold uppercase tracking-wider border",
-                player.position === 'forward' && 'position-forward',
-                player.position === 'midfielder' && 'position-midfielder',
-                player.position === 'defender' && 'position-defender',
-                player.position === 'goalkeeper' && 'position-goalkeeper'
+                player.position === 'forward' && 'bg-red-50 text-red-700 border-red-200 dark:bg-red-500/20 dark:text-red-400 dark:border-red-500/30',
+                player.position === 'midfielder' && 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-cyan-500/20 dark:text-cyan-400 dark:border-cyan-500/30',
+                player.position === 'defender' && 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/20 dark:text-amber-400 dark:border-amber-500/30',
+                player.position === 'goalkeeper' && 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-500/20 dark:text-purple-400 dark:border-purple-500/30'
               )}>
                 {player.position}
               </span>
             </div>
 
             {/* Stats Row */}
-            <div className="grid grid-cols-3 gap-2 pt-3 border-t border-white/5">
+            <div className="grid grid-cols-3 gap-2 pt-3 border-t border-slate-200 dark:border-white/5">
               <div className="text-center">
                 <p className="font-mono-data text-sm font-semibold text-[#00D9FF]">
                   {player.stats.goals}
                 </p>
-                <p className="text-xs text-[#A8A29E]">Goals</p>
+                <p className="text-xs text-slate-600 dark:text-[#A8A29E]">Goals</p>
               </div>
               <div className="text-center">
                 <p className="font-mono-data text-sm font-semibold text-[#00D9FF]">
                   {player.stats.assists}
                 </p>
-                <p className="text-xs text-[#A8A29E]">Assists</p>
+                <p className="text-xs text-slate-600 dark:text-[#A8A29E]">Assists</p>
               </div>
               <div className="text-center">
                 <p className="font-mono-data text-sm font-semibold text-[#00D9FF]">
                   {player.stats.matches}
                 </p>
-                <p className="text-xs text-[#A8A29E]">Matches</p>
+                <p className="text-xs text-slate-600 dark:text-[#A8A29E]">Matches</p>
               </div>
             </div>
           </div>
@@ -128,7 +128,7 @@ export default function PlayersPage() {
             <h1 className="font-display font-extrabold text-4xl sm:text-5xl text-foreground mb-3">
               Player Database
             </h1>
-            <p className="text-[#A8A29E] text-lg max-w-2xl">
+            <p className="text-slate-600 dark:text-[#A8A29E] text-lg max-w-2xl">
               Explore comprehensive performance data and ratings for players across Vietnamese football leagues.
             </p>
           </motion.div>
@@ -143,13 +143,13 @@ export default function PlayersPage() {
             <div className="flex flex-col lg:flex-row gap-4">
               {/* Search */}
               <div className="flex-1 relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#A8A29E]" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-600 dark:text-[#A8A29E]" />
                 <input
                   type="text"
                   placeholder="Search players or teams..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-className="w-full h-12 pl-12 pr-4 rounded-xl bg-white/5 border border-white/10 text-foreground placeholder-[#A8A29E] focus:outline-none focus:border-[#00D9FF]/50 transition-colors"
+className="w-full h-12 pl-12 pr-4 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-foreground placeholder-[#A8A29E] focus:outline-none focus:border-[#00D9FF]/50 transition-colors"
                 />
               </div>
 
@@ -162,8 +162,8 @@ className="w-full h-12 pl-12 pr-4 rounded-xl bg-white/5 border border-white/10 t
                     className={cn(
                       "px-4 py-2.5 rounded-xl font-label text-sm font-medium transition-all duration-200",
                       selectedPosition === pos.value
-                        ? "bg-[#FF4444] text-white"
-                        : "bg-white/5 text-[#A8A29E] hover:bg-white/10 hover:text-foreground"
+                        ? "bg-[#FF4444] text-slate-900 dark:text-white"
+                        : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-[#A8A29E] hover:bg-slate-200 dark:bg-white/10 hover:text-foreground"
                     )}
                   >
                     {pos.label}
@@ -173,14 +173,14 @@ className="w-full h-12 pl-12 pr-4 rounded-xl bg-white/5 border border-white/10 t
             </div>
 
             {/* Team Filter */}
-            <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-white/5">
+            <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-slate-200 dark:border-white/5">
               <button
                 onClick={() => setSelectedTeam('all')}
                 className={cn(
                   "px-3 py-1.5 rounded-lg text-xs font-label font-medium transition-all duration-200",
                   selectedTeam === 'all'
                     ? "bg-[#00D9FF]/20 text-[#00D9FF]"
-                    : "bg-white/5 text-[#A8A29E] hover:bg-white/10"
+                    : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-[#A8A29E] hover:bg-slate-200 dark:bg-white/10"
                 )}
               >
                 All Teams
@@ -193,7 +193,7 @@ className="w-full h-12 pl-12 pr-4 rounded-xl bg-white/5 border border-white/10 t
                     "px-3 py-1.5 rounded-lg text-xs font-label font-medium transition-all duration-200",
                     selectedTeam === team.name
                       ? "bg-[#00D9FF]/20 text-[#00D9FF]"
-                      : "bg-white/5 text-[#A8A29E] hover:bg-white/10"
+                      : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-[#A8A29E] hover:bg-slate-200 dark:bg-white/10"
                   )}
                 >
                   {team.name}
@@ -209,7 +209,7 @@ className="w-full h-12 pl-12 pr-4 rounded-xl bg-white/5 border border-white/10 t
             transition={{ delay: 0.2 }}
             className="mb-6 flex items-center justify-between"
           >
-            <p className="text-sm text-[#A8A29E]">
+            <p className="text-sm text-slate-600 dark:text-[#A8A29E]">
               Showing <span className="font-mono-data text-foreground">{filteredPlayers.length}</span> players
             </p>
           </motion.div>
@@ -228,13 +228,13 @@ className="w-full h-12 pl-12 pr-4 rounded-xl bg-white/5 border border-white/10 t
               animate={{ opacity: 1 }}
               className="text-center py-20"
             >
-              <div className="w-20 h-20 rounded-2xl bg-white/5 flex items-center justify-center mx-auto mb-6">
-                <Search className="w-8 h-8 text-[#A8A29E]" />
+              <div className="w-20 h-20 rounded-2xl bg-slate-100 dark:bg-white/5 flex items-center justify-center mx-auto mb-6">
+                <Search className="w-8 h-8 text-slate-600 dark:text-[#A8A29E]" />
               </div>
               <h3 className="font-display font-bold text-xl text-foreground mb-2">
                 No Players Found
               </h3>
-              <p className="text-[#A8A29E]">
+              <p className="text-slate-600 dark:text-[#A8A29E]">
                 Try adjusting your filters or search query.
               </p>
             </motion.div>

@@ -44,19 +44,19 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
       {/* Sidebar */}
       <aside className={cn(
-        "fixed lg:static inset-y-0 left-0 z-50 w-72 bg-[#060D18] border-r border-white/5 transform transition-transform duration-300 lg:transform-none",
+        "fixed lg:static inset-y-0 left-0 z-50 w-72 bg-card border-r border-slate-200 dark:border-white/5 transform transition-transform duration-300 lg:transform-none",
         sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       )}>
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="p-6 border-b border-white/5">
+          <div className="p-6 border-b border-slate-200 dark:border-white/5">
             <Link to="/admin" className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF4444] to-[#FF6666] flex items-center justify-center">
-                <span className="font-display font-extrabold text-white text-lg">VN</span>
+                <span className="font-display font-extrabold text-slate-900 dark:text-white text-lg">VN</span>
               </div>
               <div>
                 <h1 className="font-display font-bold text-foreground">Admin Portal</h1>
-                <p className="text-xs text-[#A8A29E]">Player Rating Engine</p>
+                <p className="text-xs text-slate-600 dark:text-[#A8A29E]">Player Rating Engine</p>
               </div>
             </Link>
           </div>
@@ -73,8 +73,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                   className={cn(
                     "flex items-center gap-3 px-4 py-3 rounded-xl font-body text-sm transition-all duration-200",
                     isActive
-                      ? "bg-[#FF4444] text-white"
-                      : "text-[#A8A29E] hover:bg-white/5 hover:text-foreground"
+                      ? "bg-[#FF4444] text-slate-900 dark:text-white"
+                      : "text-slate-600 dark:text-[#A8A29E] hover:bg-slate-100 dark:bg-white/5 hover:text-foreground"
                   )}
                 >
                   <item.icon className="w-5 h-5" />
@@ -85,10 +85,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           </nav>
 
           {/* Footer */}
-          <div className="p-4 border-t border-white/5">
+          <div className="p-4 border-t border-slate-200 dark:border-white/5">
             <Link
               to="/"
-              className="flex items-center gap-3 px-4 py-3 rounded-xl font-body text-sm text-[#A8A29E] hover:bg-white/5 hover:text-foreground transition-colors"
+              className="flex items-center gap-3 px-4 py-3 rounded-xl font-body text-sm text-slate-600 dark:text-[#A8A29E] hover:bg-slate-100 dark:bg-white/5 hover:text-foreground transition-colors"
             >
               <LogOut className="w-5 h-5" />
               Back to Public Site
@@ -100,11 +100,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top Bar */}
-        <header className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-white/5 px-4 lg:px-8 py-4">
+        <header className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-slate-200 dark:border-white/5 px-4 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-2 rounded-lg hover:bg-white/5 text-[#A8A29E] hover:text-foreground transition-colors"
+              className="lg:hidden p-2 rounded-lg hover:bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-[#A8A29E] hover:text-foreground transition-colors"
             >
               <Menu className="w-6 h-6" />
             </button>
@@ -112,10 +112,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             <div className="ml-auto flex items-center gap-4">
               <div className="text-right">
                 <p className="text-sm font-medium text-foreground">Admin User</p>
-                <p className="text-xs text-[#A8A29E]">admin@vleague.vn</p>
+                <p className="text-xs text-slate-600 dark:text-[#A8A29E]">admin@vleague.vn</p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-[#FF4444] flex items-center justify-center">
-                <span className="font-display font-bold text-white">A</span>
+                <span className="font-display font-bold text-slate-900 dark:text-white">A</span>
               </div>
             </div>
           </div>

@@ -33,11 +33,11 @@ export default function AdminMatchesPage() {
             <h1 className="font-display font-extrabold text-3xl text-foreground mb-1">
               Match Management
             </h1>
-            <p className="text-[#A8A29E]">
+            <p className="text-slate-600 dark:text-[#A8A29E]">
               Create matches and input performance statistics.
             </p>
           </div>
-          <Button className="bg-[#FF4444] hover:bg-[#FF5555] text-white font-label font-semibold px-6 h-11 rounded-xl">
+          <Button className="bg-[#FF4444] hover:bg-[#FF5555] text-slate-900 dark:text-white font-label font-semibold px-6 h-11 rounded-xl">
             <Plus className="w-4 h-4 mr-2" />
             Create Match
           </Button>
@@ -51,13 +51,13 @@ export default function AdminMatchesPage() {
           className="glass-card rounded-2xl p-4 flex flex-col sm:flex-row gap-4"
         >
           <div className="flex-1 relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#A8A29E]" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-600 dark:text-[#A8A29E]" />
             <input
               type="text"
               placeholder="Search matches..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-11 pl-12 pr-4 rounded-xl bg-white/5 border border-white/10 text-foreground placeholder-[#A8A29E] focus:outline-none focus:border-[#00D9FF]/50 transition-colors"
+              className="w-full h-11 pl-12 pr-4 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-foreground placeholder-[#A8A29E] focus:outline-none focus:border-[#00D9FF]/50 transition-colors"
             />
           </div>
           <div className="flex gap-2">
@@ -69,7 +69,7 @@ export default function AdminMatchesPage() {
                   "px-4 py-2.5 rounded-xl font-label text-sm font-medium transition-all duration-200 capitalize",
                   selectedStatus === status
                     ? "bg-[#00D9FF]/20 text-[#00D9FF]"
-                    : "bg-white/5 text-[#A8A29E] hover:bg-white/10"
+                    : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-[#A8A29E] hover:bg-slate-200 dark:bg-white/10"
                 )}
               >
                 {status === 'all' ? 'All' : status}
@@ -104,11 +104,11 @@ export default function AdminMatchesPage() {
                   {/* Match Info */}
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-4">
-                      <span className="text-xs text-[#A8A29E] font-label uppercase tracking-wider">
+                      <span className="text-xs text-slate-600 dark:text-[#A8A29E] font-label uppercase tracking-wider">
                         {match.league}
                       </span>
-                      <span className="text-xs text-[#A8A29E]">•</span>
-                      <span className="text-xs text-[#A8A29E]">{match.date}</span>
+                      <span className="text-xs text-slate-600 dark:text-[#A8A29E]">•</span>
+                      <span className="text-xs text-slate-600 dark:text-[#A8A29E]">{match.date}</span>
                       {isLive && (
                         <span className="flex items-center gap-1.5 px-2.5 py-1 bg-[#FF4444]/20 rounded-full">
                           <Radio className="w-3 h-3 text-[#FF4444] animate-pulse" />
@@ -121,7 +121,7 @@ export default function AdminMatchesPage() {
                         </span>
                       )}
                       {match.status === 'scheduled' && (
-                        <span className="px-2.5 py-1 bg-[#00D9FF]/10 rounded-full text-xs font-label text-[#00D9FF]">
+                        <span className="px-2.5 py-1 bg-blue-100 dark:bg-[#00D9FF]/10 rounded-full text-xs font-label text-[#00D9FF]">
                           Scheduled
                         </span>
                       )}
@@ -130,7 +130,7 @@ export default function AdminMatchesPage() {
                     <div className="flex items-center gap-6">
                       {/* Home Team */}
                       <div className="flex items-center gap-3 flex-1">
-                        <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-white/5 flex items-center justify-center">
                           <span className="font-display font-bold text-foreground">
                             {match.homeTeam.name.charAt(0)}
                           </span>
@@ -143,7 +143,7 @@ export default function AdminMatchesPage() {
                         {(isLive || isCompleted) ? (
                           <>
                             <span className="font-mono-data text-2xl font-bold text-foreground">{match.homeScore}</span>
-                            <span className="text-[#A8A29E]">-</span>
+                            <span className="text-slate-600 dark:text-[#A8A29E]">-</span>
                             <span className="font-mono-data text-2xl font-bold text-foreground">{match.awayScore}</span>
                           </>
                         ) : (
@@ -154,7 +154,7 @@ export default function AdminMatchesPage() {
                       {/* Away Team */}
                       <div className="flex items-center gap-3 flex-1 justify-end">
                         <span className="font-medium text-foreground">{match.awayTeam.name}</span>
-                        <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-white/5 flex items-center justify-center">
                           <span className="font-display font-bold text-foreground">
                             {match.awayTeam.name.charAt(0)}
                           </span>
@@ -164,11 +164,11 @@ export default function AdminMatchesPage() {
                   </div>
 
                   {/* Actions */}
-                  <div className="flex items-center gap-3 lg:border-l lg:border-white/10 lg:pl-6">
+                  <div className="flex items-center gap-3 lg:border-l lg:border-slate-200 dark:border-white/10 lg:pl-6">
                     {(isLive || isCompleted) && (
                       <Button 
                         variant="outline" 
-                        className="border-[#00D9FF]/50 text-[#00D9FF] hover:bg-[#00D9FF]/10"
+                        className="border-[#00D9FF]/50 text-[#00D9FF] hover:bg-blue-100 dark:bg-[#00D9FF]/10"
                       >
                         <BarChart3 className="w-4 h-4 mr-2" />
                         {isCompleted ? 'View Stats' : 'Input Stats'}
@@ -176,7 +176,7 @@ export default function AdminMatchesPage() {
                     )}
                     <Button 
                       variant="ghost" 
-                      className="text-[#A8A29E] hover:text-foreground hover:bg-white/5"
+                      className="text-slate-600 dark:text-[#A8A29E] hover:text-foreground hover:bg-slate-100 dark:bg-white/5"
                     >
                       <Edit2 className="w-4 h-4 mr-2" />
                       Edit
@@ -184,7 +184,7 @@ export default function AdminMatchesPage() {
                     <Link to={`/matches/${match.id}`}>
                       <Button 
                         variant="ghost" 
-                        className="text-[#A8A29E] hover:text-foreground hover:bg-white/5"
+                        className="text-slate-600 dark:text-[#A8A29E] hover:text-foreground hover:bg-slate-100 dark:bg-white/5"
                       >
                         View
                       </Button>
@@ -198,8 +198,8 @@ export default function AdminMatchesPage() {
 
         {filteredMatches.length === 0 && (
           <div className="glass-card rounded-2xl py-12 text-center">
-            <Calendar className="w-12 h-12 text-[#A8A29E] mx-auto mb-4" />
-            <p className="text-[#A8A29E]">No matches found matching your criteria.</p>
+            <Calendar className="w-12 h-12 text-slate-600 dark:text-[#A8A29E] mx-auto mb-4" />
+            <p className="text-slate-600 dark:text-[#A8A29E]">No matches found matching your criteria.</p>
           </div>
         )}
       </div>

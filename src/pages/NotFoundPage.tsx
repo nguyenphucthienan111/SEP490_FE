@@ -22,7 +22,7 @@ export default function NotFoundPage() {
         </div>
 
         {/* Description */}
-        <p className="text-[#A8A29E] text-lg max-w-md mx-auto mb-8 font-body">
+        <p className="text-slate-600 dark:text-[#A8A29E] text-lg max-w-md mx-auto mb-8 font-body">
           Trang bạn đang tìm kiếm có thể đã bị xóa, đổi tên hoặc không tồn tại.
         </p>
 
@@ -30,7 +30,7 @@ export default function NotFoundPage() {
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <Button
             asChild
-            className="bg-gradient-to-r from-[#FF4444] to-[#FF6666] hover:from-[#FF5555] hover:to-[#FF7777] text-white font-semibold px-6 h-12 rounded-xl shadow-lg shadow-[#FF4444]/30"
+            className="bg-gradient-to-r from-[#FF4444] to-[#FF6666] hover:from-[#FF5555] hover:to-[#FF7777] text-slate-900 dark:text-white font-semibold px-6 h-12 rounded-xl shadow-lg shadow-[#FF4444]/30"
           >
             <Link to="/">
               <Home className="w-5 h-5 mr-2" />
@@ -40,7 +40,7 @@ export default function NotFoundPage() {
           <Button
             asChild
             variant="outline"
-            className="border-white/20 text-foreground hover:bg-white/10 px-6 h-12 rounded-xl"
+            className="border-slate-300 dark:border-white/20 text-foreground hover:bg-slate-200 dark:bg-white/10 px-6 h-12 rounded-xl"
           >
             <Link to="/players">
               <Search className="w-5 h-5 mr-2" />
@@ -50,8 +50,8 @@ export default function NotFoundPage() {
         </div>
 
         {/* Quick Links */}
-        <div className="mt-12 pt-8 border-t border-white/[0.08]">
-          <p className="text-[#A8A29E] text-sm mb-4">Hoặc thử các liên kết phổ biến:</p>
+        <div className="mt-12 pt-8 border-t border-slate-200 dark:border-white/[0.08]">
+          <p className="text-slate-600 dark:text-[#A8A29E] text-sm mb-4">Hoặc thử các liên kết phổ biến:</p>
           <div className="flex flex-wrap items-center justify-center gap-4">
             <Link
               to="/leagues"
@@ -86,7 +86,7 @@ export default function NotFoundPage() {
         {/* Back Button */}
         <button
           onClick={() => window.history.back()}
-          className="inline-flex items-center gap-2 mt-8 text-[#A8A29E] hover:text-foreground transition-colors"
+          className="inline-flex items-center gap-2 mt-8 text-slate-600 dark:text-[#A8A29E] hover:text-foreground transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           Quay lại trang trước

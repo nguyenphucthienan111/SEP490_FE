@@ -19,7 +19,7 @@ export default function LeaguesPage() {
             <h1 className="font-display font-extrabold text-4xl sm:text-5xl text-foreground mb-3">
               Vietnamese Leagues
             </h1>
-            <p className="text-[#A8A29E] text-lg max-w-2xl">
+            <p className="text-slate-600 dark:text-[#A8A29E] text-lg max-w-2xl">
               Comprehensive coverage of all Vietnamese football competitions.
             </p>
           </motion.div>
@@ -36,10 +36,10 @@ export default function LeaguesPage() {
                 <Link to={`/leagues/${league.id}`}>
                   <div className="group glass-card rounded-2xl p-8 hover:translate-y-[-4px] hover:shadow-xl transition-all duration-300 cursor-pointer border border-transparent hover:border-[#FF4444]/20 h-full">
                     <div className="flex items-start justify-between mb-6">
-                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#FF4444]/20 to-[#00D9FF]/20 flex items-center justify-center">
+                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-red-200 dark:from-[#FF4444]/20 to-blue-200 dark:to-[#00D9FF]/20 flex items-center justify-center">
                         <Trophy className="w-8 h-8 text-[#FF4444]" />
                       </div>
-                      <span className="px-4 py-1.5 rounded-full bg-[#00D9FF]/10 text-[#00D9FF] text-sm font-label font-semibold">
+                      <span className="px-4 py-1.5 rounded-full bg-blue-100 dark:bg-[#00D9FF]/10 text-[#00D9FF] text-sm font-label font-semibold">
                         {league.season}
                       </span>
                     </div>
@@ -47,22 +47,22 @@ export default function LeaguesPage() {
                     <h3 className="font-display font-bold text-2xl text-foreground mb-2 group-hover:text-[#FF4444] transition-colors">
                       {league.name}
                     </h3>
-                    <p className="text-[#A8A29E] mb-6">{league.country}</p>
+                    <p className="text-slate-600 dark:text-[#A8A29E] mb-6">{league.country}</p>
 
-                    <div className="grid grid-cols-2 gap-4 pt-6 border-t border-white/5">
+                    <div className="grid grid-cols-2 gap-4 pt-6 border-t border-slate-200 dark:border-white/5">
                       <div>
                         <div className="flex items-center gap-2 mb-1">
-                          <Users className="w-4 h-4 text-[#A8A29E]" />
+                          <Users className="w-4 h-4 text-slate-600 dark:text-[#A8A29E]" />
                           <span className="font-mono-data text-xl font-bold text-foreground">{league.teamCount}</span>
                         </div>
-                        <p className="text-xs text-[#A8A29E]">Teams</p>
+                        <p className="text-xs text-slate-600 dark:text-[#A8A29E]">Teams</p>
                       </div>
                       <div>
                         <div className="flex items-center gap-2 mb-1">
-                          <Calendar className="w-4 h-4 text-[#A8A29E]" />
+                          <Calendar className="w-4 h-4 text-slate-600 dark:text-[#A8A29E]" />
                           <span className="font-mono-data text-xl font-bold text-foreground">{league.matchesPlayed}</span>
                         </div>
-                        <p className="text-xs text-[#A8A29E]">Matches</p>
+                        <p className="text-xs text-slate-600 dark:text-[#A8A29E]">Matches</p>
                       </div>
                     </div>
 
@@ -95,8 +95,8 @@ export default function LeaguesPage() {
                   viewport={{ once: true }}
                   transition={{ duration: 0.3, delay: index * 0.05 }}
                 >
-                  <div className="glass-card rounded-xl p-4 hover:bg-white/5 transition-colors cursor-pointer">
-                    <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mb-3">
+                  <div className="glass-card rounded-xl p-4 hover:bg-slate-100 dark:bg-white/5 transition-colors cursor-pointer">
+                    <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-white/5 flex items-center justify-center mb-3">
                       <span className="font-display font-bold text-lg text-foreground">
                         {team.name.charAt(0)}
                       </span>
@@ -104,7 +104,7 @@ export default function LeaguesPage() {
                     <h4 className="font-body font-medium text-sm text-foreground truncate">
                       {team.name}
                     </h4>
-                    <p className="text-xs text-[#A8A29E]">{team.league}</p>
+                    <p className="text-xs text-slate-600 dark:text-[#A8A29E]">{team.league}</p>
                   </div>
                 </motion.div>
               ))}

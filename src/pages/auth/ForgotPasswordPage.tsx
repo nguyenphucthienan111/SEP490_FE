@@ -36,12 +36,12 @@ export default function ForgotPasswordPage() {
           <h1 className="font-display font-extrabold text-2xl text-foreground">VN Football Analytics</h1>
         </div>
 
-        <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-8 backdrop-blur-xl">
+        <div className="bg-card border border-slate-200 dark:border-white/[0.08] rounded-2xl p-8 backdrop-blur-xl">
           {!isSubmitted ? (
             <>
               <div className="text-center mb-8">
                 <h2 className="font-display font-extrabold text-3xl text-foreground mb-2">Quên Mật Khẩu?</h2>
-                <p className="text-[#A8A29E] font-body">
+                <p className="text-slate-600 dark:text-[#A8A29E] font-body">
                   Nhập email của bạn và chúng tôi sẽ gửi link đặt lại mật khẩu.
                 </p>
               </div>
@@ -50,14 +50,14 @@ export default function ForgotPasswordPage() {
                 <div className="space-y-2">
                   <Label htmlFor="email" className="text-[#E8E6E1] font-body">Email</Label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#A8A29E]" />
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-600 dark:text-[#A8A29E]" />
                     <Input
                       id="email"
                       type="email"
                       placeholder="your@email.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="pl-10 bg-white/[0.03] border-white/[0.08] text-foreground placeholder:text-[#A8A29E]/50 h-12 rounded-xl focus:border-[#00D9FF] focus:ring-[#00D9FF]/20"
+                      className="pl-10 bg-card border-slate-200 dark:border-white/[0.08] text-foreground placeholder:text-slate-600 dark:text-[#A8A29E]/50 h-12 rounded-xl focus:border-[#00D9FF] focus:ring-[#00D9FF]/20"
                       required
                     />
                   </div>
@@ -66,7 +66,7 @@ export default function ForgotPasswordPage() {
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full h-12 bg-gradient-to-r from-[#FF4444] to-[#FF6666] hover:from-[#FF5555] hover:to-[#FF7777] text-white font-semibold rounded-xl shadow-lg shadow-[#FF4444]/30 transition-all duration-200"
+                  className="w-full h-12 bg-gradient-to-r from-[#FF4444] to-[#FF6666] hover:from-[#FF5555] hover:to-[#FF7777] text-slate-900 dark:text-white font-semibold rounded-xl shadow-lg shadow-[#FF4444]/30 transition-all duration-200"
                 >
                   {isLoading ? (
                     <div className="flex items-center gap-2">
@@ -88,14 +88,14 @@ export default function ForgotPasswordPage() {
                 <CheckCircle className="w-8 h-8 text-green-400" />
               </div>
               <h2 className="font-display font-extrabold text-2xl text-foreground mb-2">Email Đã Gửi!</h2>
-              <p className="text-[#A8A29E] font-body mb-6">
+              <p className="text-slate-600 dark:text-[#A8A29E] font-body mb-6">
                 Chúng tôi đã gửi link đặt lại mật khẩu đến <span className="text-[#00D9FF]">{email}</span>. 
                 Vui lòng kiểm tra hộp thư (bao gồm thư mục spam).
               </p>
               <Button
                 onClick={() => setIsSubmitted(false)}
                 variant="outline"
-                className="border-white/20 text-foreground hover:bg-white/10"
+                className="border-slate-300 dark:border-white/20 text-foreground hover:bg-slate-200 dark:bg-white/10"
               >
                 Gửi lại email
               </Button>
@@ -105,7 +105,7 @@ export default function ForgotPasswordPage() {
           <div className="mt-6 text-center">
             <Link
               to="/login"
-              className="inline-flex items-center gap-2 text-[#A8A29E] hover:text-foreground transition-colors font-body"
+              className="inline-flex items-center gap-2 text-slate-600 dark:text-[#A8A29E] hover:text-foreground transition-colors font-body"
             >
               <ArrowLeft className="w-4 h-4" />
               Quay lại đăng nhập

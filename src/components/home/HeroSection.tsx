@@ -54,12 +54,12 @@ export function HeroSection() {
   const currentPlayer = topPlayers[currentPlayerIndex];
 
   return (
-    <section className="relative min-h-[90vh] flex items-center overflow-hidden gradient-hero">
+    <section className="relative min-h-[90vh] flex items-center overflow-hidden bg-gradient-to-br from-background via-background to-muted/30">
       {/* Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-1/4 -left-1/4 w-[600px] h-[600px] bg-[#FF4444]/10 rounded-full blur-[120px]" />
-        <div className="absolute bottom-1/4 -right-1/4 w-[500px] h-[500px] bg-[#00D9FF]/10 rounded-full blur-[120px]" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#1A0F2E]/50 rounded-full blur-[150px]" />
+        <div className="absolute top-1/4 -left-1/4 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px]" />
+        <div className="absolute bottom-1/4 -right-1/4 w-[500px] h-[500px] bg-secondary/5 rounded-full blur-[120px]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-accent/10 rounded-full blur-[150px]" />
       </div>
 
       <div className="container mx-auto px-4 py-20 relative z-10">
@@ -75,21 +75,21 @@ export function HeroSection() {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2 }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-6"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent border border-border mb-6 shadow-sm"
             >
-              <span className="w-2 h-2 rounded-full bg-[#00D9FF] animate-pulse" />
-              <span className="text-sm font-label text-[#A8A29E] uppercase tracking-wider">
+              <span className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
+              <span className="text-sm font-label text-muted-foreground uppercase tracking-wider">
                 Season 2025 Active
               </span>
             </motion.div>
 
             <h1 className="font-display font-extrabold text-4xl sm:text-5xl lg:text-6xl xl:text-7xl text-foreground leading-[1.1] mb-6">
               Data-Driven{' '}
-              <span className="text-gradient">Player Analysis</span>{' '}
+              <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Player Analysis</span>{' '}
               for Vietnamese Football
             </h1>
 
-            <p className="text-lg text-[#A8A29E] max-w-xl mb-8 leading-relaxed">
+            <p className="text-lg text-muted-foreground max-w-xl mb-8 leading-relaxed">
               Transform raw match statistics into transparent, position-aware 
               performance ratings. Discover the true impact of every player in 
               V.League and beyond.
@@ -97,13 +97,13 @@ export function HeroSection() {
 
             <div className="flex flex-wrap gap-4 mb-12">
               <Link to="/players">
-                <Button className="bg-[#FF4444] hover:bg-[#FF5555] text-white font-label font-semibold px-8 h-12 rounded-xl glow-red transition-all duration-200 hover:scale-[0.98] group">
+                <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-label font-semibold px-8 h-12 rounded-xl shadow-lg transition-all duration-200 hover:scale-[0.98] group">
                   Explore Players
                   <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
               <Link to="/matches">
-                <Button variant="outline" className="border-[#00D9FF]/50 text-[#00D9FF] hover:bg-[#00D9FF]/10 font-label font-semibold px-8 h-12 rounded-xl transition-all duration-200">
+                <Button variant="outline" className="border-secondary/50 text-secondary hover:bg-secondary/10 font-label font-semibold px-8 h-12 rounded-xl transition-all duration-200">
                   View Matches
                 </Button>
               </Link>
@@ -122,7 +122,7 @@ export function HeroSection() {
                   <p className="text-2xl sm:text-3xl font-bold text-foreground mb-1">
                     <AnimatedNumber value={stat.value} suffix={stat.suffix} />
                   </p>
-                  <p className="text-xs sm:text-sm text-[#A8A29E]">{stat.label}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">{stat.label}</p>
                 </motion.div>
               ))}
             </div>
@@ -135,8 +135,8 @@ export function HeroSection() {
             transition={{ duration: 0.8, delay: 0.3 }}
             className="relative"
           >
-            <div className="relative glass-card rounded-3xl p-6 sm:p-8">
-              <div className="absolute -top-3 -right-3 px-4 py-2 bg-[#FF4444] rounded-xl font-label font-bold text-white text-sm glow-red">
+            <div className="relative bg-card border border-border rounded-3xl p-6 sm:p-8 shadow-xl">
+              <div className="absolute -top-3 -right-3 px-4 py-2 bg-primary rounded-xl font-label font-bold text-primary-foreground text-sm shadow-lg">
                 Featured Player
               </div>
 
@@ -149,7 +149,7 @@ export function HeroSection() {
                   transition={{ duration: 0.5 }}
                 >
                   <div className="flex items-start gap-6 mb-6">
-                    <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden bg-white/5 flex-shrink-0">
+                    <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden bg-muted flex-shrink-0">
                       <img
                         src={currentPlayer.photoUrl}
                         alt={currentPlayer.name}
@@ -160,12 +160,12 @@ export function HeroSection() {
                       <h3 className="font-display font-bold text-xl sm:text-2xl text-foreground truncate">
                         {currentPlayer.name}
                       </h3>
-                      <p className="text-[#A8A29E] text-sm mb-2">{currentPlayer.team}</p>
+                      <p className="text-muted-foreground text-sm mb-2">{currentPlayer.team}</p>
                       <span className={`inline-flex px-3 py-1 rounded-full text-xs font-label font-semibold uppercase tracking-wider border
-                        ${currentPlayer.position === 'forward' ? 'position-forward' : ''}
-                        ${currentPlayer.position === 'midfielder' ? 'position-midfielder' : ''}
-                        ${currentPlayer.position === 'defender' ? 'position-defender' : ''}
-                        ${currentPlayer.position === 'goalkeeper' ? 'position-goalkeeper' : ''}
+                        ${currentPlayer.position === 'forward' ? 'bg-red-50 text-red-700 border-red-200' : ''}
+                        ${currentPlayer.position === 'midfielder' ? 'bg-blue-50 text-blue-700 border-blue-200' : ''}
+                        ${currentPlayer.position === 'defender' ? 'bg-amber-50 text-amber-700 border-amber-200' : ''}
+                        ${currentPlayer.position === 'goalkeeper' ? 'bg-purple-50 text-purple-700 border-purple-200' : ''}
                       `}>
                         {currentPlayer.position}
                       </span>
@@ -181,7 +181,7 @@ export function HeroSection() {
                           cy="50%"
                           r="45%"
                           fill="none"
-                          stroke="rgba(255,255,255,0.1)"
+                          stroke="hsl(var(--muted))"
                           strokeWidth="8"
                         />
                         <circle
@@ -196,8 +196,8 @@ export function HeroSection() {
                         />
                         <defs>
                           <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                            <stop offset="0%" stopColor="#FF4444" />
-                            <stop offset="100%" stopColor="#00D9FF" />
+                            <stop offset="0%" stopColor="hsl(var(--primary))" />
+                            <stop offset="100%" stopColor="hsl(var(--secondary))" />
                           </linearGradient>
                         </defs>
                       </svg>
@@ -205,30 +205,30 @@ export function HeroSection() {
                         <span className="font-mono-data text-4xl sm:text-5xl font-bold text-foreground">
                           {currentPlayer.rating.toFixed(1)}
                         </span>
-                        <span className="text-xs text-[#A8A29E] uppercase tracking-wider">Rating</span>
+                        <span className="text-xs text-muted-foreground uppercase tracking-wider">Rating</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Stats Grid */}
                   <div className="grid grid-cols-3 gap-4">
-                    <div className="text-center p-3 rounded-xl bg-white/5">
-                      <p className="font-mono-data text-xl font-bold text-[#00D9FF]">
+                    <div className="text-center p-3 rounded-xl bg-muted">
+                      <p className="font-mono-data text-xl font-bold text-secondary">
                         {currentPlayer.stats.goals}
                       </p>
-                      <p className="text-xs text-[#A8A29E]">Goals</p>
+                      <p className="text-xs text-muted-foreground">Goals</p>
                     </div>
-                    <div className="text-center p-3 rounded-xl bg-white/5">
-                      <p className="font-mono-data text-xl font-bold text-[#00D9FF]">
+                    <div className="text-center p-3 rounded-xl bg-muted">
+                      <p className="font-mono-data text-xl font-bold text-secondary">
                         {currentPlayer.stats.assists}
                       </p>
-                      <p className="text-xs text-[#A8A29E]">Assists</p>
+                      <p className="text-xs text-muted-foreground">Assists</p>
                     </div>
-                    <div className="text-center p-3 rounded-xl bg-white/5">
-                      <p className="font-mono-data text-xl font-bold text-[#00D9FF]">
+                    <div className="text-center p-3 rounded-xl bg-muted">
+                      <p className="font-mono-data text-xl font-bold text-secondary">
                         {currentPlayer.stats.matches}
                       </p>
-                      <p className="text-xs text-[#A8A29E]">Matches</p>
+                      <p className="text-xs text-muted-foreground">Matches</p>
                     </div>
                   </div>
                 </motion.div>
@@ -242,8 +242,8 @@ export function HeroSection() {
                     onClick={() => setCurrentPlayerIndex(index)}
                     className={`w-2 h-2 rounded-full transition-all duration-300 ${
                       index === currentPlayerIndex 
-                        ? 'w-6 bg-[#FF4444]' 
-                        : 'bg-white/20 hover:bg-white/40'
+                        ? 'w-6 bg-primary' 
+                        : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
                     }`}
                   />
                 ))}

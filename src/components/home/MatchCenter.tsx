@@ -19,7 +19,7 @@ function MatchCard({ match, featured = false }: { match: Match; featured?: boole
         {/* Match Header */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <span className="text-xs text-[#A8A29E] font-label uppercase tracking-wider">
+            <span className="text-xs text-slate-600 dark:text-[#A8A29E] font-label uppercase tracking-wider">
               {match.league}
             </span>
           </div>
@@ -30,7 +30,7 @@ function MatchCard({ match, featured = false }: { match: Match; featured?: boole
             </span>
           )}
           {isCompleted && (
-            <span className="px-2.5 py-1 bg-white/5 rounded-full text-xs font-label text-[#A8A29E]">
+            <span className="px-2.5 py-1 bg-slate-100 dark:bg-white/5 rounded-full text-xs font-label text-slate-600 dark:text-[#A8A29E]">
               FT
             </span>
           )}
@@ -45,12 +45,12 @@ function MatchCard({ match, featured = false }: { match: Match; featured?: boole
         <div className="flex items-center justify-between gap-4 mb-4">
           {/* Home Team */}
           <div className="flex-1 text-left">
-            <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mb-2 mx-0">
-              <span className="font-display font-bold text-lg text-white">
+            <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-white/5 flex items-center justify-center mb-2 mx-0">
+              <span className="font-display font-bold text-lg text-slate-800 dark:text-white">
                 {match.homeTeam.name.charAt(0)}
               </span>
             </div>
-            <h4 className="font-body font-semibold text-white text-sm truncate">
+            <h4 className="font-body font-semibold text-slate-800 dark:text-white text-sm truncate">
               {match.homeTeam.name}
             </h4>
           </div>
@@ -59,34 +59,34 @@ function MatchCard({ match, featured = false }: { match: Match; featured?: boole
           <div className="flex items-center gap-3">
             {(isLive || isCompleted) ? (
               <>
-                <span className="font-mono-data text-3xl font-bold text-white">
+                <span className="font-mono-data text-3xl font-bold text-slate-900 dark:text-white">
                   {match.homeScore}
                 </span>
-                <span className="text-[#A8A29E] text-lg">-</span>
-                <span className="font-mono-data text-3xl font-bold text-white">
+                <span className="text-slate-500 dark:text-[#A8A29E] text-lg">-</span>
+                <span className="font-mono-data text-3xl font-bold text-slate-900 dark:text-white">
                   {match.awayScore}
                 </span>
               </>
             ) : (
-              <span className="font-mono-data text-lg text-[#A8A29E]">VS</span>
+              <span className="font-mono-data text-lg text-slate-500 dark:text-[#A8A29E]">VS</span>
             )}
           </div>
 
           {/* Away Team */}
           <div className="flex-1 text-right">
-            <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mb-2 ml-auto">
-              <span className="font-display font-bold text-lg text-white">
+            <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-white/5 flex items-center justify-center mb-2 ml-auto">
+              <span className="font-display font-bold text-lg text-slate-800 dark:text-white">
                 {match.awayTeam.name.charAt(0)}
               </span>
             </div>
-            <h4 className="font-body font-semibold text-white text-sm truncate">
+            <h4 className="font-body font-semibold text-slate-800 dark:text-white text-sm truncate">
               {match.awayTeam.name}
             </h4>
           </div>
         </div>
 
         {/* Match Info */}
-        <div className="flex items-center justify-center gap-4 pt-4 border-t border-white/5 text-xs text-[#A8A29E]">
+        <div className="flex items-center justify-center gap-4 pt-4 border-t border-slate-200 dark:border-white/5 text-xs text-slate-500 dark:text-[#A8A29E]">
           <div className="flex items-center gap-1.5">
             <Calendar className="w-3.5 h-3.5" />
             <span>{new Date(match.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
@@ -120,10 +120,10 @@ export function MatchCenter() {
           className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 mb-12"
         >
           <div>
-            <h2 className="font-display font-extrabold text-3xl sm:text-4xl text-white mb-2">
+            <h2 className="font-display font-extrabold text-3xl sm:text-4xl text-slate-900 dark:text-white mb-2">
               Match Center
             </h2>
-            <p className="text-[#A8A29E] max-w-md">
+            <p className="text-slate-600 dark:text-[#A8A29E] max-w-md">
               Live scores, recent results, and upcoming fixtures.
             </p>
           </div>
@@ -147,7 +147,7 @@ export function MatchCenter() {
           >
             <div className="flex items-center gap-2 mb-4">
               <Radio className="w-4 h-4 text-[#FF4444] animate-pulse" />
-              <h3 className="font-label font-bold text-white uppercase tracking-wider text-sm">
+              <h3 className="font-label font-bold text-slate-900 dark:text-white uppercase tracking-wider text-sm">
                 Live Now
               </h3>
             </div>

@@ -38,14 +38,14 @@ function PlayerSelector({
 
   return (
     <div className="relative">
-      <p className="text-xs text-[#A8A29E] uppercase tracking-wider mb-2 font-label">{label}</p>
+      <p className="text-xs text-slate-600 dark:text-[#A8A29E] uppercase tracking-wider mb-2 font-label">{label}</p>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full glass-card rounded-xl p-4 flex items-center gap-4 hover:bg-white/5 transition-colors"
+        className="w-full glass-card rounded-xl p-4 flex items-center gap-4 hover:bg-slate-100 dark:bg-white/5 transition-colors"
       >
         {selectedPlayer ? (
           <>
-            <div className="w-12 h-12 rounded-xl bg-white/5 overflow-hidden flex-shrink-0">
+            <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-white/5 overflow-hidden flex-shrink-0">
               <img
                 src={selectedPlayer.photoUrl}
                 alt={selectedPlayer.name}
@@ -54,16 +54,16 @@ function PlayerSelector({
             </div>
             <div className="flex-1 text-left">
               <p className="font-medium text-foreground">{selectedPlayer.name}</p>
-              <p className="text-xs text-[#A8A29E]">{selectedPlayer.team}</p>
+              <p className="text-xs text-slate-600 dark:text-[#A8A29E]">{selectedPlayer.team}</p>
             </div>
           </>
         ) : (
           <div className="flex-1 text-left">
-            <p className="text-[#A8A29E]">Select a player...</p>
+            <p className="text-slate-600 dark:text-[#A8A29E]">Select a player...</p>
           </div>
         )}
         <ChevronDown className={cn(
-          "w-5 h-5 text-[#A8A29E] transition-transform",
+          "w-5 h-5 text-slate-600 dark:text-[#A8A29E] transition-transform",
           isOpen && "rotate-180"
         )} />
       </button>
@@ -74,17 +74,17 @@ function PlayerSelector({
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="absolute z-50 top-full mt-2 left-0 right-0 glass-card rounded-xl overflow-hidden border border-white/10"
+            className="absolute z-50 top-full mt-2 left-0 right-0 glass-card rounded-xl overflow-hidden border border-slate-200 dark:border-white/10"
           >
-            <div className="p-3 border-b border-white/5">
+            <div className="p-3 border-b border-slate-200 dark:border-white/5">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A8A29E]" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600 dark:text-[#A8A29E]" />
                 <input
                   type="text"
                   placeholder="Search players..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full h-10 pl-10 pr-4 rounded-lg bg-white/5 border border-white/10 text-foreground text-sm placeholder-[#A8A29E] focus:outline-none focus:border-[#00D9FF]/50"
+                  className="w-full h-10 pl-10 pr-4 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-foreground text-sm placeholder-[#A8A29E] focus:outline-none focus:border-[#00D9FF]/50"
                 />
               </div>
             </div>
@@ -97,9 +97,9 @@ function PlayerSelector({
                     setIsOpen(false);
                     setSearch('');
                   }}
-                  className="w-full px-4 py-3 flex items-center gap-3 hover:bg-white/5 transition-colors"
+                  className="w-full px-4 py-3 flex items-center gap-3 hover:bg-slate-100 dark:bg-white/5 transition-colors"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-white/5 overflow-hidden">
+                  <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-white/5 overflow-hidden">
                     <img
                       src={player.photoUrl}
                       alt={player.name}
@@ -108,7 +108,7 @@ function PlayerSelector({
                   </div>
                   <div className="flex-1 text-left">
                     <p className="text-sm text-foreground">{player.name}</p>
-                    <p className="text-xs text-[#A8A29E]">{player.team}</p>
+                    <p className="text-xs text-slate-600 dark:text-[#A8A29E]">{player.team}</p>
                   </div>
                   <span className="font-mono-data text-sm text-[#00D9FF]">
                     {player.rating.toFixed(1)}
@@ -116,7 +116,7 @@ function PlayerSelector({
                 </button>
               ))}
               {filteredPlayers.length === 0 && (
-                <p className="p-4 text-center text-sm text-[#A8A29E]">No players found</p>
+                <p className="p-4 text-center text-sm text-slate-600 dark:text-[#A8A29E]">No players found</p>
               )}
             </div>
           </motion.div>
@@ -200,7 +200,7 @@ export default function ComparePage() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <Link to="/players" className="inline-flex items-center gap-2 text-[#A8A29E] hover:text-foreground transition-colors mb-8">
+            <Link to="/players" className="inline-flex items-center gap-2 text-slate-600 dark:text-[#A8A29E] hover:text-foreground transition-colors mb-8">
               <ArrowLeft className="w-4 h-4" />
               <span className="font-label text-sm">Back to Players</span>
             </Link>
@@ -216,7 +216,7 @@ export default function ComparePage() {
             <h1 className="font-display font-extrabold text-4xl text-foreground mb-2">
               Player Comparison
             </h1>
-            <p className="text-[#A8A29E]">
+            <p className="text-slate-600 dark:text-[#A8A29E]">
               Compare statistics and performance metrics between two players.
             </p>
           </motion.div>
@@ -316,13 +316,13 @@ export default function ComparePage() {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.3 + index * 0.05 }}
-                        className="grid grid-cols-3 gap-4 items-center py-4 border-b border-white/5 last:border-0"
+                        className="grid grid-cols-3 gap-4 items-center py-4 border-b border-slate-200 dark:border-white/5 last:border-0"
                       >
                         {/* Player 1 Value */}
                         <div className={cn(
                           "text-left",
                           p1Better && !isEqual && "text-green-400",
-                          !p1Better && !isEqual && "text-[#A8A29E]"
+                          !p1Better && !isEqual && "text-slate-600 dark:text-[#A8A29E]"
                         )}>
                           <span className="font-mono-data text-xl font-bold">
                             {stat.format === 'rating' ? stat.p1.toFixed(1) :
@@ -333,14 +333,14 @@ export default function ComparePage() {
 
                         {/* Stat Label */}
                         <div className="text-center">
-                          <span className="text-sm text-[#A8A29E]">{stat.label}</span>
+                          <span className="text-sm text-slate-600 dark:text-[#A8A29E]">{stat.label}</span>
                         </div>
 
                         {/* Player 2 Value */}
                         <div className={cn(
                           "text-right",
                           p2Better && !isEqual && "text-green-400",
-                          !p2Better && !isEqual && "text-[#A8A29E]"
+                          !p2Better && !isEqual && "text-slate-600 dark:text-[#A8A29E]"
                         )}>
                           <span className="font-mono-data text-xl font-bold">
                             {stat.format === 'rating' ? stat.p2.toFixed(1) :
@@ -360,13 +360,13 @@ export default function ComparePage() {
               animate={{ opacity: 1 }}
               className="glass-card rounded-2xl p-12 text-center"
             >
-              <div className="w-20 h-20 rounded-2xl bg-white/5 flex items-center justify-center mx-auto mb-6">
-                <Search className="w-8 h-8 text-[#A8A29E]" />
+              <div className="w-20 h-20 rounded-2xl bg-slate-100 dark:bg-white/5 flex items-center justify-center mx-auto mb-6">
+                <Search className="w-8 h-8 text-slate-600 dark:text-[#A8A29E]" />
               </div>
               <h3 className="font-display font-bold text-xl text-foreground mb-2">
                 Select Two Players to Compare
               </h3>
-              <p className="text-[#A8A29E] max-w-md mx-auto">
+              <p className="text-slate-600 dark:text-[#A8A29E] max-w-md mx-auto">
                 Use the dropdowns above to select two players and see a detailed comparison of their statistics and performance metrics.
               </p>
             </motion.div>

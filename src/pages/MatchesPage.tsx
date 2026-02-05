@@ -25,11 +25,11 @@ function MatchCard({ match, index }: { match: Match; index: number }) {
           {/* Match Header */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <span className="text-xs text-[#A8A29E] font-label uppercase tracking-wider">
+              <span className="text-xs text-slate-600 dark:text-[#A8A29E] font-label uppercase tracking-wider">
                 {match.league}
               </span>
-              <span className="text-xs text-[#A8A29E]">•</span>
-              <span className="text-xs text-[#A8A29E]">{match.season}</span>
+              <span className="text-xs text-slate-600 dark:text-[#A8A29E]">•</span>
+              <span className="text-xs text-slate-600 dark:text-[#A8A29E]">{match.season}</span>
             </div>
             {isLive && (
               <span className="flex items-center gap-1.5 px-3 py-1.5 bg-[#FF4444]/20 rounded-full">
@@ -38,12 +38,12 @@ function MatchCard({ match, index }: { match: Match; index: number }) {
               </span>
             )}
             {isCompleted && (
-              <span className="px-3 py-1.5 bg-white/5 rounded-full text-xs font-label text-[#A8A29E]">
+              <span className="px-3 py-1.5 bg-slate-100 dark:bg-white/5 rounded-full text-xs font-label text-slate-600 dark:text-[#A8A29E]">
                 Full Time
               </span>
             )}
             {match.status === 'scheduled' && (
-              <span className="px-3 py-1.5 bg-[#00D9FF]/10 rounded-full text-xs font-label text-[#00D9FF]">
+              <span className="px-3 py-1.5 bg-blue-100 dark:bg-[#00D9FF]/10 rounded-full text-xs font-label text-[#00D9FF]">
                 Upcoming
               </span>
             )}
@@ -53,7 +53,7 @@ function MatchCard({ match, index }: { match: Match; index: number }) {
           <div className="flex items-center justify-between gap-6 mb-6">
             {/* Home Team */}
             <div className="flex-1">
-              <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-3">
+              <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-white/5 flex items-center justify-center mb-3">
                 <span className="font-display font-bold text-xl text-foreground">
                   {match.homeTeam.name.charAt(0)}
                 </span>
@@ -61,7 +61,7 @@ function MatchCard({ match, index }: { match: Match; index: number }) {
               <h4 className="font-body font-semibold text-foreground text-sm">
                 {match.homeTeam.name}
               </h4>
-              <span className="text-xs text-[#A8A29E]">Home</span>
+              <span className="text-xs text-slate-600 dark:text-[#A8A29E]">Home</span>
             </div>
 
             {/* Score */}
@@ -71,7 +71,7 @@ function MatchCard({ match, index }: { match: Match; index: number }) {
                   <span className="font-mono-data text-4xl font-bold text-foreground">
                     {match.homeScore}
                   </span>
-                  <span className="text-[#A8A29E] text-2xl">-</span>
+                  <span className="text-slate-600 dark:text-[#A8A29E] text-2xl">-</span>
                   <span className="font-mono-data text-4xl font-bold text-foreground">
                     {match.awayScore}
                   </span>
@@ -79,14 +79,14 @@ function MatchCard({ match, index }: { match: Match; index: number }) {
               ) : (
                 <div className="text-center">
                   <p className="font-mono-data text-xl text-[#00D9FF] mb-1">{match.time}</p>
-                  <p className="text-xs text-[#A8A29E]">Kick-off</p>
+                  <p className="text-xs text-slate-600 dark:text-[#A8A29E]">Kick-off</p>
                 </div>
               )}
             </div>
 
             {/* Away Team */}
             <div className="flex-1 text-right">
-              <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-3 ml-auto">
+              <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-white/5 flex items-center justify-center mb-3 ml-auto">
                 <span className="font-display font-bold text-xl text-foreground">
                   {match.awayTeam.name.charAt(0)}
                 </span>
@@ -94,12 +94,12 @@ function MatchCard({ match, index }: { match: Match; index: number }) {
               <h4 className="font-body font-semibold text-foreground text-sm">
                 {match.awayTeam.name}
               </h4>
-              <span className="text-xs text-[#A8A29E]">Away</span>
+              <span className="text-xs text-slate-600 dark:text-[#A8A29E]">Away</span>
             </div>
           </div>
 
           {/* Match Info */}
-          <div className="flex items-center justify-center gap-6 pt-4 border-t border-white/5 text-sm text-[#A8A29E]">
+          <div className="flex items-center justify-center gap-6 pt-4 border-t border-slate-200 dark:border-white/5 text-sm text-slate-600 dark:text-[#A8A29E]">
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4" />
               <span>{new Date(match.date).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
@@ -142,7 +142,7 @@ export default function MatchesPage() {
             <h1 className="font-display font-extrabold text-4xl sm:text-5xl text-foreground mb-3">
               Match Center
             </h1>
-            <p className="text-[#A8A29E] text-lg max-w-2xl">
+            <p className="text-slate-600 dark:text-[#A8A29E] text-lg max-w-2xl">
               Live scores, results, and upcoming fixtures from Vietnamese football leagues.
             </p>
           </motion.div>
@@ -162,8 +162,8 @@ export default function MatchesPage() {
                   className={cn(
                     "px-4 py-2.5 rounded-xl font-label text-sm font-medium transition-all duration-200",
                     selectedLeague === 'all'
-                      ? "bg-[#FF4444] text-white"
-                      : "bg-white/5 text-[#A8A29E] hover:bg-white/10 hover:text-white"
+                      ? "bg-[#FF4444] text-slate-900 dark:text-white"
+                      : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-[#A8A29E] hover:bg-slate-200 dark:bg-white/10 hover:text-slate-900 dark:text-white"
                   )}
                 >
                   All Leagues
@@ -175,8 +175,8 @@ export default function MatchesPage() {
                     className={cn(
                       "px-4 py-2.5 rounded-xl font-label text-sm font-medium transition-all duration-200",
                       selectedLeague === league.name
-                        ? "bg-[#FF4444] text-white"
-                        : "bg-white/5 text-[#A8A29E] hover:bg-white/10 hover:text-foregroundround"
+                        ? "bg-[#FF4444] text-slate-900 dark:text-white"
+                        : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-[#A8A29E] hover:bg-slate-200 dark:bg-white/10 hover:text-foregroundround"
                     )}
                   >
                     {league.name}
@@ -199,7 +199,7 @@ export default function MatchesPage() {
                       "px-3 py-1.5 rounded-lg text-xs font-label font-medium transition-all duration-200",
                       selectedStatus === status.value
                         ? "bg-[#00D9FF]/20 text-[#00D9FF]"
-                        : "bg-white/5 text-[#A8A29E] hover:bg-white/10"
+                        : "bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-[#A8A29E] hover:bg-slate-200 dark:bg-white/10"
                     )}
                   >
                     {status.label}
@@ -258,13 +258,13 @@ export default function MatchesPage() {
               animate={{ opacity: 1 }}
               className="text-center py-20"
             >
-              <div className="w-20 h-20 rounded-2xl bg-white/5 flex items-center justify-center mx-auto mb-6">
-                <Calendar className="w-8 h-8 text-[#A8A29E]" />
+              <div className="w-20 h-20 rounded-2xl bg-slate-100 dark:bg-white/5 flex items-center justify-center mx-auto mb-6">
+                <Calendar className="w-8 h-8 text-slate-600 dark:text-[#A8A29E]" />
               </div>
               <h3 className="font-display font-bold text-xl text-foreground mb-2">
                 No Matches Found
               </h3>
-              <p className="text-[#A8A29E]">
+              <p className="text-slate-600 dark:text-[#A8A29E]">
                 Try adjusting your filters.
               </p>
             </motion.div>

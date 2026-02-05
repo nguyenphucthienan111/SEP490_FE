@@ -46,7 +46,7 @@ export default function RegisterPage() {
     <div className="min-h-screen bg-background flex">
       {/* Left Side - Decorative */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-midnight-navy via-dark-purple to-midnight-navy" />
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-800 dark:from-midnight-navy via-dark-purple to-slate-300 dark:to-midnight-navy" />
         <div className="absolute inset-0 opacity-30">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#00D9FF] rounded-full blur-[128px]" />
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#FF4444] rounded-full blur-[128px]" />
@@ -58,31 +58,31 @@ export default function RegisterPage() {
           <h1 className="font-display font-extrabold text-5xl text-foreground mb-4">
             Tham gia cùng chúng tôi
           </h1>
-          <p className="text-[#A8A29E] text-lg max-w-md font-body">
+          <p className="text-slate-600 dark:text-[#A8A29E] text-lg max-w-md font-body">
             Tạo tài khoản để khám phá thống kê, so sánh cầu thủ và theo dõi 
             phong độ của các ngôi sao bóng đá Việt Nam.
           </p>
           <div className="mt-12 space-y-4 text-left">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-[#00D9FF]/10 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-[#00D9FF]/10 flex items-center justify-center">
                 <Check className="w-5 h-5 text-[#00D9FF]" />
               </div>
               <p className="text-foreground font-body">Xem thống kê chi tiết của cầu thủ</p>
             </div>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-[#00D9FF]/10 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-[#00D9FF]/10 flex items-center justify-center">
                 <Check className="w-5 h-5 text-[#00D9FF]" />
               </div>
               <p className="text-foreground font-body">So sánh cầu thủ cùng vị trí</p>
             </div>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-[#00D9FF]/10 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-[#00D9FF]/10 flex items-center justify-center">
                 <Check className="w-5 h-5 text-[#00D9FF]" />
               </div>
               <p className="text-foreground font-body">Theo dõi xu hướng phong độ theo thời gian</p>
             </div>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-[#00D9FF]/10 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-[#00D9FF]/10 flex items-center justify-center">
                 <Check className="w-5 h-5 text-[#00D9FF]" />
               </div>
               <p className="text-foreground font-body">Lưu danh sách cầu thủ yêu thích</p>
@@ -102,17 +102,17 @@ export default function RegisterPage() {
             <h1 className="font-display font-extrabold text-2xl text-foreground">VN Football Analytics</h1>
           </div>
 
-          <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-8 backdrop-blur-xl">
+          <div className="bg-card border border-slate-200 dark:border-white/[0.08] rounded-2xl p-8 backdrop-blur-xl">
             <div className="text-center mb-8">
               <h2 className="font-display font-extrabold text-3xl text-foreground mb-2">Đăng Ký</h2>
-              <p className="text-[#A8A29E] font-body">Tạo tài khoản mới</p>
+              <p className="text-slate-600 dark:text-[#A8A29E] font-body">Tạo tài khoản mới</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-2">
                 <Label htmlFor="fullName" className="text-[#E8E6E1] font-body">Họ và tên</Label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#A8A29E]" />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-600 dark:text-[#A8A29E]" />
                   <Input
                     id="fullName"
                     name="fullName"
@@ -120,7 +120,7 @@ export default function RegisterPage() {
                     placeholder="Nguyễn Văn A"
                     value={formData.fullName}
                     onChange={handleChange}
-                    className="pl-10 bg-white/[0.03] border-white/[0.08] text-foreground placeholder:text-[#A8A29E]/50 h-12 rounded-xl focus:border-[#00D9FF] focus:ring-[#00D9FF]/20"
+                    className="pl-10 bg-card border-slate-200 dark:border-white/[0.08] text-foreground placeholder:text-slate-600 dark:text-[#A8A29E]/50 h-12 rounded-xl focus:border-[#00D9FF] focus:ring-[#00D9FF]/20"
                     required
                   />
                 </div>
@@ -129,7 +129,7 @@ export default function RegisterPage() {
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-[#E8E6E1] font-body">Email</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#A8A29E]" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-600 dark:text-[#A8A29E]" />
                   <Input
                     id="email"
                     name="email"
@@ -137,7 +137,7 @@ export default function RegisterPage() {
                     placeholder="your@email.com"
                     value={formData.email}
                     onChange={handleChange}
-                    className="pl-10 bg-white/[0.03] border-white/[0.08] text-foreground placeholder:text-[#A8A29E]/50 h-12 rounded-xl focus:border-[#00D9FF] focus:ring-[#00D9FF]/20"
+                    className="pl-10 bg-card border-slate-200 dark:border-white/[0.08] text-foreground placeholder:text-slate-600 dark:text-[#A8A29E]/50 h-12 rounded-xl focus:border-[#00D9FF] focus:ring-[#00D9FF]/20"
                     required
                   />
                 </div>
@@ -146,7 +146,7 @@ export default function RegisterPage() {
               <div className="space-y-2">
                 <Label htmlFor="password" className="text-[#E8E6E1] font-body">Mật khẩu</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#A8A29E]" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-600 dark:text-[#A8A29E]" />
                   <Input
                     id="password"
                     name="password"
@@ -154,13 +154,13 @@ export default function RegisterPage() {
                     placeholder="••••••••"
                     value={formData.password}
                     onChange={handleChange}
-                    className="pl-10 pr-10 bg-white/[0.03] border-white/[0.08] text-foreground placeholder:text-[#A8A29E]/50 h-12 rounded-xl focus:border-[#00D9FF] focus:ring-[#00D9FF]/20"
+                    className="pl-10 pr-10 bg-card border-slate-200 dark:border-white/[0.08] text-foreground placeholder:text-slate-600 dark:text-[#A8A29E]/50 h-12 rounded-xl focus:border-[#00D9FF] focus:ring-[#00D9FF]/20"
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A8A29E] hover:text-foreground transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 dark:text-[#A8A29E] hover:text-foreground transition-colors"
                   >
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
@@ -169,10 +169,10 @@ export default function RegisterPage() {
                   <div className="grid grid-cols-2 gap-2 mt-2">
                     {passwordRequirements.map((req, index) => (
                       <div key={index} className="flex items-center gap-1.5">
-                        <div className={`w-3.5 h-3.5 rounded-full flex items-center justify-center ${req.met ? 'bg-green-500' : 'bg-white/10'}`}>
-                          {req.met && <Check className="w-2.5 h-2.5 text-white" />}
+                        <div className={`w-3.5 h-3.5 rounded-full flex items-center justify-center ${req.met ? 'bg-green-500' : 'bg-slate-200 dark:bg-white/10'}`}>
+                          {req.met && <Check className="w-2.5 h-2.5 text-slate-900 dark:text-white" />}
                         </div>
-                        <span className={`text-xs ${req.met ? 'text-green-400' : 'text-[#A8A29E]'}`}>{req.label}</span>
+                        <span className={`text-xs ${req.met ? 'text-green-400' : 'text-slate-600 dark:text-[#A8A29E]'}`}>{req.label}</span>
                       </div>
                     ))}
                   </div>
@@ -182,7 +182,7 @@ export default function RegisterPage() {
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword" className="text-[#E8E6E1] font-body">Xác nhận mật khẩu</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#A8A29E]" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-600 dark:text-[#A8A29E]" />
                   <Input
                     id="confirmPassword"
                     name="confirmPassword"
@@ -190,13 +190,13 @@ export default function RegisterPage() {
                     placeholder="••••••••"
                     value={formData.confirmPassword}
                     onChange={handleChange}
-                    className="pl-10 pr-10 bg-white/[0.03] border-white/[0.08] text-foreground placeholder:text-[#A8A29E]/50 h-12 rounded-xl focus:border-[#00D9FF] focus:ring-[#00D9FF]/20"
+                    className="pl-10 pr-10 bg-card border-slate-200 dark:border-white/[0.08] text-foreground placeholder:text-slate-600 dark:text-[#A8A29E]/50 h-12 rounded-xl focus:border-[#00D9FF] focus:ring-[#00D9FF]/20"
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A8A29E] hover:text-foreground transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 dark:text-[#A8A29E] hover:text-foreground transition-colors"
                   >
                     {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
@@ -211,9 +211,9 @@ export default function RegisterPage() {
                   id="terms"
                   checked={agreeTerms}
                   onCheckedChange={(checked) => setAgreeTerms(checked as boolean)}
-                  className="border-white/20 data-[state=checked]:bg-[#00D9FF] data-[state=checked]:border-[#00D9FF] mt-0.5"
+                  className="border-slate-300 dark:border-white/20 data-[state=checked]:bg-[#00D9FF] data-[state=checked]:border-[#00D9FF] mt-0.5"
                 />
-                <Label htmlFor="terms" className="text-[#A8A29E] text-sm font-body cursor-pointer leading-relaxed">
+                <Label htmlFor="terms" className="text-slate-600 dark:text-[#A8A29E] text-sm font-body cursor-pointer leading-relaxed">
                   Tôi đồng ý với{" "}
                   <Link to="/terms" className="text-[#00D9FF] hover:underline">Điều khoản sử dụng</Link>
                   {" "}và{" "}
@@ -224,7 +224,7 @@ export default function RegisterPage() {
               <Button
                 type="submit"
                 disabled={isLoading || !agreeTerms || formData.password !== formData.confirmPassword}
-                className="w-full h-12 bg-gradient-to-r from-[#FF4444] to-[#FF6666] hover:from-[#FF5555] hover:to-[#FF7777] text-white font-semibold rounded-xl shadow-lg shadow-[#FF4444]/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full h-12 bg-gradient-to-r from-[#FF4444] to-[#FF6666] hover:from-[#FF5555] hover:to-[#FF7777] text-slate-900 dark:text-white font-semibold rounded-xl shadow-lg shadow-[#FF4444]/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? (
                   <div className="flex items-center gap-2">
@@ -241,7 +241,7 @@ export default function RegisterPage() {
             </form>
 
             <div className="mt-6 text-center">
-              <p className="text-[#A8A29E] font-body">
+              <p className="text-slate-600 dark:text-[#A8A29E] font-body">
                 Đã có tài khoản?{" "}
                 <Link to="/login" className="text-[#00D9FF] hover:underline font-semibold">
                   Đăng nhập

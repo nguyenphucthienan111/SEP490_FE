@@ -28,7 +28,7 @@ export default function LoginPage() {
       {/* Back to Home Button */}
       <Link
         to="/"
-        className="absolute top-6 left-6 z-20 flex items-center gap-2 text-[#A8A29E] hover:text-foreground transition-colors group"
+        className="absolute top-6 left-6 z-20 flex items-center gap-2 text-slate-600 dark:text-[#A8A29E] hover:text-foreground transition-colors group"
       >
         <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
         <span className="font-body">Trang chủ</span>
@@ -36,7 +36,7 @@ export default function LoginPage() {
 
       {/* Left Side - Decorative */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-midnight-navy via-dark-purple to-midnight-navy" />
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-800 dark:from-midnight-navy via-dark-purple to-slate-300 dark:to-midnight-navy" />
         <div className="absolute inset-0 opacity-30">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#FF4444] rounded-full blur-[128px]" />
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#00D9FF] rounded-full blur-[128px]" />
@@ -48,22 +48,22 @@ export default function LoginPage() {
           <h1 className="font-display font-extrabold text-5xl text-foreground mb-4">
             VN Football Analytics
           </h1>
-          <p className="text-[#A8A29E] text-lg max-w-md font-body">
+          <p className="text-slate-600 dark:text-[#A8A29E] text-lg max-w-md font-body">
             Nền tảng phân tích và đánh giá cầu thủ bóng đá Việt Nam với hệ thống 
             chấm điểm minh bạch, theo vị trí.
           </p>
           <div className="mt-12 grid grid-cols-3 gap-8">
             <div className="text-center">
               <p className="font-mono text-4xl font-bold text-[#00D9FF]">500+</p>
-              <p className="text-[#A8A29E] text-sm mt-1">Cầu thủ</p>
+              <p className="text-slate-600 dark:text-[#A8A29E] text-sm mt-1">Cầu thủ</p>
             </div>
             <div className="text-center">
               <p className="font-mono text-4xl font-bold text-[#FF4444]">100+</p>
-              <p className="text-[#A8A29E] text-sm mt-1">Trận đấu</p>
+              <p className="text-slate-600 dark:text-[#A8A29E] text-sm mt-1">Trận đấu</p>
             </div>
             <div className="text-center">
               <p className="font-mono text-4xl font-bold text-foreground">3</p>
-              <p className="text-[#A8A29E] text-sm mt-1">Giải đấu</p>
+              <p className="text-slate-600 dark:text-[#A8A29E] text-sm mt-1">Giải đấu</p>
             </div>
           </div>
         </div>
@@ -75,29 +75,29 @@ export default function LoginPage() {
           {/* Mobile Logo */}
           <div className="lg:hidden flex flex-col items-center mb-8">
             <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-[#FF4444] to-[#FF6666] flex items-center justify-center mb-4">
-              <span className="font-display font-extrabold text-white text-2xl">VN</span>
+              <span className="font-display font-extrabold text-slate-900 dark:text-white text-2xl">VN</span>
             </div>
             <h1 className="font-display font-extrabold text-2xl text-foreground">VN Football Analytics</h1>
           </div>
 
-          <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-8 backdrop-blur-xl">
+          <div className="bg-card border border-slate-200 dark:border-white/[0.08] rounded-2xl p-8 backdrop-blur-xl">
             <div className="text-center mb-8">
               <h2 className="font-display font-extrabold text-3xl text-foreground mb-2">Đăng Nhập</h2>
-              <p className="text-[#A8A29E] font-body">Chào mừng bạn quay trở lại!</p>
+              <p className="text-slate-600 dark:text-[#A8A29E] font-body">Chào mừng bạn quay trở lại!</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-[#E8E6E1] font-body">Email</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#A8A29E]" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-600 dark:text-[#A8A29E]" />
                   <Input
                     id="email"
                     type="email"
                     placeholder="your@email.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10 bg-white/[0.03] border-white/[0.08] text-foreground placeholder:text-[#A8A29E]/50 h-12 rounded-xl focus:border-[#00D9FF] focus:ring-[#00D9FF]/20"
+                    className="pl-10 bg-card border-slate-200 dark:border-white/[0.08] text-foreground placeholder:text-slate-600 dark:text-[#A8A29E]/50 h-12 rounded-xl focus:border-[#00D9FF] focus:ring-[#00D9FF]/20"
                     required
                   />
                 </div>
@@ -106,20 +106,20 @@ export default function LoginPage() {
               <div className="space-y-2">
                 <Label htmlFor="password" className="text-[#E8E6E1] font-body">Mật khẩu</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#A8A29E]" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-600 dark:text-[#A8A29E]" />
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 pr-10 bg-white/[0.03] border-white/[0.08] text-foreground placeholder:text-[#A8A29E]/50 h-12 rounded-xl focus:border-[#00D9FF] focus:ring-[#00D9FF]/20"
+                    className="pl-10 pr-10 bg-card border-slate-200 dark:border-white/[0.08] text-foreground placeholder:text-slate-600 dark:text-[#A8A29E]/50 h-12 rounded-xl focus:border-[#00D9FF] focus:ring-[#00D9FF]/20"
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A8A29E] hover:text-foreground transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 dark:text-[#A8A29E] hover:text-foreground transition-colors"
                   >
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
@@ -132,9 +132,9 @@ export default function LoginPage() {
                     id="remember"
                     checked={rememberMe}
                     onCheckedChange={(checked) => setRememberMe(checked as boolean)}
-                    className="border-white/20 data-[state=checked]:bg-[#00D9FF] data-[state=checked]:border-[#00D9FF]"
+                    className="border-slate-300 dark:border-white/20 data-[state=checked]:bg-[#00D9FF] data-[state=checked]:border-[#00D9FF]"
                   />
-                  <Label htmlFor="remember" className="text-[#A8A29E] text-sm font-body cursor-pointer">
+                  <Label htmlFor="remember" className="text-slate-600 dark:text-[#A8A29E] text-sm font-body cursor-pointer">
                     Ghi nhớ đăng nhập
                   </Label>
                 </div>
@@ -149,7 +149,7 @@ export default function LoginPage() {
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full h-12 bg-gradient-to-r from-[#FF4444] to-[#FF6666] hover:from-[#FF5555] hover:to-[#FF7777] text-white font-semibold rounded-xl shadow-lg shadow-[#FF4444]/30 transition-all duration-200"
+                className="w-full h-12 bg-gradient-to-r from-[#FF4444] to-[#FF6666] hover:from-[#FF5555] hover:to-[#FF7777] text-slate-900 dark:text-white font-semibold rounded-xl shadow-lg shadow-[#FF4444]/30 transition-all duration-200"
               >
                 {isLoading ? (
                   <div className="flex items-center gap-2">
@@ -166,7 +166,7 @@ export default function LoginPage() {
             </form>
 
             <div className="mt-6 text-center">
-              <p className="text-[#A8A29E] font-body">
+              <p className="text-slate-600 dark:text-[#A8A29E] font-body">
                 Chưa có tài khoản?{" "}
                 <Link to="/register" className="text-[#00D9FF] hover:underline font-semibold">
                   Đăng ký ngay
@@ -175,11 +175,11 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <p className="text-center text-[#A8A29E]/50 text-sm mt-6 font-body">
+          <p className="text-center text-slate-600 dark:text-[#A8A29E]/50 text-sm mt-6 font-body">
             Bằng việc đăng nhập, bạn đồng ý với{" "}
-            <Link to="/terms" className="text-[#A8A29E] hover:underline">Điều khoản sử dụng</Link>
+            <Link to="/terms" className="text-slate-600 dark:text-[#A8A29E] hover:underline">Điều khoản sử dụng</Link>
             {" "}và{" "}
-            <Link to="/privacy" className="text-[#A8A29E] hover:underline">Chính sách bảo mật</Link>
+            <Link to="/privacy" className="text-slate-600 dark:text-[#A8A29E] hover:underline">Chính sách bảo mật</Link>
           </p>
         </div>
       </div>
