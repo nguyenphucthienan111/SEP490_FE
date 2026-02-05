@@ -64,7 +64,7 @@ export default function AdminDashboard() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <h1 className="font-display font-extrabold text-3xl text-white mb-2">
+          <h1 className="font-display font-extrabold text-3xl text-foreground mb-2">
             Dashboard
           </h1>
           <p className="text-[#A8A29E]">
@@ -96,10 +96,10 @@ export default function AdminDashboard() {
                       {stat.change}
                     </div>
                   </div>
-                  <p className="font-mono-data text-3xl font-bold text-white mb-1">
+                  <p className="font-mono-data text-3xl font-bold text-foreground mb-1">
                     {stat.value}
                   </p>
-                  <p className="text-sm text-[#A8A29E] group-hover:text-white transition-colors">
+                  <p className="text-sm text-[#A8A29E] group-hover:text-foreground transition-colors">
                     {stat.label}
                   </p>
                 </div>
@@ -114,7 +114,7 @@ export default function AdminDashboard() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
         >
-          <h2 className="font-display font-bold text-xl text-white mb-4">
+          <h2 className="font-display font-bold text-xl text-foreground mb-4">
             Quick Actions
           </h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -124,7 +124,7 @@ export default function AdminDashboard() {
                   <div className="w-10 h-10 rounded-lg bg-[#00D9FF]/10 flex items-center justify-center">
                     <action.icon className="w-5 h-5 text-[#00D9FF]" />
                   </div>
-                  <span className="font-body font-medium text-white group-hover:text-[#00D9FF] transition-colors">
+                  <span className="font-body font-medium text-foreground group-hover:text-[#00D9FF] transition-colors">
                     {action.label}
                   </span>
                 </div>
@@ -142,7 +142,7 @@ export default function AdminDashboard() {
             transition={{ duration: 0.5, delay: 0.4 }}
             className="glass-card rounded-2xl p-6"
           >
-            <h2 className="font-display font-bold text-xl text-white mb-6">
+            <h2 className="font-display font-bold text-xl text-foreground mb-6">
               Recent Activity
             </h2>
             <div className="space-y-4">
@@ -157,7 +157,7 @@ export default function AdminDashboard() {
                     'bg-green-400'
                   }`} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-white">{activity.action}</p>
+                    <p className="text-sm text-foreground">{activity.action}</p>
                     <p className="text-xs text-[#A8A29E] truncate">{activity.target}</p>
                   </div>
                   <span className="text-xs text-[#A8A29E] whitespace-nowrap">{activity.time}</span>
@@ -174,7 +174,7 @@ export default function AdminDashboard() {
             className="glass-card rounded-2xl p-6"
           >
             <div className="flex items-center justify-between mb-6">
-              <h2 className="font-display font-bold text-xl text-white">
+              <h2 className="font-display font-bold text-xl text-foreground">
                 Top Rated Players
               </h2>
               <Link to="/admin/players" className="text-sm text-[#00D9FF] hover:text-[#00E8FF] font-label">
@@ -198,7 +198,7 @@ export default function AdminDashboard() {
                     />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-white truncate">{player.name}</p>
+                    <p className="text-sm font-medium text-foreground truncate">{player.name}</p>
                     <p className="text-xs text-[#A8A29E]">{player.team}</p>
                   </div>
                   <span className="font-mono-data text-lg font-bold text-[#00D9FF]">

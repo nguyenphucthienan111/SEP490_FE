@@ -61,15 +61,15 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0A1628]">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-white/[0.08] bg-[#0A1628]/80 backdrop-blur-xl">
+      <header className="sticky top-0 z-50 border-b border-white/[0.08] bg-background/80 backdrop-blur-xl">
         <div className="max-w-6xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link
                 to="/"
-                className="flex items-center gap-2 text-[#A8A29E] hover:text-white transition-colors"
+                className="flex items-center gap-2 text-[#A8A29E] hover:text-foreground transition-colors"
               >
                 <ArrowLeft className="w-5 h-5" />
                 <span className="font-body">Về trang chủ</span>
@@ -78,7 +78,7 @@ export default function ProfilePage() {
             <div className="flex items-center gap-3">
               <Button
                 variant="ghost"
-                className="text-[#A8A29E] hover:text-white hover:bg-white/5"
+                className="text-[#A8A29E] hover:text-foreground hover:bg-white/5"
               >
                 <LogOut className="w-5 h-5 mr-2" />
                 Đăng xuất
@@ -90,7 +90,7 @@ export default function ProfilePage() {
 
       <div className="max-w-6xl mx-auto px-6 py-8">
         {/* Profile Header */}
-        <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-8 mb-8">
+          <div className="bg-card/5 border border-white/[0.08] rounded-2xl p-8">
           <div className="flex flex-col md:flex-row items-center gap-6">
             {/* Avatar */}
             <div className="relative group">
@@ -102,13 +102,13 @@ export default function ProfilePage() {
                 />
               </div>
               <button className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl">
-                <Camera className="w-6 h-6 text-white" />
+                <Camera className="w-6 h-6 text-foreground" />
               </button>
             </div>
 
             {/* User Info */}
             <div className="flex-1 text-center md:text-left">
-              <h1 className="font-display font-extrabold text-3xl text-white mb-2">
+              <h1 className="font-display font-extrabold text-3xl text-foreground mb-2">
                 {mockUser.name}
               </h1>
               <p className="text-[#A8A29E] font-body mb-4">{mockUser.email}</p>
@@ -127,7 +127,7 @@ export default function ProfilePage() {
             {/* Edit Button */}
             <Button
               onClick={() => setIsEditing(!isEditing)}
-              className="bg-white/[0.03] border border-white/[0.08] text-white hover:bg-white/[0.08]"
+              className="bg-white/[0.03] border border-white/[0.08] text-foreground hover:bg-white/[0.08]"
             >
               <Edit2 className="w-4 h-4 mr-2" />
               {isEditing ? "Hủy" : "Chỉnh sửa"}
@@ -171,7 +171,7 @@ export default function ProfilePage() {
           {/* Profile Tab */}
           <TabsContent value="profile" className="space-y-6">
             <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-6">
-              <h3 className="font-display font-bold text-xl text-white mb-6">
+              <h3 className="font-display font-bold text-xl text-foreground mb-6">
                 Thông tin cá nhân
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -181,10 +181,10 @@ export default function ProfilePage() {
                     <Input
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="bg-white/[0.03] border-white/[0.08] text-white h-12 rounded-xl"
+                      className="bg-card/5 border-white/[0.08] text-foreground h-12 rounded-xl"
                     />
                   ) : (
-                    <p className="text-white font-body h-12 flex items-center">{formData.name}</p>
+                    <p className="text-foreground font-body h-12 flex items-center">{formData.name}</p>
                   )}
                 </div>
                 <div className="space-y-2">
@@ -193,10 +193,10 @@ export default function ProfilePage() {
                     <Input
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="bg-white/[0.03] border-white/[0.08] text-white h-12 rounded-xl"
+                      className="bg-card/5 border-white/[0.08] text-foreground h-12 rounded-xl"
                     />
                   ) : (
-                    <p className="text-white font-body h-12 flex items-center">{formData.email}</p>
+                    <p className="text-foreground font-body h-12 flex items-center">{formData.email}</p>
                   )}
                 </div>
                 <div className="space-y-2">
@@ -205,10 +205,10 @@ export default function ProfilePage() {
                     <Input
                       value={formData.favoriteTeam}
                       onChange={(e) => setFormData({ ...formData, favoriteTeam: e.target.value })}
-                      className="bg-white/[0.03] border-white/[0.08] text-white h-12 rounded-xl"
+                      className="bg-white/[0.03] border-white/[0.08] text-foreground h-12 rounded-xl"
                     />
                   ) : (
-                    <p className="text-white font-body h-12 flex items-center">{formData.favoriteTeam}</p>
+                    <p className="text-foreground font-body h-12 flex items-center">{formData.favoriteTeam}</p>
                   )}
                 </div>
               </div>
@@ -217,7 +217,7 @@ export default function ProfilePage() {
                   <Button
                     variant="ghost"
                     onClick={() => setIsEditing(false)}
-                    className="text-[#A8A29E] hover:text-white"
+                    className="text-[#A8A29E] hover:text-foreground"
                   >
                     Hủy
                   </Button>
@@ -235,7 +235,7 @@ export default function ProfilePage() {
           {/* Favorites Tab */}
           <TabsContent value="favorites" className="space-y-6">
             <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-6">
-              <h3 className="font-display font-bold text-xl text-white mb-6">
+              <h3 className="font-display font-bold text-xl text-foreground mb-6">
                 Cầu thủ yêu thích
               </h3>
               <div className="space-y-3">
@@ -250,7 +250,7 @@ export default function ProfilePage() {
                         <User className="w-6 h-6 text-[#00D9FF]" />
                       </div>
                       <div>
-                        <p className="text-white font-semibold">{player.name}</p>
+                        <p className="text-foreground font-semibold">{player.name}</p>
                         <p className="text-[#A8A29E] text-sm">{player.team} • {player.position}</p>
                       </div>
                     </div>
@@ -264,7 +264,7 @@ export default function ProfilePage() {
           {/* Activity Tab */}
           <TabsContent value="activity" className="space-y-6">
             <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-6">
-              <h3 className="font-display font-bold text-xl text-white mb-6">
+              <h3 className="font-display font-bold text-xl text-foreground mb-6">
                 Hoạt động gần đây
               </h3>
               <div className="space-y-3">
@@ -285,13 +285,13 @@ export default function ProfilePage() {
                         )}
                       </div>
                       <div>
-                        <p className="text-white font-medium">{view.name}</p>
+                        <p className="text-foreground font-medium">{view.name}</p>
                         <p className="text-[#A8A29E] text-sm">
                           {view.type === "player" ? "Cầu thủ" : "Trận đấu"} • {view.date}
                         </p>
                       </div>
                     </div>
-                    <ChevronRight className="w-5 h-5 text-[#A8A29E] group-hover:text-white transition-colors" />
+                    <ChevronRight className="w-5 h-5 text-[#A8A29E] group-hover:text-foreground transition-colors" />
                   </Link>
                 ))}
               </div>
@@ -301,13 +301,13 @@ export default function ProfilePage() {
           {/* Settings Tab */}
           <TabsContent value="settings" className="space-y-6">
             <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-6">
-              <h3 className="font-display font-bold text-xl text-white mb-6">
+              <h3 className="font-display font-bold text-xl text-foreground mb-6">
                 Cài đặt thông báo
               </h3>
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-4 rounded-xl bg-white/[0.02] border border-white/[0.05]">
                   <div>
-                    <p className="text-white font-medium">Kết quả trận đấu</p>
+                    <p className="text-foreground font-medium">Kết quả trận đấu</p>
                     <p className="text-[#A8A29E] text-sm">Nhận thông báo khi trận đấu kết thúc</p>
                   </div>
                   <Switch
@@ -317,7 +317,7 @@ export default function ProfilePage() {
                 </div>
                 <div className="flex items-center justify-between p-4 rounded-xl bg-white/[0.02] border border-white/[0.05]">
                   <div>
-                    <p className="text-white font-medium">Cập nhật cầu thủ</p>
+                    <p className="text-foreground font-medium">Cập nhật cầu thủ</p>
                     <p className="text-[#A8A29E] text-sm">Thông báo về cầu thủ yêu thích</p>
                   </div>
                   <Switch
@@ -327,7 +327,7 @@ export default function ProfilePage() {
                 </div>
                 <div className="flex items-center justify-between p-4 rounded-xl bg-white/[0.02] border border-white/[0.05]">
                   <div>
-                    <p className="text-white font-medium">Bản tin hàng tuần</p>
+                    <p className="text-foreground font-medium">Bản tin hàng tuần</p>
                     <p className="text-[#A8A29E] text-sm">Nhận email tổng hợp mỗi tuần</p>
                   </div>
                   <Switch
@@ -337,7 +337,7 @@ export default function ProfilePage() {
                 </div>
                 <div className="flex items-center justify-between p-4 rounded-xl bg-white/[0.02] border border-white/[0.05]">
                   <div>
-                    <p className="text-white font-medium">Push Notifications</p>
+                    <p className="text-foreground font-medium">Push Notifications</p>
                     <p className="text-[#A8A29E] text-sm">Thông báo đẩy trên trình duyệt</p>
                   </div>
                   <Switch

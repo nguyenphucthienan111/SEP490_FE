@@ -116,7 +116,7 @@ export default function AdminRatingsPage() {
           className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
         >
           <div>
-            <h1 className="font-display font-extrabold text-3xl text-white mb-1">
+            <h1 className="font-display font-extrabold text-3xl text-foreground mb-1">
               Rating Engine Configuration
             </h1>
             <p className="text-[#A8A29E]">
@@ -154,7 +154,7 @@ export default function AdminRatingsPage() {
             <Info className="w-5 h-5 text-[#00D9FF]" />
           </div>
           <div>
-            <h3 className="font-body font-semibold text-white mb-1">How Weighting Works</h3>
+            <h3 className="font-body font-semibold text-foreground mb-1">How Weighting Works</h3>
             <p className="text-sm text-[#A8A29E] leading-relaxed">
               Each statistic contributes to the final player rating based on its weight (0.0 to 1.0). 
               Higher weights mean that statistic has more impact on the final rating. Weights are position-specific 
@@ -196,7 +196,7 @@ export default function AdminRatingsPage() {
           transition={{ duration: 0.5, delay: 0.3 }}
           className="glass-card rounded-2xl p-6"
         >
-          <h3 className="font-display font-bold text-xl text-white mb-6 capitalize">
+          <h3 className="font-display font-bold text-xl text-foreground mb-6 capitalize">
             {selectedPosition} Weights
           </h3>
 
@@ -204,7 +204,7 @@ export default function AdminRatingsPage() {
             {Object.entries(weights[selectedPosition]).map(([stat, value]) => (
               <div key={stat} className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium text-white">
+                  <label className="text-sm font-medium text-foreground">
                     {statLabels[stat]}
                   </label>
                   <span className="font-mono-data text-sm text-[#00D9FF]">
@@ -236,7 +236,7 @@ export default function AdminRatingsPage() {
           transition={{ duration: 0.5, delay: 0.4 }}
           className="glass-card rounded-2xl p-6"
         >
-          <h3 className="font-display font-bold text-xl text-white mb-6">
+          <h3 className="font-display font-bold text-xl text-foreground mb-6">
             Weight Summary
           </h3>
 
@@ -252,7 +252,7 @@ export default function AdminRatingsPage() {
                       style={{ width: `${value * 100}%` }}
                     />
                   </div>
-                  <span className="font-mono-data text-sm text-white w-12 text-right">
+                  <span className="font-mono-data text-sm text-foreground w-12 text-right">
                     {(value * 100).toFixed(0)}%
                   </span>
                 </div>

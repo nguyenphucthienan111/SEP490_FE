@@ -25,7 +25,7 @@ export default function MatchDetailPage() {
       <MainLayout>
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-center">
-            <h2 className="font-display font-bold text-2xl text-white mb-4">Match Not Found</h2>
+            <h2 className="font-display font-bold text-2xl text-foreground mb-4">Match Not Found</h2>
             <Link to="/matches">
               <Button variant="outline" className="border-[#00D9FF] text-[#00D9FF]">
                 Back to Matches
@@ -50,7 +50,7 @@ export default function MatchDetailPage() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <Link to="/matches" className="inline-flex items-center gap-2 text-[#A8A29E] hover:text-white transition-colors mb-8">
+            <Link to="/matches" className="inline-flex items-center gap-2 text-[#A8A29E] hover:text-foreground transition-colors mb-8">
               <ArrowLeft className="w-4 h-4" />
               <span className="font-label text-sm">Back to Matches</span>
             </Link>
@@ -83,11 +83,11 @@ export default function MatchDetailPage() {
               {/* Home Team */}
               <div className="flex-1 text-center">
                 <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-2xl bg-white/5 flex items-center justify-center mb-4 mx-auto">
-                  <span className="font-display font-bold text-2xl sm:text-4xl text-white">
+                  <span className="font-display font-bold text-2xl sm:text-4xl text-foreground">
                     {match.homeTeam.name.charAt(0)}
                   </span>
                 </div>
-                <h3 className="font-display font-bold text-lg sm:text-xl text-white mb-1">
+                <h3 className="font-display font-bold text-lg sm:text-xl text-foreground mb-1">
                   {match.homeTeam.name}
                 </h3>
                 <span className="text-sm text-[#A8A29E]">Home</span>
@@ -97,11 +97,11 @@ export default function MatchDetailPage() {
               <div className="flex flex-col items-center">
                 {(isLive || isCompleted) ? (
                   <div className="flex items-center gap-4 sm:gap-6">
-                    <span className="font-mono-data text-5xl sm:text-7xl font-bold text-white">
+                    <span className="font-mono-data text-5xl sm:text-7xl font-bold text-foreground">
                       {match.homeScore}
                     </span>
                     <span className="text-[#A8A29E] text-3xl sm:text-4xl">-</span>
-                    <span className="font-mono-data text-5xl sm:text-7xl font-bold text-white">
+                    <span className="font-mono-data text-5xl sm:text-7xl font-bold text-foreground">
                       {match.awayScore}
                     </span>
                   </div>
@@ -121,11 +121,11 @@ export default function MatchDetailPage() {
               {/* Away Team */}
               <div className="flex-1 text-center">
                 <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-2xl bg-white/5 flex items-center justify-center mb-4 mx-auto">
-                  <span className="font-display font-bold text-2xl sm:text-4xl text-white">
+                  <span className="font-display font-bold text-2xl sm:text-4xl text-foreground">
                     {match.awayTeam.name.charAt(0)}
                   </span>
                 </div>
-                <h3 className="font-display font-bold text-lg sm:text-xl text-white mb-1">
+                <h3 className="font-display font-bold text-lg sm:text-xl text-foreground mb-1">
                   {match.awayTeam.name}
                 </h3>
                 <span className="text-sm text-[#A8A29E]">Away</span>
@@ -157,7 +157,7 @@ export default function MatchDetailPage() {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="glass-card rounded-2xl p-6 sm:p-8"
             >
-              <h3 className="font-display font-bold text-xl text-white mb-6">
+              <h3 className="font-display font-bold text-xl text-foreground mb-6">
                 Player Performances
               </h3>
 
@@ -185,11 +185,11 @@ export default function MatchDetailPage() {
                         <td className="py-4 px-3">
                           <Link to={`/players/${perf.playerId}`} className="flex items-center gap-3 group">
                             <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center">
-                              <span className="font-display font-bold text-sm text-white">
+                              <span className="font-display font-bold text-sm text-foreground">
                                 {perf.name.charAt(0)}
                               </span>
                             </div>
-                            <span className="font-body font-medium text-white group-hover:text-[#00D9FF] transition-colors">
+                            <span className="font-body font-medium text-foreground group-hover:text-[#00D9FF] transition-colors">
                               {perf.name}
                             </span>
                           </Link>
@@ -219,12 +219,12 @@ export default function MatchDetailPage() {
                           </div>
                         </td>
                         <td className="py-4 px-3 text-center">
-                          <span className="font-mono-data text-white">
+                          <span className="font-mono-data text-foreground">
                             {perf.goals > 0 ? perf.goals : '-'}
                           </span>
                         </td>
                         <td className="py-4 px-3 text-center">
-                          <span className="font-mono-data text-white">
+                          <span className="font-mono-data text-foreground">
                             {perf.assists > 0 ? perf.assists : '-'}
                           </span>
                         </td>
@@ -252,14 +252,14 @@ export default function MatchDetailPage() {
               <div className="w-16 h-16 rounded-2xl bg-[#00D9FF]/10 flex items-center justify-center mx-auto mb-4">
                 <Clock className="w-8 h-8 text-[#00D9FF]" />
               </div>
-              <h3 className="font-display font-bold text-xl text-white mb-2">
+              <h3 className="font-display font-bold text-xl text-foreground mb-2">
                 Match Not Started Yet
               </h3>
               <p className="text-[#A8A29E] mb-6">
                 Player performances will be available after the match begins.
               </p>
               <Link to="/matches">
-                <Button className="bg-[#00D9FF] hover:bg-[#00E8FF] text-[#0A1628] font-label font-semibold px-6 h-10 rounded-xl">
+                <Button className="bg-[#00D9FF] hover:bg-[#00E8FF] text-foreground font-label font-semibold px-6 h-10 rounded-xl">
                   View Other Matches
                 </Button>
               </Link>

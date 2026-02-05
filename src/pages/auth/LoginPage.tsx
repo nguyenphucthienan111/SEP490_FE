@@ -24,11 +24,11 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0A1628] flex relative">
+    <div className="min-h-screen bg-background flex relative">
       {/* Back to Home Button */}
       <Link
         to="/"
-        className="absolute top-6 left-6 z-20 flex items-center gap-2 text-[#A8A29E] hover:text-white transition-colors group"
+        className="absolute top-6 left-6 z-20 flex items-center gap-2 text-[#A8A29E] hover:text-foreground transition-colors group"
       >
         <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
         <span className="font-body">Trang chủ</span>
@@ -36,16 +36,16 @@ export default function LoginPage() {
 
       {/* Left Side - Decorative */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#0A1628] via-[#1A0F2E] to-[#0A1628]" />
+        <div className="absolute inset-0 bg-gradient-to-br from-midnight-navy via-dark-purple to-midnight-navy" />
         <div className="absolute inset-0 opacity-30">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#FF4444] rounded-full blur-[128px]" />
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#00D9FF] rounded-full blur-[128px]" />
         </div>
         <div className="relative z-10 flex flex-col justify-center items-center p-12 text-center">
           <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#FF4444] to-[#FF6666] flex items-center justify-center mb-8 shadow-lg shadow-[#FF4444]/30">
-            <span className="font-display font-extrabold text-white text-3xl">VN</span>
+            <span className="font-display font-extrabold text-foreground text-3xl">VN</span>
           </div>
-          <h1 className="font-display font-extrabold text-5xl text-white mb-4">
+          <h1 className="font-display font-extrabold text-5xl text-foreground mb-4">
             VN Football Analytics
           </h1>
           <p className="text-[#A8A29E] text-lg max-w-md font-body">
@@ -62,7 +62,7 @@ export default function LoginPage() {
               <p className="text-[#A8A29E] text-sm mt-1">Trận đấu</p>
             </div>
             <div className="text-center">
-              <p className="font-mono text-4xl font-bold text-white">3</p>
+              <p className="font-mono text-4xl font-bold text-foreground">3</p>
               <p className="text-[#A8A29E] text-sm mt-1">Giải đấu</p>
             </div>
           </div>
@@ -77,12 +77,12 @@ export default function LoginPage() {
             <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-[#FF4444] to-[#FF6666] flex items-center justify-center mb-4">
               <span className="font-display font-extrabold text-white text-2xl">VN</span>
             </div>
-            <h1 className="font-display font-extrabold text-2xl text-white">VN Football Analytics</h1>
+            <h1 className="font-display font-extrabold text-2xl text-foreground">VN Football Analytics</h1>
           </div>
 
           <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-8 backdrop-blur-xl">
             <div className="text-center mb-8">
-              <h2 className="font-display font-extrabold text-3xl text-white mb-2">Đăng Nhập</h2>
+              <h2 className="font-display font-extrabold text-3xl text-foreground mb-2">Đăng Nhập</h2>
               <p className="text-[#A8A29E] font-body">Chào mừng bạn quay trở lại!</p>
             </div>
 
@@ -97,7 +97,7 @@ export default function LoginPage() {
                     placeholder="your@email.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10 bg-white/[0.03] border-white/[0.08] text-white placeholder:text-[#A8A29E]/50 h-12 rounded-xl focus:border-[#00D9FF] focus:ring-[#00D9FF]/20"
+                    className="pl-10 bg-white/[0.03] border-white/[0.08] text-foreground placeholder:text-[#A8A29E]/50 h-12 rounded-xl focus:border-[#00D9FF] focus:ring-[#00D9FF]/20"
                     required
                   />
                 </div>
@@ -113,13 +113,13 @@ export default function LoginPage() {
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 pr-10 bg-white/[0.03] border-white/[0.08] text-white placeholder:text-[#A8A29E]/50 h-12 rounded-xl focus:border-[#00D9FF] focus:ring-[#00D9FF]/20"
+                    className="pl-10 pr-10 bg-white/[0.03] border-white/[0.08] text-foreground placeholder:text-[#A8A29E]/50 h-12 rounded-xl focus:border-[#00D9FF] focus:ring-[#00D9FF]/20"
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A8A29E] hover:text-white transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A8A29E] hover:text-foreground transition-colors"
                   >
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>

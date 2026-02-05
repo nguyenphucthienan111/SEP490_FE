@@ -83,7 +83,7 @@ export function HeroSection() {
               </span>
             </motion.div>
 
-            <h1 className="font-display font-extrabold text-4xl sm:text-5xl lg:text-6xl xl:text-7xl text-white leading-[1.1] mb-6">
+            <h1 className="font-display font-extrabold text-4xl sm:text-5xl lg:text-6xl xl:text-7xl text-foreground leading-[1.1] mb-6">
               Data-Driven{' '}
               <span className="text-gradient">Player Analysis</span>{' '}
               for Vietnamese Football
@@ -119,7 +119,7 @@ export function HeroSection() {
                   transition={{ delay: 0.4 + index * 0.1 }}
                   className="text-left"
                 >
-                  <p className="text-2xl sm:text-3xl font-bold text-white mb-1">
+                  <p className="text-2xl sm:text-3xl font-bold text-foreground mb-1">
                     <AnimatedNumber value={stat.value} suffix={stat.suffix} />
                   </p>
                   <p className="text-xs sm:text-sm text-[#A8A29E]">{stat.label}</p>
@@ -157,7 +157,7 @@ export function HeroSection() {
                       />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-display font-bold text-xl sm:text-2xl text-white truncate">
+                      <h3 className="font-display font-bold text-xl sm:text-2xl text-foreground truncate">
                         {currentPlayer.name}
                       </h3>
                       <p className="text-[#A8A29E] text-sm mb-2">{currentPlayer.team}</p>
@@ -202,7 +202,7 @@ export function HeroSection() {
                         </defs>
                       </svg>
                       <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <span className="font-mono-data text-4xl sm:text-5xl font-bold text-white">
+                        <span className="font-mono-data text-4xl sm:text-5xl font-bold text-foreground">
                           {currentPlayer.rating.toFixed(1)}
                         </span>
                         <span className="text-xs text-[#A8A29E] uppercase tracking-wider">Rating</span>

@@ -71,15 +71,15 @@ export default function AdminSettingsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0A1628]">
+    <div className="min-h-screen bg-background">
       {/* Sidebar */}
       <aside className="fixed left-0 top-0 h-full w-[280px] bg-white/[0.02] border-r border-white/[0.08] p-6">
         <div className="flex items-center gap-3 mb-8">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF4444] to-[#FF6666] flex items-center justify-center">
-            <span className="font-display font-extrabold text-white text-lg">VN</span>
+            <span className="font-display font-extrabold text-foreground text-lg">VN</span>
           </div>
           <div>
-            <p className="font-display font-bold text-white">Admin Panel</p>
+            <p className="font-display font-bold text-foreground">Admin Panel</p>
             <p className="text-[#A8A29E] text-xs">Quản trị hệ thống</p>
           </div>
         </div>
@@ -135,7 +135,7 @@ export default function AdminSettingsPage() {
         <div className="max-w-4xl">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="font-display font-extrabold text-3xl text-white mb-2">
+            <h1 className="font-display font-extrabold text-3xl text-foreground mb-2">
               Cài đặt hệ thống
             </h1>
             <p className="text-[#A8A29E]">Quản lý cấu hình và thiết lập hệ thống</p>
@@ -176,7 +176,7 @@ export default function AdminSettingsPage() {
             {/* General Settings */}
             <TabsContent value="general">
               <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-6">
-                <h3 className="font-display font-bold text-xl text-white mb-6">
+                <h3 className="font-display font-bold text-xl text-foreground mb-6">
                   Cài đặt chung
                 </h3>
                 <div className="space-y-6">
@@ -186,7 +186,7 @@ export default function AdminSettingsPage() {
                       <Input
                         value={generalSettings.siteName}
                         onChange={(e) => setGeneralSettings({ ...generalSettings, siteName: e.target.value })}
-                        className="bg-white/[0.03] border-white/[0.08] text-white h-12 rounded-xl"
+                        className="bg-white/[0.03] border-white/[0.08] text-foreground h-12 rounded-xl"
                       />
                     </div>
                     <div className="space-y-2">
@@ -195,10 +195,10 @@ export default function AdminSettingsPage() {
                         value={generalSettings.language}
                         onValueChange={(value) => setGeneralSettings({ ...generalSettings, language: value })}
                       >
-                        <SelectTrigger className="bg-white/[0.03] border-white/[0.08] text-white h-12 rounded-xl">
+                        <SelectTrigger className="bg-white/[0.03] border-white/[0.08] text-foreground h-12 rounded-xl">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent className="bg-[#0A1628] border-white/[0.08]">
+                        <SelectContent className="bg-background border-white/[0.08]">
                           <SelectItem value="vi">Tiếng Việt</SelectItem>
                           <SelectItem value="en">English</SelectItem>
                         </SelectContent>
@@ -210,7 +210,7 @@ export default function AdminSettingsPage() {
                     <Input
                       value={generalSettings.siteDescription}
                       onChange={(e) => setGeneralSettings({ ...generalSettings, siteDescription: e.target.value })}
-                      className="bg-white/[0.03] border-white/[0.08] text-white h-12 rounded-xl"
+                      className="bg-white/[0.03] border-white/[0.08] text-foreground h-12 rounded-xl"
                     />
                   </div>
                   <div className="space-y-2">
@@ -219,10 +219,10 @@ export default function AdminSettingsPage() {
                       value={generalSettings.timezone}
                       onValueChange={(value) => setGeneralSettings({ ...generalSettings, timezone: value })}
                     >
-                      <SelectTrigger className="bg-white/[0.03] border-white/[0.08] text-white h-12 rounded-xl w-full md:w-1/2">
+                        <SelectTrigger className="bg-white/[0.03] border-white/[0.08] text-foreground h-12 rounded-xl w-full md:w-1/2">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="bg-[#0A1628] border-white/[0.08]">
+                      <SelectContent className="bg-background border-white/[0.08]">
                         <SelectItem value="Asia/Ho_Chi_Minh">Asia/Ho_Chi_Minh (GMT+7)</SelectItem>
                         <SelectItem value="Asia/Bangkok">Asia/Bangkok (GMT+7)</SelectItem>
                         <SelectItem value="UTC">UTC (GMT+0)</SelectItem>
@@ -231,7 +231,7 @@ export default function AdminSettingsPage() {
                   </div>
                   <div className="flex items-center justify-between p-4 rounded-xl bg-yellow-500/5 border border-yellow-500/20">
                     <div>
-                      <p className="text-white font-medium">Chế độ bảo trì</p>
+                      <p className="text-foreground font-medium">Chế độ bảo trì</p>
                       <p className="text-[#A8A29E] text-sm">Khi bật, chỉ admin có thể truy cập trang</p>
                     </div>
                     <Switch
@@ -255,13 +255,13 @@ export default function AdminSettingsPage() {
             {/* Notification Settings */}
             <TabsContent value="notifications">
               <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-6">
-                <h3 className="font-display font-bold text-xl text-white mb-6">
+                <h3 className="font-display font-bold text-xl text-foreground mb-6">
                   Cài đặt thông báo
                 </h3>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-4 rounded-xl bg-white/[0.02] border border-white/[0.05]">
                     <div>
-                      <p className="text-white font-medium">Thông báo qua Email</p>
+                      <p className="text-foreground font-medium">Thông báo qua Email</p>
                       <p className="text-[#A8A29E] text-sm">Nhận thông báo qua email</p>
                     </div>
                     <Switch
@@ -271,7 +271,7 @@ export default function AdminSettingsPage() {
                   </div>
                   <div className="flex items-center justify-between p-4 rounded-xl bg-white/[0.02] border border-white/[0.05]">
                     <div>
-                      <p className="text-white font-medium">Người dùng mới</p>
+                      <p className="text-foreground font-medium">Người dùng mới</p>
                       <p className="text-[#A8A29E] text-sm">Thông báo khi có người dùng đăng ký</p>
                     </div>
                     <Switch
@@ -281,7 +281,7 @@ export default function AdminSettingsPage() {
                   </div>
                   <div className="flex items-center justify-between p-4 rounded-xl bg-white/[0.02] border border-white/[0.05]">
                     <div>
-                      <p className="text-white font-medium">Cập nhật trận đấu</p>
+                      <p className="text-foreground font-medium">Cập nhật trận đấu</p>
                       <p className="text-[#A8A29E] text-sm">Thông báo khi có trận đấu mới hoặc kết quả</p>
                     </div>
                     <Switch
@@ -291,7 +291,7 @@ export default function AdminSettingsPage() {
                   </div>
                   <div className="flex items-center justify-between p-4 rounded-xl bg-white/[0.02] border border-white/[0.05]">
                     <div>
-                      <p className="text-white font-medium">Lỗi hệ thống</p>
+                      <p className="text-foreground font-medium">Lỗi hệ thống</p>
                       <p className="text-[#A8A29E] text-sm">Thông báo khi có lỗi hệ thống nghiêm trọng</p>
                     </div>
                     <Switch
@@ -301,7 +301,7 @@ export default function AdminSettingsPage() {
                   </div>
                   <div className="flex items-center justify-between p-4 rounded-xl bg-white/[0.02] border border-white/[0.05]">
                     <div>
-                      <p className="text-white font-medium">Báo cáo hàng tuần</p>
+                      <p className="text-foreground font-medium">Báo cáo hàng tuần</p>
                       <p className="text-[#A8A29E] text-sm">Nhận email tổng hợp mỗi tuần</p>
                     </div>
                     <Switch
@@ -325,13 +325,13 @@ export default function AdminSettingsPage() {
             {/* Rating Engine Settings */}
             <TabsContent value="ratings">
               <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-6">
-                <h3 className="font-display font-bold text-xl text-white mb-6">
+                <h3 className="font-display font-bold text-xl text-foreground mb-6">
                   Cấu hình Rating Engine
                 </h3>
                 <div className="space-y-6">
                   <div className="flex items-center justify-between p-4 rounded-xl bg-white/[0.02] border border-white/[0.05]">
                     <div>
-                      <p className="text-white font-medium">Tự động tính điểm</p>
+                      <p className="text-foreground font-medium">Tự động tính điểm</p>
                       <p className="text-[#A8A29E] text-sm">Tự động tính rating sau khi nhập thống kê trận đấu</p>
                     </div>
                     <Switch
@@ -345,7 +345,7 @@ export default function AdminSettingsPage() {
                       <Input
                         value={ratingSettings.defaultBaseScore}
                         onChange={(e) => setRatingSettings({ ...ratingSettings, defaultBaseScore: e.target.value })}
-                        className="bg-white/[0.03] border-white/[0.08] text-white h-12 rounded-xl"
+                        className="bg-white/[0.03] border-white/[0.08] text-foreground h-12 rounded-xl"
                       />
                       <p className="text-[#A8A29E] text-xs">Điểm khởi đầu cho mỗi cầu thủ trong trận</p>
                     </div>
@@ -355,10 +355,10 @@ export default function AdminSettingsPage() {
                         value={ratingSettings.decimalPlaces}
                         onValueChange={(value) => setRatingSettings({ ...ratingSettings, decimalPlaces: value })}
                       >
-                        <SelectTrigger className="bg-white/[0.03] border-white/[0.08] text-white h-12 rounded-xl">
+                        <SelectTrigger className="bg-white/[0.03] border-white/[0.08] text-foreground h-12 rounded-xl">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent className="bg-[#0A1628] border-white/[0.08]">
+                        <SelectContent className="bg-background border-white/[0.08]">
                           <SelectItem value="0">0 (6, 7, 8)</SelectItem>
                           <SelectItem value="1">1 (6.5, 7.2)</SelectItem>
                           <SelectItem value="2">2 (6.54, 7.21)</SelectItem>
@@ -370,7 +370,7 @@ export default function AdminSettingsPage() {
                       <Input
                         value={ratingSettings.minRating}
                         onChange={(e) => setRatingSettings({ ...ratingSettings, minRating: e.target.value })}
-                        className="bg-white/[0.03] border-white/[0.08] text-white h-12 rounded-xl"
+                        className="bg-white/[0.03] border-white/[0.08] text-foreground h-12 rounded-xl"
                       />
                     </div>
                     <div className="space-y-2">
@@ -378,14 +378,14 @@ export default function AdminSettingsPage() {
                       <Input
                         value={ratingSettings.maxRating}
                         onChange={(e) => setRatingSettings({ ...ratingSettings, maxRating: e.target.value })}
-                        className="bg-white/[0.03] border-white/[0.08] text-white h-12 rounded-xl"
+                        className="bg-white/[0.03] border-white/[0.08] text-foreground h-12 rounded-xl"
                       />
                     </div>
                   </div>
                   <div className="flex items-center justify-between pt-4 border-t border-white/[0.05]">
                     <Button
                       variant="outline"
-                      className="border-white/20 text-white hover:bg-white/10"
+                      className="border-white/20 text-foreground hover:bg-white/10"
                     >
                       <RefreshCw className="w-4 h-4 mr-2" />
                       Tính lại tất cả rating
@@ -403,7 +403,7 @@ export default function AdminSettingsPage() {
 
               {/* Position Weights */}
               <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-6 mt-6">
-                <h3 className="font-display font-bold text-xl text-white mb-2">
+                <h3 className="font-display font-bold text-xl text-foreground mb-2">
                   Trọng số theo vị trí
                 </h3>
                 <p className="text-[#A8A29E] mb-6">
@@ -421,7 +421,7 @@ export default function AdminSettingsPage() {
             {/* Security Settings */}
             <TabsContent value="security">
               <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-6">
-                <h3 className="font-display font-bold text-xl text-white mb-6">
+                <h3 className="font-display font-bold text-xl text-foreground mb-6">
                   Cài đặt bảo mật
                 </h3>
                 <div className="space-y-6">
@@ -431,12 +431,12 @@ export default function AdminSettingsPage() {
                       <Input
                         type="password"
                         placeholder="Mật khẩu hiện tại"
-                        className="bg-white/[0.03] border-white/[0.08] text-white h-12 rounded-xl"
+                        className="bg-white/[0.03] border-white/[0.08] text-foreground h-12 rounded-xl"
                       />
                       <Input
                         type="password"
                         placeholder="Mật khẩu mới"
-                        className="bg-white/[0.03] border-white/[0.08] text-white h-12 rounded-xl"
+                        className="bg-white/[0.03] border-white/[0.08] text-foreground h-12 rounded-xl"
                       />
                     </div>
                   </div>
@@ -447,11 +447,11 @@ export default function AdminSettingsPage() {
                         <div className="flex items-center gap-3">
                           <Key className="w-5 h-5 text-[#A8A29E]" />
                           <div>
-                            <p className="text-white font-medium">Production API Key</p>
+                            <p className="text-foreground font-medium">Production API Key</p>
                             <p className="text-[#A8A29E] text-sm font-mono">vn_live_••••••••••••</p>
                           </div>
                         </div>
-                        <Button variant="outline" className="border-white/20 text-white hover:bg-white/10">
+                          <Button variant="outline" className="border-white/20 text-foreground hover:bg-white/10">
                           Tạo lại
                         </Button>
                       </div>
@@ -463,16 +463,16 @@ export default function AdminSettingsPage() {
                       <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.05]">
                         <div className="flex items-center gap-3 mb-3">
                           <Database className="w-5 h-5 text-[#00D9FF]" />
-                          <p className="text-white font-medium">Export dữ liệu</p>
+                          <p className="text-foreground font-medium">Export dữ liệu</p>
                         </div>
-                        <Button variant="outline" className="w-full border-white/20 text-white hover:bg-white/10">
+                        <Button variant="outline" className="w-full border-white/20 text-foreground hover:bg-white/10">
                           Tải xuống backup
                         </Button>
                       </div>
                       <div className="p-4 rounded-xl bg-red-500/5 border border-red-500/20">
                         <div className="flex items-center gap-3 mb-3">
                           <AlertTriangle className="w-5 h-5 text-red-400" />
-                          <p className="text-white font-medium">Xóa dữ liệu</p>
+                          <p className="text-foreground font-medium">Xóa dữ liệu</p>
                         </div>
                         <Button variant="outline" className="w-full border-red-500/30 text-red-400 hover:bg-red-500/10">
                           Xóa tất cả dữ liệu

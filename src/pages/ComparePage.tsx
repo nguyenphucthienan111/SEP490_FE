@@ -53,7 +53,7 @@ function PlayerSelector({
               />
             </div>
             <div className="flex-1 text-left">
-              <p className="font-medium text-white">{selectedPlayer.name}</p>
+              <p className="font-medium text-foreground">{selectedPlayer.name}</p>
               <p className="text-xs text-[#A8A29E]">{selectedPlayer.team}</p>
             </div>
           </>
@@ -84,7 +84,7 @@ function PlayerSelector({
                   placeholder="Search players..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full h-10 pl-10 pr-4 rounded-lg bg-white/5 border border-white/10 text-white text-sm placeholder-[#A8A29E] focus:outline-none focus:border-[#00D9FF]/50"
+                  className="w-full h-10 pl-10 pr-4 rounded-lg bg-white/5 border border-white/10 text-foreground text-sm placeholder-[#A8A29E] focus:outline-none focus:border-[#00D9FF]/50"
                 />
               </div>
             </div>
@@ -107,7 +107,7 @@ function PlayerSelector({
                     />
                   </div>
                   <div className="flex-1 text-left">
-                    <p className="text-sm text-white">{player.name}</p>
+                    <p className="text-sm text-foreground">{player.name}</p>
                     <p className="text-xs text-[#A8A29E]">{player.team}</p>
                   </div>
                   <span className="font-mono-data text-sm text-[#00D9FF]">
@@ -200,7 +200,7 @@ export default function ComparePage() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <Link to="/players" className="inline-flex items-center gap-2 text-[#A8A29E] hover:text-white transition-colors mb-8">
+            <Link to="/players" className="inline-flex items-center gap-2 text-[#A8A29E] hover:text-foreground transition-colors mb-8">
               <ArrowLeft className="w-4 h-4" />
               <span className="font-label text-sm">Back to Players</span>
             </Link>
@@ -213,7 +213,7 @@ export default function ComparePage() {
             transition={{ duration: 0.5 }}
             className="mb-8"
           >
-            <h1 className="font-display font-extrabold text-4xl text-white mb-2">
+            <h1 className="font-display font-extrabold text-4xl text-foreground mb-2">
               Player Comparison
             </h1>
             <p className="text-[#A8A29E]">
@@ -252,7 +252,7 @@ export default function ComparePage() {
                 transition={{ duration: 0.5, delay: 0.2 }}
                 className="glass-card rounded-2xl p-6 mb-8"
               >
-                <h3 className="font-display font-bold text-xl text-white mb-6 text-center">
+                <h3 className="font-display font-bold text-xl text-foreground mb-6 text-center">
                   Performance Comparison
                 </h3>
                 <div className="h-80">
@@ -286,7 +286,7 @@ export default function ComparePage() {
                       />
                       <Legend 
                         wrapperStyle={{ paddingTop: '20px' }}
-                        formatter={(value) => <span className="text-white text-sm">{value}</span>}
+                        formatter={(value) => <span className="text-foreground text-sm">{value}</span>}
                       />
                     </RadarChart>
                   </ResponsiveContainer>
@@ -300,7 +300,7 @@ export default function ComparePage() {
                 transition={{ duration: 0.5, delay: 0.3 }}
                 className="glass-card rounded-2xl p-6"
               >
-                <h3 className="font-display font-bold text-xl text-white mb-6">
+                <h3 className="font-display font-bold text-xl text-foreground mb-6">
                   Detailed Statistics
                 </h3>
 
@@ -363,7 +363,7 @@ export default function ComparePage() {
               <div className="w-20 h-20 rounded-2xl bg-white/5 flex items-center justify-center mx-auto mb-6">
                 <Search className="w-8 h-8 text-[#A8A29E]" />
               </div>
-              <h3 className="font-display font-bold text-xl text-white mb-2">
+              <h3 className="font-display font-bold text-xl text-foreground mb-2">
                 Select Two Players to Compare
               </h3>
               <p className="text-[#A8A29E] max-w-md mx-auto">

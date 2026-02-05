@@ -8,7 +8,7 @@ interface MainLayoutProps {
 
 export function MainLayout({ children }: MainLayoutProps) {
   return (
-    <div className="min-h-screen flex flex-col bg-[#0A1628] noise-texture">
+    <div className="min-h-screen flex flex-col bg-background noise-texture">
       <Header />
       <main className="flex-1 pt-16 md:pt-20">
         {children}

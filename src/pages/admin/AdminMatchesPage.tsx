@@ -30,7 +30,7 @@ export default function AdminMatchesPage() {
           className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
         >
           <div>
-            <h1 className="font-display font-extrabold text-3xl text-white mb-1">
+            <h1 className="font-display font-extrabold text-3xl text-foreground mb-1">
               Match Management
             </h1>
             <p className="text-[#A8A29E]">
@@ -57,7 +57,7 @@ export default function AdminMatchesPage() {
               placeholder="Search matches..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-11 pl-12 pr-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder-[#A8A29E] focus:outline-none focus:border-[#00D9FF]/50 transition-colors"
+              className="w-full h-11 pl-12 pr-4 rounded-xl bg-white/5 border border-white/10 text-foreground placeholder-[#A8A29E] focus:outline-none focus:border-[#00D9FF]/50 transition-colors"
             />
           </div>
           <div className="flex gap-2">
@@ -131,20 +131,20 @@ export default function AdminMatchesPage() {
                       {/* Home Team */}
                       <div className="flex items-center gap-3 flex-1">
                         <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center">
-                          <span className="font-display font-bold text-white">
+                          <span className="font-display font-bold text-foreground">
                             {match.homeTeam.name.charAt(0)}
                           </span>
                         </div>
-                        <span className="font-medium text-white">{match.homeTeam.name}</span>
+                        <span className="font-medium text-foreground">{match.homeTeam.name}</span>
                       </div>
 
                       {/* Score */}
                       <div className="flex items-center gap-3 px-4">
                         {(isLive || isCompleted) ? (
                           <>
-                            <span className="font-mono-data text-2xl font-bold text-white">{match.homeScore}</span>
+                            <span className="font-mono-data text-2xl font-bold text-foreground">{match.homeScore}</span>
                             <span className="text-[#A8A29E]">-</span>
-                            <span className="font-mono-data text-2xl font-bold text-white">{match.awayScore}</span>
+                            <span className="font-mono-data text-2xl font-bold text-foreground">{match.awayScore}</span>
                           </>
                         ) : (
                           <span className="font-mono-data text-lg text-[#00D9FF]">{match.time}</span>
@@ -153,9 +153,9 @@ export default function AdminMatchesPage() {
 
                       {/* Away Team */}
                       <div className="flex items-center gap-3 flex-1 justify-end">
-                        <span className="font-medium text-white">{match.awayTeam.name}</span>
+                        <span className="font-medium text-foreground">{match.awayTeam.name}</span>
                         <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center">
-                          <span className="font-display font-bold text-white">
+                          <span className="font-display font-bold text-foreground">
                             {match.awayTeam.name.charAt(0)}
                           </span>
                         </div>
@@ -176,7 +176,7 @@ export default function AdminMatchesPage() {
                     )}
                     <Button 
                       variant="ghost" 
-                      className="text-[#A8A29E] hover:text-white hover:bg-white/5"
+                      className="text-[#A8A29E] hover:text-foreground hover:bg-white/5"
                     >
                       <Edit2 className="w-4 h-4 mr-2" />
                       Edit
@@ -184,7 +184,7 @@ export default function AdminMatchesPage() {
                     <Link to={`/matches/${match.id}`}>
                       <Button 
                         variant="ghost" 
-                        className="text-[#A8A29E] hover:text-white hover:bg-white/5"
+                        className="text-[#A8A29E] hover:text-foreground hover:bg-white/5"
                       >
                         View
                       </Button>

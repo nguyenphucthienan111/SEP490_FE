@@ -127,44 +127,44 @@ export default function AdminLeaguesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0A1628]">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30">
       {/* Sidebar */}
-      <aside className="fixed left-0 top-0 h-full w-[280px] bg-white/[0.02] border-r border-white/[0.08] p-6">
+      <aside className="fixed left-0 top-0 h-full w-[280px] bg-white/95 backdrop-blur-sm border-r border-slate-200/60 p-6 shadow-lg">
         <div className="flex items-center gap-3 mb-8">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF4444] to-[#FF6666] flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF4444] to-[#FF6666] flex items-center justify-center shadow-md">
             <span className="font-display font-extrabold text-white text-lg">VN</span>
           </div>
           <div>
-            <p className="font-display font-bold text-white">Admin Panel</p>
-            <p className="text-[#A8A29E] text-xs">Quản trị hệ thống</p>
+            <p className="font-display font-bold text-slate-800">Admin Panel</p>
+            <p className="text-slate-500 text-xs">Quản trị hệ thống</p>
           </div>
         </div>
 
         <nav className="space-y-1">
           <Link
             to="/admin"
-            className="flex items-center gap-3 px-4 py-3 rounded-xl text-[#A8A29E] hover:bg-white/[0.05] transition-colors"
+            className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 hover:bg-slate-100/80 hover:text-slate-800 transition-all duration-200"
           >
             <ArrowLeft className="w-5 h-5" />
             Dashboard
           </Link>
           <Link
             to="/admin/leagues"
-            className="flex items-center gap-3 px-4 py-3 rounded-xl bg-[#00D9FF]/10 text-[#00D9FF]"
+            className="flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-50 text-blue-700 border border-blue-200/50 shadow-sm"
           >
             <Trophy className="w-5 h-5" />
             Giải đấu
           </Link>
           <Link
             to="/admin/players"
-            className="flex items-center gap-3 px-4 py-3 rounded-xl text-[#A8A29E] hover:bg-white/[0.05] transition-colors"
+            className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 hover:bg-slate-100/80 hover:text-slate-800 transition-all duration-200"
           >
             <Users className="w-5 h-5" />
             Cầu thủ
           </Link>
           <Link
             to="/admin/matches"
-            className="flex items-center gap-3 px-4 py-3 rounded-xl text-[#A8A29E] hover:bg-white/[0.05] transition-colors"
+            className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 hover:bg-slate-100/80 hover:text-slate-800 transition-all duration-200"
           >
             <Calendar className="w-5 h-5" />
             Trận đấu
@@ -178,70 +178,70 @@ export default function AdminLeaguesPage() {
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="font-display font-extrabold text-3xl text-white mb-2">
+              <h1 className="font-display font-extrabold text-3xl text-slate-800 mb-2">
                 Quản lý Giải đấu
               </h1>
-              <p className="text-[#A8A29E]">Tạo và quản lý các giải đấu bóng đá</p>
+              <p className="text-slate-600">Tạo và quản lý các giải đấu bóng đá</p>
             </div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-gradient-to-r from-[#FF4444] to-[#FF6666] text-white">
+                <Button className="bg-gradient-to-r from-[#FF4444] to-[#FF6666] text-white shadow-lg hover:shadow-xl transition-all duration-200">
                   <Plus className="w-5 h-5 mr-2" />
                   Thêm giải đấu
                 </Button>
               </DialogTrigger>
-              <DialogContent className="bg-[#0A1628] border-white/[0.08] text-white max-w-md">
+              <DialogContent className="bg-white border-slate-200 text-slate-800 max-w-md shadow-2xl">
                 <DialogHeader>
-                  <DialogTitle className="font-display font-bold text-xl">
+                  <DialogTitle className="font-display font-bold text-xl text-slate-800">
                     {editingLeague ? "Chỉnh sửa giải đấu" : "Thêm giải đấu mới"}
                   </DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 mt-4">
                   <div className="space-y-2">
-                    <Label className="text-[#A8A29E]">Tên giải đấu</Label>
+                    <Label className="text-slate-600 font-medium">Tên giải đấu</Label>
                     <Input
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       placeholder="V.League 1"
-                      className="bg-white/[0.03] border-white/[0.08] text-white"
+                      className="bg-slate-50 border-slate-200 text-slate-800 focus:border-blue-400 focus:ring-blue-400/20"
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label className="text-[#A8A29E]">Mùa giải</Label>
+                      <Label className="text-slate-600 font-medium">Mùa giải</Label>
                       <Input
                         value={formData.season}
                         onChange={(e) => setFormData({ ...formData, season: e.target.value })}
                         placeholder="2024"
-                        className="bg-white/[0.03] border-white/[0.08] text-white"
+                        className="bg-slate-50 border-slate-200 text-slate-800 focus:border-blue-400 focus:ring-blue-400/20"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-[#A8A29E]">Quốc gia</Label>
+                      <Label className="text-slate-600 font-medium">Quốc gia</Label>
                       <Input
                         value={formData.country}
                         onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                        className="bg-white/[0.03] border-white/[0.08] text-white"
+                        className="bg-slate-50 border-slate-200 text-slate-800 focus:border-blue-400 focus:ring-blue-400/20"
                       />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label className="text-[#A8A29E]">Ngày bắt đầu</Label>
+                      <Label className="text-slate-600 font-medium">Ngày bắt đầu</Label>
                       <Input
                         type="date"
                         value={formData.startDate}
                         onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                        className="bg-white/[0.03] border-white/[0.08] text-white"
+                        className="bg-slate-50 border-slate-200 text-slate-800 focus:border-blue-400 focus:ring-blue-400/20"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-[#A8A29E]">Ngày kết thúc</Label>
+                      <Label className="text-slate-600 font-medium">Ngày kết thúc</Label>
                       <Input
                         type="date"
                         value={formData.endDate}
                         onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                        className="bg-white/[0.03] border-white/[0.08] text-white"
+                        className="bg-slate-50 border-slate-200 text-slate-800 focus:border-blue-400 focus:ring-blue-400/20"
                       />
                     </div>
                   </div>
@@ -249,13 +249,13 @@ export default function AdminLeaguesPage() {
                     <Button
                       variant="ghost"
                       onClick={() => setIsDialogOpen(false)}
-                      className="text-[#A8A29E] hover:text-white"
+                      className="text-slate-600 hover:text-slate-800 hover:bg-slate-100"
                     >
                       Hủy
                     </Button>
                     <Button
                       onClick={handleSave}
-                      className="bg-gradient-to-r from-[#FF4444] to-[#FF6666] text-white"
+                      className="bg-gradient-to-r from-[#FF4444] to-[#FF6666] text-white shadow-lg hover:shadow-xl transition-all duration-200"
                     >
                       {editingLeague ? "Lưu thay đổi" : "Tạo giải đấu"}
                     </Button>
@@ -268,19 +268,19 @@ export default function AdminLeaguesPage() {
           {/* Filters */}
           <div className="flex items-center gap-4 mb-6">
             <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#A8A29E]" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
               <Input
                 placeholder="Tìm kiếm giải đấu..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-white/[0.03] border-white/[0.08] text-white"
+                className="pl-10 bg-white border-slate-200 text-slate-800 shadow-sm focus:border-blue-400 focus:ring-blue-400/20"
               />
             </div>
             <Select value={seasonFilter} onValueChange={setSeasonFilter}>
-              <SelectTrigger className="w-[140px] bg-white/[0.03] border-white/[0.08] text-white">
+              <SelectTrigger className="w-[140px] bg-white border-slate-200 text-slate-800 shadow-sm focus:border-blue-400 focus:ring-blue-400/20">
                 <SelectValue placeholder="Mùa giải" />
               </SelectTrigger>
-              <SelectContent className="bg-[#0A1628] border-white/[0.08]">
+              <SelectContent className="bg-white border-slate-200 shadow-xl">
                 <SelectItem value="all">Tất cả</SelectItem>
                 <SelectItem value="2024">2024</SelectItem>
                 <SelectItem value="2023">2023</SelectItem>
@@ -293,30 +293,30 @@ export default function AdminLeaguesPage() {
             {filteredLeagues.map((league) => (
               <div
                 key={league.id}
-                className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-6 hover:bg-white/[0.05] transition-colors group"
+                className="bg-white border border-slate-200 rounded-2xl p-6 hover:shadow-lg hover:border-slate-300 transition-all duration-200 group"
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#00D9FF]/20 to-[#00D9FF]/5 flex items-center justify-center text-3xl">
+                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-100 to-blue-50 flex items-center justify-center text-3xl border border-blue-200/50">
                       {league.logo}
                     </div>
                     <div>
-                      <h3 className="font-display font-bold text-xl text-white">{league.name}</h3>
-                      <p className="text-[#A8A29E]">Mùa giải {league.season}</p>
+                      <h3 className="font-display font-bold text-xl text-slate-800">{league.name}</h3>
+                      <p className="text-slate-600">Mùa giải {league.season}</p>
                     </div>
                   </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="text-[#A8A29E] hover:text-white">
+                      <Button variant="ghost" size="icon" className="text-slate-500 hover:text-slate-700 hover:bg-slate-100">
                         <MoreVertical className="w-5 h-5" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent className="bg-[#0A1628] border-white/[0.08]">
-                      <DropdownMenuItem onClick={() => handleEdit(league)} className="text-white hover:bg-white/[0.05]">
+                    <DropdownMenuContent className="bg-white border-slate-200 shadow-xl">
+                      <DropdownMenuItem onClick={() => handleEdit(league)} className="text-slate-700 hover:bg-slate-50 focus:bg-slate-50">
                         <Edit className="w-4 h-4 mr-2" />
                         Chỉnh sửa
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-red-400 hover:bg-red-500/10">
+                      <DropdownMenuItem className="text-red-600 hover:bg-red-50 focus:bg-red-50">
                         <Trash2 className="w-4 h-4 mr-2" />
                         Xóa
                       </DropdownMenuItem>
@@ -325,30 +325,30 @@ export default function AdminLeaguesPage() {
                 </div>
 
                 <div className="grid grid-cols-3 gap-4 mb-4">
-                  <div className="text-center p-3 rounded-xl bg-white/[0.02]">
-                    <p className="font-mono text-2xl font-bold text-white">{league.teams}</p>
-                    <p className="text-[#A8A29E] text-xs">Đội</p>
+                  <div className="text-center p-3 rounded-xl bg-slate-50 border border-slate-100">
+                    <p className="font-mono text-2xl font-bold text-slate-800">{league.teams}</p>
+                    <p className="text-slate-500 text-xs">Đội</p>
                   </div>
-                  <div className="text-center p-3 rounded-xl bg-white/[0.02]">
-                    <p className="font-mono text-2xl font-bold text-white">{league.matches}</p>
-                    <p className="text-[#A8A29E] text-xs">Trận</p>
+                  <div className="text-center p-3 rounded-xl bg-slate-50 border border-slate-100">
+                    <p className="font-mono text-2xl font-bold text-slate-800">{league.matches}</p>
+                    <p className="text-slate-500 text-xs">Trận</p>
                   </div>
-                  <div className="text-center p-3 rounded-xl bg-white/[0.02]">
-                    <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
+                  <div className="text-center p-3 rounded-xl bg-slate-50 border border-slate-100">
+                    <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                       league.status === "active"
-                        ? "bg-green-500/10 text-green-400"
-                        : "bg-[#A8A29E]/10 text-[#A8A29E]"
+                        ? "bg-green-100 text-green-700 border border-green-200"
+                        : "bg-slate-100 text-slate-600 border border-slate-200"
                     }`}>
                       {league.status === "active" ? "Đang diễn ra" : "Hoàn thành"}
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between text-sm text-[#A8A29E] pt-4 border-t border-white/[0.05]">
+                <div className="flex items-center justify-between text-sm text-slate-500 pt-4 border-t border-slate-100">
                   <span>{league.startDate} - {league.endDate}</span>
                   <Link
                     to={`/admin/leagues/${league.id}`}
-                    className="flex items-center gap-1 text-[#00D9FF] hover:underline"
+                    className="flex items-center gap-1 text-blue-600 hover:text-blue-700 hover:underline font-medium"
                   >
                     Chi tiết
                     <ChevronRight className="w-4 h-4" />

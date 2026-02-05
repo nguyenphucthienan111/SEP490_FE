@@ -33,7 +33,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const location = useLocation();
 
   return (
-    <div className="min-h-screen bg-[#0A1628] flex">
+    <div className="min-h-screen bg-background flex">
       {/* Mobile Overlay */}
       {sidebarOpen && (
         <div 
@@ -55,7 +55,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 <span className="font-display font-extrabold text-white text-lg">VN</span>
               </div>
               <div>
-                <h1 className="font-display font-bold text-white">Admin Portal</h1>
+                <h1 className="font-display font-bold text-foreground">Admin Portal</h1>
                 <p className="text-xs text-[#A8A29E]">Player Rating Engine</p>
               </div>
             </Link>
@@ -74,7 +74,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                     "flex items-center gap-3 px-4 py-3 rounded-xl font-body text-sm transition-all duration-200",
                     isActive
                       ? "bg-[#FF4444] text-white"
-                      : "text-[#A8A29E] hover:bg-white/5 hover:text-white"
+                      : "text-[#A8A29E] hover:bg-white/5 hover:text-foreground"
                   )}
                 >
                   <item.icon className="w-5 h-5" />
@@ -88,7 +88,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           <div className="p-4 border-t border-white/5">
             <Link
               to="/"
-              className="flex items-center gap-3 px-4 py-3 rounded-xl font-body text-sm text-[#A8A29E] hover:bg-white/5 hover:text-white transition-colors"
+              className="flex items-center gap-3 px-4 py-3 rounded-xl font-body text-sm text-[#A8A29E] hover:bg-white/5 hover:text-foreground transition-colors"
             >
               <LogOut className="w-5 h-5" />
               Back to Public Site
@@ -100,18 +100,18 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top Bar */}
-        <header className="sticky top-0 z-30 bg-[#0A1628]/95 backdrop-blur border-b border-white/5 px-4 lg:px-8 py-4">
+        <header className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-white/5 px-4 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-2 rounded-lg hover:bg-white/5 text-[#A8A29E] hover:text-white transition-colors"
+              className="lg:hidden p-2 rounded-lg hover:bg-white/5 text-[#A8A29E] hover:text-foreground transition-colors"
             >
               <Menu className="w-6 h-6" />
             </button>
 
             <div className="ml-auto flex items-center gap-4">
               <div className="text-right">
-                <p className="text-sm font-medium text-white">Admin User</p>
+                <p className="text-sm font-medium text-foreground">Admin User</p>
                 <p className="text-xs text-[#A8A29E]">admin@vleague.vn</p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-[#FF4444] flex items-center justify-center">

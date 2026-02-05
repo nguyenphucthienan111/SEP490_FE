@@ -17,7 +17,7 @@ export function FeaturedPlayers() {
           className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 mb-12"
         >
           <div>
-            <h2 className="font-display font-extrabold text-3xl sm:text-4xl text-white mb-2">
+            <h2 className="font-display font-extrabold text-3xl sm:text-4xl text-foreground mb-2">
               Top Rated Players
             </h2>
             <p className="text-[#A8A29E] max-w-md">
@@ -45,9 +45,9 @@ export function FeaturedPlayers() {
               <Link to={`/players/${player.id}`}>
                 <div className="group glass-card rounded-2xl overflow-hidden hover:translate-y-[-4px] hover:shadow-xl transition-all duration-300 cursor-pointer border border-transparent hover:border-[#FF4444]/20">
                   {/* Player Header */}
-                  <div className="relative h-32 bg-gradient-to-br from-[#1A0F2E] to-[#0A1628] p-4">
+                  <div className="relative h-32 bg-gradient-to-br from-dark-purple to-midnight-navy p-4">
                     <div className="absolute top-4 left-4">
-                      <span className="font-mono-data text-6xl font-extralight text-white/10">
+                      <span className="font-mono-data text-6xl font-extralight text-foreground/10">
                         #{index + 1}
                       </span>
                     </div>
@@ -55,7 +55,7 @@ export function FeaturedPlayers() {
                       <TrendingUp className="w-4 h-4 text-green-400" />
                       <span className="text-xs text-green-400 font-mono-data">+0.2</span>
                     </div>
-                    <div className="absolute -bottom-10 right-4 w-20 h-20 rounded-xl overflow-hidden border-4 border-[#0A1628] bg-white/5">
+                    <div className="absolute -bottom-10 right-4 w-20 h-20 rounded-xl overflow-hidden border-4 border-background bg-white/5">
                       <img
                         src={player.photoUrl}
                         alt={player.name}
@@ -68,13 +68,13 @@ export function FeaturedPlayers() {
                   <div className="p-6 pt-4">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex-1 min-w-0 pr-4">
-                        <h3 className="font-display font-bold text-lg text-white truncate group-hover:text-[#FF4444] transition-colors">
+                        <h3 className="font-display font-bold text-lg text-foreground truncate group-hover:text-[#FF4444] transition-colors">
                           {player.name}
                         </h3>
                         <p className="text-sm text-[#A8A29E] truncate">{player.team}</p>
                       </div>
                       <div className="flex flex-col items-end">
-                        <span className="font-mono-data text-2xl font-bold text-white">
+                        <span className="font-mono-data text-2xl font-bold text-foreground">
                           {player.rating.toFixed(1)}
                         </span>
                         <span className="text-xs text-[#A8A29E]">Rating</span>

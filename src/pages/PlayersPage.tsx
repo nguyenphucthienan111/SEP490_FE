@@ -26,9 +26,9 @@ function PlayerCard({ player, index }: { player: Player; index: number }) {
       <Link to={`/players/${player.id}`}>
         <div className="group glass-card rounded-2xl overflow-hidden hover:translate-y-[-4px] hover:shadow-xl transition-all duration-300 cursor-pointer border border-transparent hover:border-[#FF4444]/20">
           {/* Player Header */}
-          <div className="relative h-28 bg-gradient-to-br from-[#1A0F2E] to-[#0A1628] p-4">
+          <div className="relative h-28 bg-gradient-to-br from-dark-purple to-midnight-navy p-4">
             <div className="absolute top-4 left-4">
-              <span className="font-mono-data text-5xl font-extralight text-white/10">
+              <span className="font-mono-data text-5xl font-extralight text-foreground/10">
                 #{player.number}
               </span>
             </div>
@@ -36,7 +36,7 @@ function PlayerCard({ player, index }: { player: Player; index: number }) {
               <TrendingUp className="w-3.5 h-3.5 text-green-400" />
               <span className="text-xs text-green-400 font-mono-data">+0.1</span>
             </div>
-            <div className="absolute -bottom-8 right-4 w-16 h-16 rounded-xl overflow-hidden border-3 border-[#0A1628] bg-white/5">
+            <div className="absolute -bottom-8 right-4 w-16 h-16 rounded-xl overflow-hidden border-3 border-background bg-white/5">
               <img
                 src={player.photoUrl}
                 alt={player.name}
@@ -49,13 +49,13 @@ function PlayerCard({ player, index }: { player: Player; index: number }) {
           <div className="p-5 pt-3">
             <div className="flex items-start justify-between mb-3">
               <div className="flex-1 min-w-0 pr-3">
-                <h3 className="font-display font-bold text-base text-white truncate group-hover:text-[#FF4444] transition-colors">
+                <h3 className="font-display font-bold text-base text-foreground truncate group-hover:text-[#FF4444] transition-colors">
                   {player.name}
                 </h3>
                 <p className="text-xs text-[#A8A29E] truncate">{player.team}</p>
               </div>
               <div className="flex flex-col items-end">
-                <span className="font-mono-data text-xl font-bold text-white">
+                <span className="font-mono-data text-xl font-bold text-foreground">
                   {player.rating.toFixed(1)}
                 </span>
               </div>
@@ -125,7 +125,7 @@ export default function PlayersPage() {
             transition={{ duration: 0.6 }}
             className="mb-8"
           >
-            <h1 className="font-display font-extrabold text-4xl sm:text-5xl text-white mb-3">
+            <h1 className="font-display font-extrabold text-4xl sm:text-5xl text-foreground mb-3">
               Player Database
             </h1>
             <p className="text-[#A8A29E] text-lg max-w-2xl">
@@ -149,7 +149,7 @@ export default function PlayersPage() {
                   placeholder="Search players or teams..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full h-12 pl-12 pr-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder-[#A8A29E] focus:outline-none focus:border-[#00D9FF]/50 transition-colors"
+className="w-full h-12 pl-12 pr-4 rounded-xl bg-white/5 border border-white/10 text-foreground placeholder-[#A8A29E] focus:outline-none focus:border-[#00D9FF]/50 transition-colors"
                 />
               </div>
 
@@ -163,7 +163,7 @@ export default function PlayersPage() {
                       "px-4 py-2.5 rounded-xl font-label text-sm font-medium transition-all duration-200",
                       selectedPosition === pos.value
                         ? "bg-[#FF4444] text-white"
-                        : "bg-white/5 text-[#A8A29E] hover:bg-white/10 hover:text-white"
+                        : "bg-white/5 text-[#A8A29E] hover:bg-white/10 hover:text-foreground"
                     )}
                   >
                     {pos.label}
@@ -210,7 +210,7 @@ export default function PlayersPage() {
             className="mb-6 flex items-center justify-between"
           >
             <p className="text-sm text-[#A8A29E]">
-              Showing <span className="font-mono-data text-white">{filteredPlayers.length}</span> players
+              Showing <span className="font-mono-data text-foreground">{filteredPlayers.length}</span> players
             </p>
           </motion.div>
 
@@ -231,7 +231,7 @@ export default function PlayersPage() {
               <div className="w-20 h-20 rounded-2xl bg-white/5 flex items-center justify-center mx-auto mb-6">
                 <Search className="w-8 h-8 text-[#A8A29E]" />
               </div>
-              <h3 className="font-display font-bold text-xl text-white mb-2">
+              <h3 className="font-display font-bold text-xl text-foreground mb-2">
                 No Players Found
               </h3>
               <p className="text-[#A8A29E]">

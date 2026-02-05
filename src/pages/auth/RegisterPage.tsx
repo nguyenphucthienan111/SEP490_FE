@@ -43,19 +43,19 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0A1628] flex">
+    <div className="min-h-screen bg-background flex">
       {/* Left Side - Decorative */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#0A1628] via-[#1A0F2E] to-[#0A1628]" />
+        <div className="absolute inset-0 bg-gradient-to-br from-midnight-navy via-dark-purple to-midnight-navy" />
         <div className="absolute inset-0 opacity-30">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#00D9FF] rounded-full blur-[128px]" />
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#FF4444] rounded-full blur-[128px]" />
         </div>
         <div className="relative z-10 flex flex-col justify-center items-center p-12 text-center">
           <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#FF4444] to-[#FF6666] flex items-center justify-center mb-8 shadow-lg shadow-[#FF4444]/30">
-            <span className="font-display font-extrabold text-white text-3xl">VN</span>
+            <span className="font-display font-extrabold text-foreground text-3xl">VN</span>
           </div>
-          <h1 className="font-display font-extrabold text-5xl text-white mb-4">
+          <h1 className="font-display font-extrabold text-5xl text-foreground mb-4">
             Tham gia cùng chúng tôi
           </h1>
           <p className="text-[#A8A29E] text-lg max-w-md font-body">
@@ -67,25 +67,25 @@ export default function RegisterPage() {
               <div className="w-10 h-10 rounded-full bg-[#00D9FF]/10 flex items-center justify-center">
                 <Check className="w-5 h-5 text-[#00D9FF]" />
               </div>
-              <p className="text-white font-body">Xem thống kê chi tiết của cầu thủ</p>
+              <p className="text-foreground font-body">Xem thống kê chi tiết của cầu thủ</p>
             </div>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-[#00D9FF]/10 flex items-center justify-center">
                 <Check className="w-5 h-5 text-[#00D9FF]" />
               </div>
-              <p className="text-white font-body">So sánh cầu thủ cùng vị trí</p>
+              <p className="text-foreground font-body">So sánh cầu thủ cùng vị trí</p>
             </div>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-[#00D9FF]/10 flex items-center justify-center">
                 <Check className="w-5 h-5 text-[#00D9FF]" />
               </div>
-              <p className="text-white font-body">Theo dõi xu hướng phong độ theo thời gian</p>
+              <p className="text-foreground font-body">Theo dõi xu hướng phong độ theo thời gian</p>
             </div>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-[#00D9FF]/10 flex items-center justify-center">
                 <Check className="w-5 h-5 text-[#00D9FF]" />
               </div>
-              <p className="text-white font-body">Lưu danh sách cầu thủ yêu thích</p>
+              <p className="text-foreground font-body">Lưu danh sách cầu thủ yêu thích</p>
             </div>
           </div>
         </div>
@@ -97,14 +97,14 @@ export default function RegisterPage() {
           {/* Mobile Logo */}
           <div className="lg:hidden flex flex-col items-center mb-8">
             <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-[#FF4444] to-[#FF6666] flex items-center justify-center mb-4">
-              <span className="font-display font-extrabold text-white text-2xl">VN</span>
+              <span className="font-display font-extrabold text-foreground text-2xl">VN</span>
             </div>
-            <h1 className="font-display font-extrabold text-2xl text-white">VN Football Analytics</h1>
+            <h1 className="font-display font-extrabold text-2xl text-foreground">VN Football Analytics</h1>
           </div>
 
           <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-8 backdrop-blur-xl">
             <div className="text-center mb-8">
-              <h2 className="font-display font-extrabold text-3xl text-white mb-2">Đăng Ký</h2>
+              <h2 className="font-display font-extrabold text-3xl text-foreground mb-2">Đăng Ký</h2>
               <p className="text-[#A8A29E] font-body">Tạo tài khoản mới</p>
             </div>
 
@@ -120,7 +120,7 @@ export default function RegisterPage() {
                     placeholder="Nguyễn Văn A"
                     value={formData.fullName}
                     onChange={handleChange}
-                    className="pl-10 bg-white/[0.03] border-white/[0.08] text-white placeholder:text-[#A8A29E]/50 h-12 rounded-xl focus:border-[#00D9FF] focus:ring-[#00D9FF]/20"
+                    className="pl-10 bg-white/[0.03] border-white/[0.08] text-foreground placeholder:text-[#A8A29E]/50 h-12 rounded-xl focus:border-[#00D9FF] focus:ring-[#00D9FF]/20"
                     required
                   />
                 </div>
@@ -137,7 +137,7 @@ export default function RegisterPage() {
                     placeholder="your@email.com"
                     value={formData.email}
                     onChange={handleChange}
-                    className="pl-10 bg-white/[0.03] border-white/[0.08] text-white placeholder:text-[#A8A29E]/50 h-12 rounded-xl focus:border-[#00D9FF] focus:ring-[#00D9FF]/20"
+                    className="pl-10 bg-white/[0.03] border-white/[0.08] text-foreground placeholder:text-[#A8A29E]/50 h-12 rounded-xl focus:border-[#00D9FF] focus:ring-[#00D9FF]/20"
                     required
                   />
                 </div>
@@ -154,13 +154,13 @@ export default function RegisterPage() {
                     placeholder="••••••••"
                     value={formData.password}
                     onChange={handleChange}
-                    className="pl-10 pr-10 bg-white/[0.03] border-white/[0.08] text-white placeholder:text-[#A8A29E]/50 h-12 rounded-xl focus:border-[#00D9FF] focus:ring-[#00D9FF]/20"
+                    className="pl-10 pr-10 bg-white/[0.03] border-white/[0.08] text-foreground placeholder:text-[#A8A29E]/50 h-12 rounded-xl focus:border-[#00D9FF] focus:ring-[#00D9FF]/20"
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A8A29E] hover:text-white transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A8A29E] hover:text-foreground transition-colors"
                   >
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
@@ -190,13 +190,13 @@ export default function RegisterPage() {
                     placeholder="••••••••"
                     value={formData.confirmPassword}
                     onChange={handleChange}
-                    className="pl-10 pr-10 bg-white/[0.03] border-white/[0.08] text-white placeholder:text-[#A8A29E]/50 h-12 rounded-xl focus:border-[#00D9FF] focus:ring-[#00D9FF]/20"
+                    className="pl-10 pr-10 bg-white/[0.03] border-white/[0.08] text-foreground placeholder:text-[#A8A29E]/50 h-12 rounded-xl focus:border-[#00D9FF] focus:ring-[#00D9FF]/20"
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A8A29E] hover:text-white transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A8A29E] hover:text-foreground transition-colors"
                   >
                     {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>

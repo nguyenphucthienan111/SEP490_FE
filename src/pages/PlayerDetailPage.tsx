@@ -41,7 +41,7 @@ export default function PlayerDetailPage() {
       <MainLayout>
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-center">
-            <h2 className="font-display font-bold text-2xl text-white mb-4">Player Not Found</h2>
+            <h2 className="font-display font-bold text-2xl text-foreground mb-4">Player Not Found</h2>
             <Link to="/players">
               <Button variant="outline" className="border-[#00D9FF] text-[#00D9FF]">
                 Back to Players
@@ -111,7 +111,7 @@ export default function PlayerDetailPage() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <Link to="/players" className="inline-flex items-center gap-2 text-[#A8A29E] hover:text-white transition-colors mb-8">
+            <Link to="/players" className="inline-flex items-center gap-2 text-[#A8A29E] hover:text-foreground transition-colors mb-8">
               <ArrowLeft className="w-4 h-4" />
               <span className="font-label text-sm">Back to Players</span>
             </Link>
@@ -147,7 +147,7 @@ export default function PlayerDetailPage() {
                     </span>
                     <span className="text-[#A8A29E] text-sm">#{player.number}</span>
                   </div>
-                  <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-white mb-2">
+                  <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-foreground mb-2">
                     {player.name}
                   </h1>
                   <p className="text-lg text-[#A8A29E] mb-4">{player.team}</p>
@@ -194,7 +194,7 @@ export default function PlayerDetailPage() {
                     </defs>
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="font-mono-data text-4xl font-bold text-white">
+                    <span className="font-mono-data text-4xl font-bold text-foreground">
                       {player.rating.toFixed(1)}
                     </span>
                     <span className="text-xs text-[#A8A29E] uppercase tracking-wider">Rating</span>
@@ -218,7 +218,7 @@ export default function PlayerDetailPage() {
               transition={{ duration: 0.5, delay: 0.1 }}
               className="glass-card rounded-2xl p-6"
             >
-              <h3 className="font-label font-bold text-white uppercase tracking-wider text-sm mb-6">
+              <h3 className="font-label font-bold text-foreground uppercase tracking-wider text-sm mb-6">
                 Season Statistics
               </h3>
               <div className="space-y-4">
@@ -232,7 +232,7 @@ export default function PlayerDetailPage() {
                 ].map((stat, index) => (
                   <div key={stat.label} className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
                     <span className="text-[#A8A29E] text-sm">{stat.label}</span>
-                    <span className="font-mono-data text-lg font-semibold text-white">{stat.value}</span>
+                    <span className="font-mono-data text-lg font-semibold text-foreground">{stat.value}</span>
                   </div>
                 ))}
               </div>
@@ -245,7 +245,7 @@ export default function PlayerDetailPage() {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="glass-card rounded-2xl p-6"
             >
-              <h3 className="font-label font-bold text-white uppercase tracking-wider text-sm mb-6">
+              <h3 className="font-label font-bold text-foreground uppercase tracking-wider text-sm mb-6">
                 Player Attributes
               </h3>
               <div className="h-64">
@@ -281,7 +281,7 @@ export default function PlayerDetailPage() {
               transition={{ duration: 0.5, delay: 0.3 }}
               className="glass-card rounded-2xl p-6"
             >
-              <h3 className="font-label font-bold text-white uppercase tracking-wider text-sm mb-6">
+              <h3 className="font-label font-bold text-foreground uppercase tracking-wider text-sm mb-6">
                 Rating Breakdown
               </h3>
               <p className="text-sm text-[#A8A29E] mb-4">
@@ -301,7 +301,7 @@ export default function PlayerDetailPage() {
                           ) : (
                             <div className="w-2 h-2 rounded-full bg-red-400" />
                           )}
-                          <span className="text-sm text-white">{contrib.category}</span>
+                          <span className="text-sm text-foreground">{contrib.category}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className={cn(
@@ -351,7 +351,7 @@ export default function PlayerDetailPage() {
             transition={{ duration: 0.5, delay: 0.4 }}
             className="glass-card rounded-2xl p-6 mb-8"
           >
-            <h3 className="font-label font-bold text-white uppercase tracking-wider text-sm mb-6">
+            <h3 className="font-label font-bold text-foreground uppercase tracking-wider text-sm mb-6">
               Performance Trend
             </h3>
             <div className="h-80">
@@ -370,10 +370,10 @@ export default function PlayerDetailPage() {
                   />
                   <Tooltip 
                     contentStyle={{ 
-                      backgroundColor: '#0A1628', 
+                      backgroundColor: 'hsl(var(--background))', 
                       border: '1px solid rgba(255,255,255,0.1)',
                       borderRadius: '12px',
-                      color: '#fff'
+                      color: 'hsl(var(--foreground))'
                     }}
                   />
                   <Line 
@@ -403,7 +403,7 @@ export default function PlayerDetailPage() {
             className="text-center"
           >
             <Link to={`/compare?player1=${player.id}`}>
-              <Button className="bg-[#00D9FF] hover:bg-[#00E8FF] text-[#0A1628] font-label font-semibold px-8 h-12 rounded-xl">
+              <Button className="bg-[#00D9FF] hover:bg-[#00E8FF] text-foreground font-label font-semibold px-8 h-12 rounded-xl">
                 <Users className="w-4 h-4 mr-2" />
                 Compare with Another Player
               </Button>

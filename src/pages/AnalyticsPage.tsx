@@ -19,7 +19,7 @@ export default function AnalyticsPage() {
             transition={{ duration: 0.6 }}
             className="mb-12"
           >
-            <h1 className="font-display font-extrabold text-4xl sm:text-5xl text-white mb-3">
+            <h1 className="font-display font-extrabold text-4xl sm:text-5xl text-foreground mb-3">
               Analytics Hub
             </h1>
             <p className="text-[#A8A29E] text-lg max-w-2xl">
@@ -43,8 +43,8 @@ export default function AnalyticsPage() {
                       alt={featuredArticle.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-r from-[#0A1628] via-transparent to-transparent lg:block hidden" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#0A1628] via-transparent to-transparent lg:hidden" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-midnight-navy via-transparent to-transparent lg:block hidden" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-midnight-navy via-transparent to-transparent lg:hidden" />
                   </div>
                   <div className="p-8 lg:p-12 flex flex-col justify-center">
                     <div className="flex flex-wrap gap-2 mb-4">
@@ -57,7 +57,7 @@ export default function AnalyticsPage() {
                         </span>
                       ))}
                     </div>
-                    <h2 className="font-display font-bold text-2xl sm:text-3xl text-white mb-4 group-hover:text-[#FF4444] transition-colors">
+                    <h2 className="font-display font-bold text-2xl sm:text-3xl text-foreground mb-4 group-hover:text-[#FF4444] transition-colors">
                       {featuredArticle.title}
                     </h2>
                     <p className="text-[#A8A29E] leading-relaxed mb-6">
@@ -86,7 +86,7 @@ export default function AnalyticsPage() {
             transition={{ delay: 0.2 }}
             className="mb-8"
           >
-            <h2 className="font-display font-bold text-xl text-white">
+            <h2 className="font-display font-bold text-xl text-foreground">
               Latest Analysis
             </h2>
           </motion.div>
@@ -107,12 +107,12 @@ export default function AnalyticsPage() {
                         alt={article.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#0A1628] via-transparent to-transparent" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-midnight-navy via-transparent to-transparent" />
                       <div className="absolute top-4 left-4 flex flex-wrap gap-2">
                         {article.tags.slice(0, 2).map((tag) => (
                           <span
                             key={tag}
-                            className="px-2.5 py-1 bg-[#00D9FF]/90 rounded-full text-xs font-label font-semibold text-[#0A1628]"
+                            className="px-2.5 py-1 bg-[#00D9FF]/90 rounded-full text-xs font-label font-semibold text-foreground"
                           >
                             {tag}
                           </span>
@@ -120,7 +120,7 @@ export default function AnalyticsPage() {
                       </div>
                     </div>
                     <div className="p-6">
-                      <h3 className="font-display font-bold text-lg text-white mb-3 group-hover:text-[#00D9FF] transition-colors line-clamp-2">
+                      <h3 className="font-display font-bold text-lg text-foreground mb-3 group-hover:text-[#00D9FF] transition-colors line-clamp-2">
                         {article.title}
                       </h3>
                       <p className="text-sm text-[#A8A29E] leading-relaxed mb-4 line-clamp-2">
@@ -148,7 +148,7 @@ export default function AnalyticsPage() {
             transition={{ duration: 0.6 }}
             className="mt-16 glass-card rounded-3xl p-8 sm:p-12 text-center"
           >
-            <h2 className="font-display font-bold text-2xl sm:text-3xl text-white mb-4">
+            <h2 className="font-display font-bold text-2xl sm:text-3xl text-foreground mb-4">
               Want Deeper Insights?
             </h2>
             <p className="text-[#A8A29E] max-w-xl mx-auto mb-8">

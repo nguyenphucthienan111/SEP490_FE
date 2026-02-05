@@ -113,20 +113,15 @@ export default function AdminContentPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0A1628]">
+    <div className="min-h-screen bg-background">
       {/* Sidebar */}
       <aside className="fixed left-0 top-0 h-full w-[280px] bg-white/[0.02] border-r border-white/[0.08] p-6">
         <div className="flex items-center gap-3 mb-8">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF4444] to-[#FF6666] flex items-center justify-center">
-            <span className="font-display font-extrabold text-white text-lg">VN</span>
+            <span className="font-display font-extrabold text-foreground text-lg">VN</span>
           </div>
           <div>
-            <p className="font-display font-bold text-white">Admin Panel</p>
-            <p className="text-[#A8A29E] text-xs">Quản trị hệ thống</p>
-          </div>
-        </div>
-
-        <nav className="space-y-1">
+              <p className="font-display font-bold text-foreground">Admin Panel</p>
           <Link
             to="/admin"
             className="flex items-center gap-3 px-4 py-3 rounded-xl text-[#A8A29E] hover:bg-white/[0.05] transition-colors"
@@ -171,7 +166,7 @@ export default function AdminContentPage() {
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="font-display font-extrabold text-3xl text-white mb-2">
+              <h1 className="font-display font-extrabold text-3xl text-foreground mb-2">
                 Quản lý Nội dung
               </h1>
               <p className="text-[#A8A29E]">Tạo và quản lý bài viết phân tích</p>
@@ -183,9 +178,9 @@ export default function AdminContentPage() {
                   Tạo bài viết
                 </Button>
               </DialogTrigger>
-              <DialogContent className="bg-[#0A1628] border-white/[0.08] text-white max-w-2xl">
+              <DialogContent className="bg-background border-white/[0.08] text-foreground max-w-2xl">
                 <DialogHeader>
-                  <DialogTitle className="font-display font-bold text-xl">
+                  <DialogTitle className="font-display font-bold text-xl text-foreground">
                     Tạo bài viết mới
                   </DialogTitle>
                 </DialogHeader>
@@ -196,7 +191,7 @@ export default function AdminContentPage() {
                       value={formData.title}
                       onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                       placeholder="Nhập tiêu đề bài viết..."
-                      className="bg-white/[0.03] border-white/[0.08] text-white"
+                      className="bg-white/[0.03] border-white/[0.08] text-foreground"
                     />
                   </div>
                   <div className="space-y-2">
@@ -205,10 +200,10 @@ export default function AdminContentPage() {
                       value={formData.category}
                       onValueChange={(value) => setFormData({ ...formData, category: value })}
                     >
-                      <SelectTrigger className="bg-white/[0.03] border-white/[0.08] text-white">
+                      <SelectTrigger className="bg-white/[0.03] border-white/[0.08] text-foreground">
                         <SelectValue placeholder="Chọn danh mục" />
                       </SelectTrigger>
-                      <SelectContent className="bg-[#0A1628] border-white/[0.08]">
+                      <SelectContent className="bg-background border-white/[0.08]">
                         {categories.map((cat) => (
                           <SelectItem key={cat.value} value={cat.value}>
                             {cat.label}
@@ -223,7 +218,7 @@ export default function AdminContentPage() {
                       value={formData.excerpt}
                       onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
                       placeholder="Tóm tắt nội dung bài viết..."
-                      className="bg-white/[0.03] border-white/[0.08] text-white resize-none"
+                      className="bg-white/[0.03] border-white/[0.08] text-foreground resize-none"
                       rows={3}
                     />
                   </div>
@@ -233,7 +228,7 @@ export default function AdminContentPage() {
                       value={formData.content}
                       onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                       placeholder="Viết nội dung bài viết..."
-                      className="bg-white/[0.03] border-white/[0.08] text-white resize-none"
+                      className="bg-white/[0.03] border-white/[0.08] text-foreground resize-none"
                       rows={8}
                     />
                   </div>
@@ -241,13 +236,13 @@ export default function AdminContentPage() {
                     <Button
                       variant="ghost"
                       onClick={() => setIsDialogOpen(false)}
-                      className="text-[#A8A29E] hover:text-white"
+                      className="text-[#A8A29E] hover:text-foreground"
                     >
                       Hủy
                     </Button>
                     <Button
                       variant="outline"
-                      className="border-white/20 text-white hover:bg-white/10"
+                      className="border-white/20 text-foreground hover:bg-white/10"
                     >
                       Lưu nháp
                     </Button>
@@ -267,7 +262,7 @@ export default function AdminContentPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-5">
               <p className="text-[#A8A29E] text-sm mb-1">Tổng bài viết</p>
-              <p className="font-mono text-3xl font-bold text-white">{mockArticles.length}</p>
+              <p className="font-mono text-3xl font-bold text-foreground">{mockArticles.length}</p>
             </div>
             <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-5">
               <p className="text-[#A8A29E] text-sm mb-1">Đã xuất bản</p>
@@ -297,14 +292,14 @@ export default function AdminContentPage() {
                 placeholder="Tìm kiếm bài viết..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-white/[0.03] border-white/[0.08] text-white"
+                className="pl-10 bg-white/[0.03] border-white/[0.08] text-foreground"
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[160px] bg-white/[0.03] border-white/[0.08] text-white">
+              <SelectTrigger className="w-[160px] bg-white/[0.03] border-white/[0.08] text-foreground">
                 <SelectValue placeholder="Trạng thái" />
               </SelectTrigger>
-              <SelectContent className="bg-[#0A1628] border-white/[0.08]">
+              <SelectContent className="bg-background border-white/[0.08]">
                 <SelectItem value="all">Tất cả</SelectItem>
                 <SelectItem value="published">Đã xuất bản</SelectItem>
                 <SelectItem value="draft">Bản nháp</SelectItem>
@@ -333,7 +328,7 @@ export default function AdminContentPage() {
                         {categories.find((c) => c.value === article.category)?.label}
                       </span>
                     </div>
-                    <h3 className="font-display font-bold text-xl text-white mb-2">
+                    <h3 className="font-display font-bold text-xl text-foreground mb-2">
                       {article.title}
                     </h3>
                     <p className="text-[#A8A29E] line-clamp-2">{article.excerpt}</p>
@@ -376,16 +371,16 @@ export default function AdminContentPage() {
 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="text-[#A8A29E] hover:text-white">
+                      <Button variant="ghost" size="icon" className="text-[#A8A29E] hover:text-foreground">
                         <MoreVertical className="w-5 h-5" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent className="bg-[#0A1628] border-white/[0.08]">
-                      <DropdownMenuItem className="text-white hover:bg-white/[0.05]">
+                    <DropdownMenuContent className="bg-background border-white/[0.08]">
+                      <DropdownMenuItem className="text-foreground hover:bg-white/[0.05]">
                         <Edit className="w-4 h-4 mr-2" />
                         Chỉnh sửa
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-white hover:bg-white/[0.05]">
+                      <DropdownMenuItem className="text-foreground hover:bg-white/[0.05]">
                         <Eye className="w-4 h-4 mr-2" />
                         Xem trước
                       </DropdownMenuItem>

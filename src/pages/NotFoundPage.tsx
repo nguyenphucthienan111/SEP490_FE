@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 
 export default function NotFoundPage() {
   return (
-    <div className="min-h-screen bg-[#0A1628] flex items-center justify-center p-8">
+    <div className="min-h-screen bg-background flex items-center justify-center p-8">
       <div className="absolute inset-0 opacity-30">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#FF4444] rounded-full blur-[128px]" />
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#00D9FF] rounded-full blur-[128px]" />
@@ -16,7 +16,7 @@ export default function NotFoundPage() {
           <h1 className="font-display font-extrabold text-[180px] leading-none text-transparent bg-clip-text bg-gradient-to-r from-[#FF4444] to-[#FF6666] mb-0">
             404
           </h1>
-          <p className="font-display font-bold text-2xl text-white -mt-6">
+          <p className="font-display font-bold text-2xl text-foreground -mt-6">
             Không tìm thấy trang
           </p>
         </div>
@@ -40,7 +40,7 @@ export default function NotFoundPage() {
           <Button
             asChild
             variant="outline"
-            className="border-white/20 text-white hover:bg-white/10 px-6 h-12 rounded-xl"
+            className="border-white/20 text-foreground hover:bg-white/10 px-6 h-12 rounded-xl"
           >
             <Link to="/players">
               <Search className="w-5 h-5 mr-2" />
@@ -59,21 +59,21 @@ export default function NotFoundPage() {
             >
               Giải đấu
             </Link>
-            <span className="text-white/20">•</span>
+            <span className="text-foreground/20">•</span>
             <Link
               to="/matches"
               className="text-[#00D9FF] hover:underline text-sm"
             >
               Trận đấu
             </Link>
-            <span className="text-white/20">•</span>
+            <span className="text-foreground/20">•</span>
             <Link
               to="/analytics"
               className="text-[#00D9FF] hover:underline text-sm"
             >
               Phân tích
             </Link>
-            <span className="text-white/20">•</span>
+            <span className="text-foreground/20">•</span>
             <Link
               to="/compare"
               className="text-[#00D9FF] hover:underline text-sm"
@@ -86,7 +86,7 @@ export default function NotFoundPage() {
         {/* Back Button */}
         <button
           onClick={() => window.history.back()}
-          className="inline-flex items-center gap-2 mt-8 text-[#A8A29E] hover:text-white transition-colors"
+          className="inline-flex items-center gap-2 mt-8 text-[#A8A29E] hover:text-foreground transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           Quay lại trang trước

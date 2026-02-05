@@ -32,10 +32,10 @@ const AdminSettingsPage = lazy(() => import("@/pages/admin/AdminSettingsPage"));
 // Loading component
 function PageLoader() {
   return (
-    <div className="min-h-screen bg-[#0A1628] flex items-center justify-center">
+    <div className="min-h-screen bg-background flex items-center justify-center">
       <div className="flex flex-col items-center gap-4">
         <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#FF4444] to-[#FF6666] flex items-center justify-center animate-pulse">
-          <span className="font-display font-extrabold text-white text-xl">
+          <span className="font-display font-extrabold text-foreground text-xl">
             VN
           </span>
         </div>

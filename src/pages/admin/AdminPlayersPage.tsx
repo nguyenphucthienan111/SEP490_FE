@@ -28,7 +28,7 @@ export default function AdminPlayersPage() {
           className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
         >
           <div>
-            <h1 className="font-display font-extrabold text-3xl text-white mb-1">
+            <h1 className="font-display font-extrabold text-3xl text-foreground mb-1">
               Player Management
             </h1>
             <p className="text-[#A8A29E]">
@@ -55,7 +55,7 @@ export default function AdminPlayersPage() {
               placeholder="Search players..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-11 pl-12 pr-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder-[#A8A29E] focus:outline-none focus:border-[#00D9FF]/50 transition-colors"
+              className="w-full h-11 pl-12 pr-4 rounded-xl bg-white/5 border border-white/10 text-foreground placeholder-[#A8A29E] focus:outline-none focus:border-[#00D9FF]/50 transition-colors"
             />
           </div>
           <div className="flex gap-2">
@@ -115,7 +115,7 @@ export default function AdminPlayersPage() {
                           />
                         </div>
                         <div>
-                          <p className="font-medium text-white">{player.name}</p>
+                          <p className="font-medium text-foreground">{player.name}</p>
                           <p className="text-xs text-[#A8A29E]">#{player.number}</p>
                         </div>
                       </div>
@@ -140,15 +140,15 @@ export default function AdminPlayersPage() {
                       </span>
                     </td>
                     <td className="py-4 px-6 text-center">
-                      <span className="font-mono-data text-white">{player.stats.matches}</span>
+                      <span className="font-mono-data text-foreground">{player.stats.matches}</span>
                     </td>
                     <td className="py-4 px-6 text-center">
-                      <span className="font-mono-data text-white">{player.stats.goals}</span>
+                      <span className="font-mono-data text-foreground">{player.stats.goals}</span>
                     </td>
                     <td className="py-4 px-6 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <Link to={`/players/${player.id}`}>
-                          <button className="p-2 rounded-lg hover:bg-white/5 text-[#A8A29E] hover:text-white transition-colors">
+                            <button className="p-2 rounded-lg hover:bg-white/5 text-[#A8A29E] hover:text-foreground transition-colors">
                             <Eye className="w-4 h-4" />
                           </button>
                         </Link>

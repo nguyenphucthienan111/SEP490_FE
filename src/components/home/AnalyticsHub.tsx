@@ -18,7 +18,7 @@ export function AnalyticsHub() {
           className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 mb-12"
         >
           <div>
-            <h2 className="font-display font-extrabold text-3xl sm:text-4xl text-white mb-2">
+            <h2 className="font-display font-extrabold text-3xl sm:text-4xl text-foreground mb-2">
               Analytics Hub
             </h2>
             <p className="text-[#A8A29E] max-w-md">
@@ -50,7 +50,7 @@ export function AnalyticsHub() {
                     alt={featuredArticle.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#0A1628] via-transparent to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-midnight-navy via-transparent to-transparent" />
                   <div className="absolute top-4 left-4 flex flex-wrap gap-2">
                     {featuredArticle.tags.slice(0, 2).map((tag) => (
                       <span
@@ -64,7 +64,7 @@ export function AnalyticsHub() {
                 </div>
 
                 <div className="p-6">
-                  <h3 className="font-display font-bold text-xl sm:text-2xl text-white mb-3 group-hover:text-[#FF4444] transition-colors line-clamp-2">
+                  <h3 className="font-display font-bold text-xl sm:text-2xl text-foreground mb-3 group-hover:text-[#FF4444] transition-colors line-clamp-2">
                     {featuredArticle.title}
                   </h3>
                   <p className="text-[#A8A29E] text-sm leading-relaxed mb-4 line-clamp-3">
@@ -118,7 +118,7 @@ export function AnalyticsHub() {
                             </span>
                           ))}
                         </div>
-                        <h3 className="font-display font-bold text-base sm:text-lg text-white group-hover:text-[#00D9FF] transition-colors line-clamp-2">
+                        <h3 className="font-display font-bold text-base sm:text-lg text-foreground group-hover:text-[#00D9FF] transition-colors line-clamp-2">
                           {article.title}
                         </h3>
                       </div>

@@ -15,7 +15,7 @@ export function LeagueGrid() {
           className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 mb-12"
         >
           <div>
-            <h2 className="font-display font-extrabold text-3xl sm:text-4xl text-white mb-2">
+            <h2 className="font-display font-extrabold text-3xl sm:text-4xl text-foreground mb-2">
               Vietnamese Leagues
             </h2>
             <p className="text-[#A8A29E] max-w-md">
@@ -51,7 +51,7 @@ export function LeagueGrid() {
                     </span>
                   </div>
 
-                  <h3 className="font-display font-bold text-xl text-white mb-2 group-hover:text-[#00D9FF] transition-colors">
+                  <h3 className="font-display font-bold text-xl text-foreground mb-2 group-hover:text-[#00D9FF] transition-colors">
                     {league.name}
                   </h3>
                   <p className="text-sm text-[#A8A29E] mb-6">{league.country}</p>
@@ -59,12 +59,12 @@ export function LeagueGrid() {
                   <div className="flex items-center gap-6 pt-4 border-t border-white/5">
                     <div className="flex items-center gap-2">
                       <Users className="w-4 h-4 text-[#A8A29E]" />
-                      <span className="font-mono-data text-sm text-white">{league.teamCount}</span>
+                      <span className="font-mono-data text-sm text-foreground">{league.teamCount}</span>
                       <span className="text-xs text-[#A8A29E]">Teams</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Calendar className="w-4 h-4 text-[#A8A29E]" />
-                      <span className="font-mono-data text-sm text-white">{league.matchesPlayed}</span>
+                      <span className="font-mono-data text-sm text-foreground">{league.matchesPlayed}</span>
                       <span className="text-xs text-[#A8A29E]">Matches</span>
                     </div>
                   </div>

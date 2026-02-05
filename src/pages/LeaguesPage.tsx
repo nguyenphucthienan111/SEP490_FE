@@ -16,7 +16,7 @@ export default function LeaguesPage() {
             transition={{ duration: 0.6 }}
             className="mb-12"
           >
-            <h1 className="font-display font-extrabold text-4xl sm:text-5xl text-white mb-3">
+            <h1 className="font-display font-extrabold text-4xl sm:text-5xl text-foreground mb-3">
               Vietnamese Leagues
             </h1>
             <p className="text-[#A8A29E] text-lg max-w-2xl">
@@ -44,7 +44,7 @@ export default function LeaguesPage() {
                       </span>
                     </div>
 
-                    <h3 className="font-display font-bold text-2xl text-white mb-2 group-hover:text-[#FF4444] transition-colors">
+                    <h3 className="font-display font-bold text-2xl text-foreground mb-2 group-hover:text-[#FF4444] transition-colors">
                       {league.name}
                     </h3>
                     <p className="text-[#A8A29E] mb-6">{league.country}</p>
@@ -53,14 +53,14 @@ export default function LeaguesPage() {
                       <div>
                         <div className="flex items-center gap-2 mb-1">
                           <Users className="w-4 h-4 text-[#A8A29E]" />
-                          <span className="font-mono-data text-xl font-bold text-white">{league.teamCount}</span>
+                          <span className="font-mono-data text-xl font-bold text-foreground">{league.teamCount}</span>
                         </div>
                         <p className="text-xs text-[#A8A29E]">Teams</p>
                       </div>
                       <div>
                         <div className="flex items-center gap-2 mb-1">
                           <Calendar className="w-4 h-4 text-[#A8A29E]" />
-                          <span className="font-mono-data text-xl font-bold text-white">{league.matchesPlayed}</span>
+                          <span className="font-mono-data text-xl font-bold text-foreground">{league.matchesPlayed}</span>
                         </div>
                         <p className="text-xs text-[#A8A29E]">Matches</p>
                       </div>
@@ -83,7 +83,7 @@ export default function LeaguesPage() {
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <h2 className="font-display font-bold text-2xl text-white mb-6">
+            <h2 className="font-display font-bold text-2xl text-foreground mb-6">
               V.League 1 Teams
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
@@ -97,11 +97,11 @@ export default function LeaguesPage() {
                 >
                   <div className="glass-card rounded-xl p-4 hover:bg-white/5 transition-colors cursor-pointer">
                     <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mb-3">
-                      <span className="font-display font-bold text-lg text-white">
+                      <span className="font-display font-bold text-lg text-foreground">
                         {team.name.charAt(0)}
                       </span>
                     </div>
-                    <h4 className="font-body font-medium text-sm text-white truncate">
+                    <h4 className="font-body font-medium text-sm text-foreground truncate">
                       {team.name}
                     </h4>
                     <p className="text-xs text-[#A8A29E]">{team.league}</p>

@@ -54,11 +54,11 @@ function MatchCard({ match, index }: { match: Match; index: number }) {
             {/* Home Team */}
             <div className="flex-1">
               <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-3">
-                <span className="font-display font-bold text-xl text-white">
+                <span className="font-display font-bold text-xl text-foreground">
                   {match.homeTeam.name.charAt(0)}
                 </span>
               </div>
-              <h4 className="font-body font-semibold text-white text-sm">
+              <h4 className="font-body font-semibold text-foreground text-sm">
                 {match.homeTeam.name}
               </h4>
               <span className="text-xs text-[#A8A29E]">Home</span>
@@ -68,11 +68,11 @@ function MatchCard({ match, index }: { match: Match; index: number }) {
             <div className="flex flex-col items-center">
               {(isLive || isCompleted) ? (
                 <div className="flex items-center gap-4">
-                  <span className="font-mono-data text-4xl font-bold text-white">
+                  <span className="font-mono-data text-4xl font-bold text-foreground">
                     {match.homeScore}
                   </span>
                   <span className="text-[#A8A29E] text-2xl">-</span>
-                  <span className="font-mono-data text-4xl font-bold text-white">
+                  <span className="font-mono-data text-4xl font-bold text-foreground">
                     {match.awayScore}
                   </span>
                 </div>
@@ -87,11 +87,11 @@ function MatchCard({ match, index }: { match: Match; index: number }) {
             {/* Away Team */}
             <div className="flex-1 text-right">
               <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-3 ml-auto">
-                <span className="font-display font-bold text-xl text-white">
+                <span className="font-display font-bold text-xl text-foreground">
                   {match.awayTeam.name.charAt(0)}
                 </span>
               </div>
-              <h4 className="font-body font-semibold text-white text-sm">
+              <h4 className="font-body font-semibold text-foreground text-sm">
                 {match.awayTeam.name}
               </h4>
               <span className="text-xs text-[#A8A29E]">Away</span>
@@ -139,7 +139,7 @@ export default function MatchesPage() {
             transition={{ duration: 0.6 }}
             className="mb-8"
           >
-            <h1 className="font-display font-extrabold text-4xl sm:text-5xl text-white mb-3">
+            <h1 className="font-display font-extrabold text-4xl sm:text-5xl text-foreground mb-3">
               Match Center
             </h1>
             <p className="text-[#A8A29E] text-lg max-w-2xl">
@@ -176,7 +176,7 @@ export default function MatchesPage() {
                       "px-4 py-2.5 rounded-xl font-label text-sm font-medium transition-all duration-200",
                       selectedLeague === league.name
                         ? "bg-[#FF4444] text-white"
-                        : "bg-white/5 text-[#A8A29E] hover:bg-white/10 hover:text-white"
+                        : "bg-white/5 text-[#A8A29E] hover:bg-white/10 hover:text-foregroundround"
                     )}
                   >
                     {league.name}
@@ -219,7 +219,7 @@ export default function MatchesPage() {
             >
               <div className="flex items-center gap-2 mb-6">
                 <Radio className="w-5 h-5 text-[#FF4444] animate-pulse" />
-                <h2 className="font-display font-bold text-xl text-white">
+                <h2 className="font-display font-bold text-xl text-foreground">
                   Live Now
                 </h2>
               </div>
@@ -238,7 +238,7 @@ export default function MatchesPage() {
             transition={{ delay: 0.3 }}
             className="mb-6"
           >
-            <h2 className="font-display font-bold text-xl text-white mb-6">
+            <h2 className="font-display font-bold text-xl text-foreground mb-6">
               {selectedStatus === 'scheduled' ? 'Upcoming Matches' : 
                selectedStatus === 'completed' ? 'Recent Results' : 
                'All Matches'}
@@ -261,7 +261,7 @@ export default function MatchesPage() {
               <div className="w-20 h-20 rounded-2xl bg-white/5 flex items-center justify-center mx-auto mb-6">
                 <Calendar className="w-8 h-8 text-[#A8A29E]" />
               </div>
-              <h3 className="font-display font-bold text-xl text-white mb-2">
+              <h3 className="font-display font-bold text-xl text-foreground mb-2">
                 No Matches Found
               </h3>
               <p className="text-[#A8A29E]">
