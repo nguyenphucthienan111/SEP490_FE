@@ -43,6 +43,7 @@ const mockUser = {
 
 export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
+  const [activeTab, setActiveTab] = useState("profile");
   const [formData, setFormData] = useState({
     name: mockUser.name,
     email: mockUser.email,
@@ -58,6 +59,14 @@ export default function ProfilePage() {
   const handleSave = () => {
     // Save profile changes
     setIsEditing(false);
+  };
+
+  const handleEditClick = () => {
+    if (!isEditing) {
+      // Khi bắt đầu chỉnh sửa, chuyển về tab profile
+      setActiveTab("profile");
+    }
+    setIsEditing(!isEditing);
   };
 
   return (
@@ -126,7 +135,7 @@ export default function ProfilePage() {
 
             {/* Edit Button */}
             <Button
-              onClick={() => setIsEditing(!isEditing)}
+              onClick={handleEditClick}
               className="bg-card border border-slate-200 dark:border-white/[0.08] text-foreground hover:bg-white/[0.08]"
             >
               <Edit2 className="w-4 h-4 mr-2" />
@@ -136,7 +145,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="profile" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="bg-card border border-slate-200 dark:border-white/[0.08] p-1 rounded-xl">
             <TabsTrigger
               value="profile"
@@ -351,7 +360,7 @@ export default function ProfilePage() {
             {/* Danger Zone */}
             <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-6">
               <h3 className="font-display font-bold text-xl text-red-400 mb-4">
-                Vùng nguy hiểm
+                Bảo mật
               </h3>
               <p className="text-slate-600 dark:text-[#A8A29E] text-sm mb-4">
                 Các hành động dưới đây không thể hoàn tác. Hãy cẩn thận.
