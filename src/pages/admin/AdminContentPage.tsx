@@ -1,21 +1,16 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import {
   Plus,
   Search,
   Edit,
   Trash2,
-  FileText,
   Eye,
   Calendar,
   User,
   Tag,
   MoreVertical,
-  ArrowLeft,
-  Trophy,
-  Users,
-  Settings,
 } from "lucide-react";
+import { AdminLayout } from "./AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -113,64 +108,16 @@ export default function AdminContentPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Sidebar */}
-      <aside className="fixed left-0 top-0 h-full w-[280px] bg-muted border-r border-slate-200 dark:border-white/[0.08] p-6">
-        <div className="flex items-center gap-3 mb-8">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF4444] to-[#FF6666] flex items-center justify-center">
-            <span className="font-display font-extrabold text-foreground text-lg">VN</span>
-          </div>
+    <AdminLayout>
+      <div className="space-y-8">
+        {/* Header */}
+        <div className="flex items-center justify-between">
           <div>
-              <p className="font-display font-bold text-foreground">Admin Panel</p>
-          <Link
-            to="/admin"
-            className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-[#A8A29E] hover:bg-accent transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            Dashboard
-          </Link>
-          <Link
-            to="/admin/leagues"
-            className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-[#A8A29E] hover:bg-accent transition-colors"
-          >
-            <Trophy className="w-5 h-5" />
-            Giải đấu
-          </Link>
-          <Link
-            to="/admin/players"
-            className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-[#A8A29E] hover:bg-accent transition-colors"
-          >
-            <Users className="w-5 h-5" />
-            Cầu thủ
-          </Link>
-          <Link
-            to="/admin/content"
-            className="flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-100 dark:bg-[#00D9FF]/10 text-[#00D9FF]"
-          >
-            <FileText className="w-5 h-5" />
-            Nội dung
-          </Link>
-          <Link
-            to="/admin/settings"
-            className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-[#A8A29E] hover:bg-accent transition-colors"
-          >
-            <Settings className="w-5 h-5" />
-            Cài đặt
-          </Link>
-        </nav>
-      </aside>
-
-      {/* Main Content */}
-      <main className="ml-[280px] p-8">
-        <div className="max-w-6xl">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h1 className="font-display font-extrabold text-3xl text-foreground mb-2">
-                Quản lý Nội dung
-              </h1>
-              <p className="text-slate-600 dark:text-[#A8A29E]">Tạo và quản lý bài viết phân tích</p>
-            </div>
+            <h1 className="font-display font-extrabold text-3xl text-foreground mb-2">
+              Quản lý Nội dung
+            </h1>
+            <p className="text-slate-600 dark:text-[#A8A29E]">Tạo và quản lý bài viết phân tích</p>
+          </div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="bg-gradient-to-r from-[#FF4444] to-[#FF6666] text-slate-900 dark:text-white">
@@ -395,7 +342,6 @@ export default function AdminContentPage() {
             ))}
           </div>
         </div>
-      </main>
-    </div>
+      </AdminLayout>
   );
 }

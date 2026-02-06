@@ -9,14 +9,10 @@ import {
   Globe,
   Key,
   Save,
-  ArrowLeft,
-  Trophy,
-  Users,
-  Calendar,
-  FileText,
   RefreshCw,
   AlertTriangle,
 } from "lucide-react";
+import { AdminLayout } from "./AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -71,110 +67,50 @@ export default function AdminSettingsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Sidebar */}
-      <aside className="fixed left-0 top-0 h-full w-[280px] bg-muted border-r border-slate-200 dark:border-white/[0.08] p-6">
-        <div className="flex items-center gap-3 mb-8">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF4444] to-[#FF6666] flex items-center justify-center">
-            <span className="font-display font-extrabold text-foreground text-lg">VN</span>
-          </div>
-          <div>
-            <p className="font-display font-bold text-foreground">Admin Panel</p>
-            <p className="text-slate-600 dark:text-[#A8A29E] text-xs">Quản trị hệ thống</p>
-          </div>
+    <AdminLayout>
+      <div className="space-y-8">
+        {/* Header */}
+        <div>
+          <h1 className="font-display font-extrabold text-3xl text-foreground mb-2">
+            Cài đặt hệ thống
+          </h1>
+          <p className="text-slate-600 dark:text-[#A8A29E]">Quản lý cấu hình và thiết lập hệ thống</p>
         </div>
 
-        <nav className="space-y-1">
-          <Link
-            to="/admin"
-            className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-[#A8A29E] hover:bg-accent transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            Dashboard
-          </Link>
-          <Link
-            to="/admin/leagues"
-            className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-[#A8A29E] hover:bg-accent transition-colors"
-          >
-            <Trophy className="w-5 h-5" />
-            Giải đấu
-          </Link>
-          <Link
-            to="/admin/players"
-            className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-[#A8A29E] hover:bg-accent transition-colors"
-          >
-            <Users className="w-5 h-5" />
-            Cầu thủ
-          </Link>
-          <Link
-            to="/admin/matches"
-            className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-[#A8A29E] hover:bg-accent transition-colors"
-          >
-            <Calendar className="w-5 h-5" />
-            Trận đấu
-          </Link>
-          <Link
-            to="/admin/content"
-            className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 dark:text-[#A8A29E] hover:bg-accent transition-colors"
-          >
-            <FileText className="w-5 h-5" />
-            Nội dung
-          </Link>
-          <Link
-            to="/admin/settings"
-            className="flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-100 dark:bg-[#00D9FF]/10 text-[#00D9FF]"
-          >
-            <Settings className="w-5 h-5" />
-            Cài đặt
-          </Link>
-        </nav>
-      </aside>
+        <Tabs defaultValue="general" className="space-y-6">
+          <TabsList className="bg-card border border-slate-200 dark:border-white/[0.08] p-1 rounded-xl">
+            <TabsTrigger
+              value="general"
+              className="data-[state=active]:bg-blue-100 dark:bg-[#00D9FF]/10 data-[state=active]:text-[#00D9FF] rounded-lg px-6"
+            >
+              <Globe className="w-4 h-4 mr-2" />
+              Chung
+            </TabsTrigger>
+            <TabsTrigger
+              value="notifications"
+              className="data-[state=active]:bg-blue-100 dark:bg-[#00D9FF]/10 data-[state=active]:text-[#00D9FF] rounded-lg px-6"
+            >
+              <Bell className="w-4 h-4 mr-2" />
+              Thông báo
+            </TabsTrigger>
+            <TabsTrigger
+              value="ratings"
+              className="data-[state=active]:bg-blue-100 dark:bg-[#00D9FF]/10 data-[state=active]:text-[#00D9FF] rounded-lg px-6"
+            >
+              <Palette className="w-4 h-4 mr-2" />
+              Rating Engine
+            </TabsTrigger>
+            <TabsTrigger
+              value="security"
+              className="data-[state=active]:bg-blue-100 dark:bg-[#00D9FF]/10 data-[state=active]:text-[#00D9FF] rounded-lg px-6"
+            >
+              <Shield className="w-4 h-4 mr-2" />
+              Bảo mật
+            </TabsTrigger>
+          </TabsList>
 
-      {/* Main Content */}
-      <main className="ml-[280px] p-8">
-        <div className="max-w-4xl">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="font-display font-extrabold text-3xl text-foreground mb-2">
-              Cài đặt hệ thống
-            </h1>
-            <p className="text-slate-600 dark:text-[#A8A29E]">Quản lý cấu hình và thiết lập hệ thống</p>
-          </div>
-
-          <Tabs defaultValue="general" className="space-y-6">
-            <TabsList className="bg-card border border-slate-200 dark:border-white/[0.08] p-1 rounded-xl">
-              <TabsTrigger
-                value="general"
-                className="data-[state=active]:bg-blue-100 dark:bg-[#00D9FF]/10 data-[state=active]:text-[#00D9FF] rounded-lg px-6"
-              >
-                <Globe className="w-4 h-4 mr-2" />
-                Chung
-              </TabsTrigger>
-              <TabsTrigger
-                value="notifications"
-                className="data-[state=active]:bg-blue-100 dark:bg-[#00D9FF]/10 data-[state=active]:text-[#00D9FF] rounded-lg px-6"
-              >
-                <Bell className="w-4 h-4 mr-2" />
-                Thông báo
-              </TabsTrigger>
-              <TabsTrigger
-                value="ratings"
-                className="data-[state=active]:bg-blue-100 dark:bg-[#00D9FF]/10 data-[state=active]:text-[#00D9FF] rounded-lg px-6"
-              >
-                <Palette className="w-4 h-4 mr-2" />
-                Rating Engine
-              </TabsTrigger>
-              <TabsTrigger
-                value="security"
-                className="data-[state=active]:bg-blue-100 dark:bg-[#00D9FF]/10 data-[state=active]:text-[#00D9FF] rounded-lg px-6"
-              >
-                <Shield className="w-4 h-4 mr-2" />
-                Bảo mật
-              </TabsTrigger>
-            </TabsList>
-
-            {/* General Settings */}
-            <TabsContent value="general">
+          {/* General Settings */}
+          <TabsContent value="general">
               <div className="bg-card border border-slate-200 dark:border-white/[0.08] rounded-2xl p-6">
                 <h3 className="font-display font-bold text-xl text-foreground mb-6">
                   Cài đặt chung
@@ -485,7 +421,6 @@ export default function AdminSettingsPage() {
             </TabsContent>
           </Tabs>
         </div>
-      </main>
-    </div>
+      </AdminLayout>
   );
 }
