@@ -10,8 +10,8 @@ import {
   Users,
   ChevronRight,
   MoreVertical,
-  ArrowLeft,
 } from "lucide-react";
+import { AdminLayout } from "./AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -127,62 +127,16 @@ export default function AdminLeaguesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30">
-      {/* Sidebar */}
-      <aside className="fixed left-0 top-0 h-full w-[280px] bg-white/95 backdrop-blur-sm border-r border-slate-200/60 p-6 shadow-lg">
-        <div className="flex items-center gap-3 mb-8">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF4444] to-[#FF6666] flex items-center justify-center shadow-md">
-            <span className="font-display font-extrabold text-white text-lg">VN</span>
-          </div>
+    <AdminLayout>
+      <div className="space-y-8">
+        {/* Header */}
+        <div className="flex items-center justify-between">
           <div>
-            <p className="font-display font-bold text-slate-800">Admin Panel</p>
-            <p className="text-slate-500 text-xs">Quản trị hệ thống</p>
+            <h1 className="font-display font-extrabold text-3xl text-foreground mb-2">
+              Quản lý Giải đấu
+            </h1>
+            <p className="text-slate-600 dark:text-[#A8A29E]">Tạo và quản lý các giải đấu bóng đá</p>
           </div>
-        </div>
-
-        <nav className="space-y-1">
-          <Link
-            to="/admin"
-            className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 hover:bg-slate-100/80 hover:text-slate-800 transition-all duration-200"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            Dashboard
-          </Link>
-          <Link
-            to="/admin/leagues"
-            className="flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-50 text-blue-700 border border-blue-200/50 shadow-sm"
-          >
-            <Trophy className="w-5 h-5" />
-            Giải đấu
-          </Link>
-          <Link
-            to="/admin/players"
-            className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 hover:bg-slate-100/80 hover:text-slate-800 transition-all duration-200"
-          >
-            <Users className="w-5 h-5" />
-            Cầu thủ
-          </Link>
-          <Link
-            to="/admin/matches"
-            className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 hover:bg-slate-100/80 hover:text-slate-800 transition-all duration-200"
-          >
-            <Calendar className="w-5 h-5" />
-            Trận đấu
-          </Link>
-        </nav>
-      </aside>
-
-      {/* Main Content */}
-      <main className="ml-[280px] p-8">
-        <div className="max-w-6xl">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h1 className="font-display font-extrabold text-3xl text-slate-800 mb-2">
-                Quản lý Giải đấu
-              </h1>
-              <p className="text-slate-600">Tạo và quản lý các giải đấu bóng đá</p>
-            </div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="bg-gradient-to-r from-[#FF4444] to-[#FF6666] text-white shadow-lg hover:shadow-xl transition-all duration-200">
@@ -358,7 +312,6 @@ export default function AdminLeaguesPage() {
             ))}
           </div>
         </div>
-      </main>
-    </div>
+      </AdminLayout>
   );
 }
