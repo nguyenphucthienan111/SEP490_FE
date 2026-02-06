@@ -10,6 +10,7 @@ const MatchDetailPage = lazy(() => import("@/pages/MatchDetailPage"));
 const LeaguesPage = lazy(() => import("@/pages/LeaguesPage"));
 const AnalyticsPage = lazy(() => import("@/pages/AnalyticsPage"));
 const ComparePage = lazy(() => import("@/pages/ComparePage"));
+const PredictionsPage = lazy(() => import("@/pages/PredictionsPage"));
 
 // Auth pages
 const LoginPage = lazy(() => import("@/pages/auth/LoginPage"));
@@ -63,6 +64,7 @@ function App() {
         <Route path="/analytics" element={<AnalyticsPage />} />
         <Route path="/analytics/:articleId" element={<AnalyticsPage />} />
         <Route path="/compare" element={<ComparePage />} />
+        <Route path="/predictions" element={<PredictionsPage />} />
 
         {/* Auth Routes */}
         <Route path="/login" element={<LoginPage />} />

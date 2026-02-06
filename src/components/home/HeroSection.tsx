@@ -83,16 +83,14 @@ export function HeroSection() {
               </span>
             </motion.div>
 
-            <h1 className="font-display font-extrabold text-4xl sm:text-5xl lg:text-6xl xl:text-7xl text-foreground leading-[1.1] mb-6">
+            <h1 className="font-display font-extrabold text-4xl sm:text-5xl lg:text-6xl xl:text-7xl text-slate-900 dark:text-foreground leading-[1.1] mb-6">
               Data-Driven{' '}
               <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Player Analysis</span>{' '}
               for Vietnamese Football
             </h1>
 
-            <p className="text-lg text-muted-foreground max-w-xl mb-8 leading-relaxed">
-              Transform raw match statistics into transparent, position-aware 
-              performance ratings. Discover the true impact of every player in 
-              V.League and beyond.
+            <p className="text-lg text-slate-800 dark:text-slate-300 max-w-xl mb-8 leading-relaxed font-medium">
+              Nền tảng phân tích và đánh giá cầu thủ bóng đá Việt Nam với hệ thống chấm điểm minh bạch, khách quan.
             </p>
 
             <div className="flex flex-wrap gap-4 mb-12">
@@ -119,10 +117,10 @@ export function HeroSection() {
                   transition={{ delay: 0.4 + index * 0.1 }}
                   className="text-left"
                 >
-                  <p className="text-2xl sm:text-3xl font-bold text-foreground mb-1">
+                  <p className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-1">
                     <AnimatedNumber value={stat.value} suffix={stat.suffix} />
                   </p>
-                  <p className="text-xs sm:text-sm text-muted-foreground">{stat.label}</p>
+                  <p className="text-xs sm:text-sm text-slate-900 dark:text-slate-300 font-bold">{stat.label}</p>
                 </motion.div>
               ))}
             </div>
@@ -213,22 +211,22 @@ export function HeroSection() {
                   {/* Stats Grid */}
                   <div className="grid grid-cols-3 gap-4">
                     <div className="text-center p-3 rounded-xl bg-muted">
-                      <p className="font-mono-data text-xl font-bold text-secondary">
+                      <p className="font-mono-data text-xl font-bold text-blue-600 dark:text-[#00D9FF]">
                         {currentPlayer.stats.goals}
                       </p>
-                      <p className="text-xs text-muted-foreground">Goals</p>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Goals</p>
                     </div>
                     <div className="text-center p-3 rounded-xl bg-muted">
-                      <p className="font-mono-data text-xl font-bold text-secondary">
+                      <p className="font-mono-data text-xl font-bold text-blue-600 dark:text-[#00D9FF]">
                         {currentPlayer.stats.assists}
                       </p>
-                      <p className="text-xs text-muted-foreground">Assists</p>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Assists</p>
                     </div>
                     <div className="text-center p-3 rounded-xl bg-muted">
-                      <p className="font-mono-data text-xl font-bold text-secondary">
+                      <p className="font-mono-data text-xl font-bold text-blue-600 dark:text-[#00D9FF]">
                         {currentPlayer.stats.matches}
                       </p>
-                      <p className="text-xs text-muted-foreground">Matches</p>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Matches</p>
                     </div>
                   </div>
                 </motion.div>

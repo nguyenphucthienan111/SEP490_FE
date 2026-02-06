@@ -10,6 +10,7 @@ const navItems = [
   { label: 'Leagues', path: '/leagues' },
   { label: 'Players', path: '/players' },
   { label: 'Matches', path: '/matches' },
+  { label: 'Predictions', path: '/predictions' },
   { label: 'Analytics', path: '/analytics' },
 ];
 
@@ -18,7 +19,7 @@ export function Header() {
   const location = useLocation();
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border shadow-sm">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-slate-900/95 dark:bg-background/95 backdrop-blur-sm border-b border-slate-700/50 dark:border-white/5">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
@@ -27,10 +28,10 @@ export function Header() {
               <span className="font-display font-extrabold text-white text-lg">VN</span>
             </div>
             <div className="hidden sm:block">
-              <h1 className="font-display font-bold text-lg text-foreground leading-tight">
+              <h1 className="font-display font-bold text-lg text-white leading-tight">
                 Player Rating
               </h1>
-              <p className="text-xs text-muted-foreground font-label uppercase tracking-wider">
+              <p className="text-xs text-slate-400 font-label uppercase tracking-wider">
                 Vietnamese Football
               </p>
             </div>
@@ -45,8 +46,8 @@ export function Header() {
                 className={cn(
                   "px-4 py-2 rounded-lg font-body text-sm font-medium transition-all duration-200",
                   location.pathname === item.path
-                    ? "bg-accent text-accent-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                    ? "bg-slate-700/50 text-white"
+                    : "text-slate-300 hover:text-white hover:bg-slate-700/30"
                 )}
               >
                 {item.label}
@@ -59,7 +60,7 @@ export function Header() {
             <Button
               variant="ghost"
               size="icon"
-              className="text-muted-foreground hover:text-foreground hover:bg-accent/50"
+              className="text-slate-300 hover:text-white hover:bg-white/5"
             >
               <Search className="w-5 h-5" />
             </Button>
@@ -71,7 +72,7 @@ export function Header() {
             <Link to="/login" className="hidden sm:block">
               <Button 
                 variant="ghost"
-                className="text-muted-foreground hover:text-foreground hover:bg-accent/50 font-body text-sm gap-2"
+                className="text-slate-300 hover:text-white hover:bg-slate-700/40 active:bg-slate-700/60 font-body text-sm gap-2"
               >
                 <LogIn className="w-4 h-4" />
                 Đăng nhập
@@ -81,7 +82,7 @@ export function Header() {
             {/* Register/Sign Up Button */}
             <Link to="/register" className="hidden sm:block">
               <Button 
-                className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80 text-primary-foreground font-semibold text-sm px-4 h-10 rounded-xl transition-all duration-200 hover:scale-[0.98] shadow-lg"
+                className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80 active:from-primary/80 active:to-primary/70 text-primary-foreground font-semibold text-sm px-4 h-10 rounded-xl transition-all duration-200 hover:scale-[0.98] shadow-lg"
               >
                 Đăng ký
               </Button>
@@ -91,7 +92,7 @@ export function Header() {
             <Button
               variant="ghost"
               size="icon"
-              className="lg:hidden text-muted-foreground hover:text-foreground hover:bg-accent/50"
+              className="lg:hidden text-slate-300 hover:text-white hover:bg-white/5"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
               {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -102,7 +103,7 @@ export function Header() {
 
       {/* Mobile Navigation */}
       {isMenuOpen && (
-        <div className="lg:hidden bg-background/95 backdrop-blur-sm border-t border-border animate-fade-in shadow-lg">
+        <div className="lg:hidden bg-slate-900/95 dark:bg-background/95 backdrop-blur-sm border-t border-slate-700/50 dark:border-white/5 animate-fade-in shadow-lg">
           <nav className="container mx-auto px-4 py-4 flex flex-col gap-1">
             {navItems.map((item) => (
               <Link
@@ -112,8 +113,8 @@ export function Header() {
                 className={cn(
                   "px-4 py-3 rounded-lg font-body text-sm font-medium transition-all duration-200",
                   location.pathname === item.path
-                    ? "bg-accent text-accent-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                    ? "bg-slate-700/50 text-white"
+                    : "text-slate-300 hover:text-white hover:bg-slate-700/30"
                 )}
               >
                 {item.label}
@@ -123,7 +124,7 @@ export function Header() {
               <Link to="/login" className="flex-1" onClick={() => setIsMenuOpen(false)}>
                 <Button 
                   variant="outline"
-                  className="w-full border-border text-foreground hover:bg-accent/50 font-semibold text-sm h-10 rounded-xl"
+                  className="w-full border-slate-600 text-white hover:bg-white/10 font-semibold text-sm h-10 rounded-xl"
                 >
                   <LogIn className="w-4 h-4 mr-2" />
                   Đăng nhập
