@@ -171,7 +171,7 @@ export default function LeaguesPage() {
                   </div>
                 </div>
                 <span className="px-5 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-[#00D9FF] text-white text-base font-label font-bold shadow-lg">
-                  2024
+                  2025
                 </span>
               </div>
 

@@ -41,37 +41,37 @@ const mockLeagues = [
   {
     id: "1",
     name: "V.League 1",
-    season: "2024",
+    season: "2025",
     country: "Vietnam",
     teams: 14,
     matches: 182,
     status: "active",
-    startDate: "2024-02-15",
-    endDate: "2024-10-30",
+    startDate: "2025-02-15",
+    endDate: "2025-10-30",
     logo: "🏆",
   },
   {
     id: "2",
     name: "V.League 2",
-    season: "2024",
+    season: "2025",
     country: "Vietnam",
     teams: 12,
     matches: 132,
     status: "active",
-    startDate: "2024-03-01",
-    endDate: "2024-10-15",
+    startDate: "2025-03-01",
+    endDate: "2025-10-15",
     logo: "🥈",
   },
   {
     id: "3",
     name: "Cúp Quốc gia",
-    season: "2024",
+    season: "2025",
     country: "Vietnam",
     teams: 24,
     matches: 47,
     status: "active",
-    startDate: "2024-04-10",
-    endDate: "2024-09-20",
+    startDate: "2025-04-10",
+    endDate: "2025-09-20",
     logo: "🏅",
   },
   {
@@ -166,7 +166,7 @@ export default function AdminLeaguesPage() {
                       <Input
                         value={formData.season}
                         onChange={(e) => setFormData({ ...formData, season: e.target.value })}
-                        placeholder="2024"
+                        placeholder="2025"
                         className="bg-slate-50 border-slate-200 text-slate-800 focus:border-blue-400 focus:ring-blue-400/20"
                       />
                     </div>
@@ -236,7 +236,7 @@ export default function AdminLeaguesPage() {
               </SelectTrigger>
               <SelectContent className="bg-white border-slate-200 shadow-xl">
                 <SelectItem value="all">Tất cả</SelectItem>
-                <SelectItem value="2024">2024</SelectItem>
+                <SelectItem value="2025">2025</SelectItem>
                 <SelectItem value="2023">2023</SelectItem>
               </SelectContent>
             </Select>

@@ -27,7 +27,7 @@ const mockUser = {
   email: "nguyenvana@email.com",
   avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&q=80",
   role: "Viewer",
-  joinDate: "2024-01-15",
+  joinDate: "2025-01-15",
   favoriteTeam: "Hà Nội FC",
   favoritePlayers: [
     { id: "1", name: "Nguyễn Quang Hải", team: "Công an Hà Nội", position: "Midfielder" },
@@ -35,9 +35,9 @@ const mockUser = {
     { id: "3", name: "Đỗ Hùng Dũng", team: "Hà Nội FC", position: "Midfielder" },
   ],
   recentViews: [
-    { type: "player", id: "1", name: "Nguyễn Quang Hải", date: "2024-01-20" },
-    { type: "match", id: "1", name: "Hà Nội FC vs HAGL", date: "2024-01-19" },
-    { type: "player", id: "2", name: "Nguyễn Tiến Linh", date: "2024-01-18" },
+    { type: "player", id: "1", name: "Nguyễn Quang Hải", date: "2025-01-20" },
+    { type: "match", id: "1", name: "Hà Nội FC vs HAGL", date: "2025-01-19" },
+    { type: "player", id: "2", name: "Nguyễn Tiến Linh", date: "2025-01-18" },
   ],
 };
 

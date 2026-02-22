@@ -31,7 +31,7 @@ const upcomingMatches = [
     id: "1",
     homeTeam: "Hà Nội FC",
     awayTeam: "Hoàng Anh Gia Lai",
-    date: "2024-12-25",
+    date: "2025-12-25",
     time: "19:00",
     venue: "Sân Hàng Đẫy",
     league: "V.League 1",
@@ -42,7 +42,7 @@ const upcomingMatches = [
     id: "2",
     homeTeam: "Công An Hà Nội",
     awayTeam: "Viettel FC",
-    date: "2024-12-26",
+    date: "2025-12-26",
     time: "18:00",
     venue: "Sân Hàng Đẫy",
     league: "V.League 1",
@@ -53,7 +53,7 @@ const upcomingMatches = [
     id: "3",
     homeTeam: "Hồ Chí Minh City",
     awayTeam: "Bình Dương",
-    date: "2024-12-27",
+    date: "2025-12-27",
     time: "17:00",
     venue: "Sân Thống Nhất",
     league: "V.League 1",
@@ -308,7 +308,7 @@ export default function PredictionsPage() {
                   Bảng xếp hạng cao thủ
                 </h2>
                 <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white">
-                  Tháng 12/2024
+                  Tháng 12/2025
                 </Badge>
               </div>
 

@@ -76,7 +76,7 @@ export function Footer() {
 
         <div className="border-t border-slate-700/50 dark:border-white/5 mt-8 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-xs text-slate-400">
-            © 2024 Player Rating Engine. All rights reserved.
+            © 2025 Player Rating Engine. All rights reserved.
           </p>
           <div className="flex items-center gap-6">
             <Link to="/privacy" className="text-xs text-slate-400 hover:text-white transition-colors">
