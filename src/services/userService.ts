@@ -1,11 +1,12 @@
 import { apiClient } from './api';
 
 export interface UserResponse {
-  id: string;
+  userId: string;
   username: string;
   email: string;
   fullName: string;
-  emailVerified: boolean;
+  roles?: string[];
+  isEmailVerified?: boolean;
 }
 
 export const userService = {

@@ -41,6 +41,9 @@ export const authService = {
     if (response.accessToken) {
       localStorage.setItem('accessToken', response.accessToken);
       localStorage.setItem('refreshToken', response.refreshToken);
+      if (response.user) {
+        localStorage.setItem('user', JSON.stringify(response.user));
+      }
     }
     
     return response;
@@ -53,6 +56,9 @@ export const authService = {
     if (response.accessToken) {
       localStorage.setItem('accessToken', response.accessToken);
       localStorage.setItem('refreshToken', response.refreshToken);
+      if (response.user) {
+        localStorage.setItem('user', JSON.stringify(response.user));
+      }
     }
     
     return response;
@@ -64,6 +70,7 @@ export const authService = {
     // Clear tokens from localStorage
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
+    localStorage.removeItem('user');
   },
 
   async refreshToken(refreshToken: string): Promise<AuthResponse> {
@@ -73,6 +80,9 @@ export const authService = {
     if (response.accessToken) {
       localStorage.setItem('accessToken', response.accessToken);
       localStorage.setItem('refreshToken', response.refreshToken);
+      if (response.user) {
+        localStorage.setItem('user', JSON.stringify(response.user));
+      }
     }
     
     return response;
@@ -88,5 +98,17 @@ export const authService = {
 
   isAuthenticated(): boolean {
     return !!this.getAccessToken();
+  },
+
+  getCurrentUser(): AuthResponse['user'] | null {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        return JSON.parse(userStr);
+      } catch {
+        return null;
+      }
+    }
+    return null;
   },
 };

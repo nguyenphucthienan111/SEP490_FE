@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
   User,
   Mail,
@@ -19,6 +19,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { userService, UserResponse } from "@/services/userService";
+import { authService } from "@/services/authService";
+import { toast } from "sonner";
 
 // Mock user data
 const mockUser = {
@@ -42,12 +45,15 @@ const mockUser = {
 };
 
 export default function ProfilePage() {
+  const navigate = useNavigate();
+  const [user, setUser] = useState<UserResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState("profile");
   const [formData, setFormData] = useState({
-    name: mockUser.name,
-    email: mockUser.email,
-    favoriteTeam: mockUser.favoriteTeam,
+    username: "",
+    email: "",
+    fullName: "",
   });
   const [notifications, setNotifications] = useState({
     matchResults: true,
@@ -56,18 +62,72 @@ export default function ProfilePage() {
     pushNotifications: true,
   });
 
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const userData = await userService.getMe();
+        setUser(userData);
+        setFormData({
+          username: userData.username,
+          email: userData.email,
+          fullName: userData.fullName,
+        });
+      } catch (error) {
+        console.error('Failed to fetch user:', error);
+        toast.error('Không thể tải thông tin người dùng');
+        navigate('/login');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (authService.isAuthenticated()) {
+      fetchUser();
+    } else {
+      navigate('/login');
+    }
+  }, [navigate]);
+
   const handleSave = () => {
-    // Save profile changes
+    // TODO: Call API to update user profile
+    toast.success('Cập nhật thông tin thành công!');
     setIsEditing(false);
+  };
+
+  const handleLogout = async () => {
+    try {
+      const refreshToken = authService.getRefreshToken();
+      if (refreshToken) {
+        await authService.logout(refreshToken);
+      }
+      toast.success('Đăng xuất thành công!');
+      navigate('/');
+    } catch (error) {
+      toast.error('Đăng xuất thất bại');
+    }
   };
 
   const handleEditClick = () => {
     if (!isEditing) {
-      // Khi bắt đầu chỉnh sửa, chuyển về tab profile
       setActiveTab("profile");
     }
     setIsEditing(!isEditing);
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Đang tải...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -86,6 +146,7 @@ export default function ProfilePage() {
             </div>
             <div className="flex items-center gap-3">
               <Button
+                onClick={handleLogout}
                 variant="ghost"
                 className="text-slate-600 dark:text-[#A8A29E] hover:text-foreground hover:bg-slate-100 dark:bg-white/5"
               >
@@ -103,33 +164,31 @@ export default function ProfilePage() {
           <div className="flex flex-col md:flex-row items-center gap-6">
             {/* Avatar */}
             <div className="relative group">
-              <div className="w-32 h-32 rounded-2xl overflow-hidden border-4 border-[#00D9FF]/30">
-                <img
-                  src={mockUser.avatar}
-                  alt={mockUser.name}
-                  className="w-full h-full object-cover"
-                />
+              <div className="w-32 h-32 rounded-2xl overflow-hidden border-4 border-[#00D9FF]/30 bg-gradient-to-br from-[#00D9FF]/20 to-[#00D9FF]/5 flex items-center justify-center">
+                <User className="w-16 h-16 text-[#00D9FF]" />
               </div>
               <button className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl">
-                <Camera className="w-6 h-6 text-foreground" />
+                <Camera className="w-6 h-6 text-white" />
               </button>
             </div>
 
             {/* User Info */}
             <div className="flex-1 text-center md:text-left">
               <h1 className="font-display font-extrabold text-3xl text-foreground mb-2">
-                {mockUser.name}
+                {user.fullName}
               </h1>
-              <p className="text-slate-600 dark:text-[#A8A29E] font-body mb-4">{mockUser.email}</p>
+              <p className="text-slate-600 dark:text-[#A8A29E] font-body mb-4">@{user.username}</p>
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-4">
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-100 dark:bg-[#00D9FF]/10 text-[#00D9FF]">
-                  <Shield className="w-4 h-4" />
-                  <span className="text-sm font-body">{mockUser.role}</span>
+                  <Mail className="w-4 h-4" />
+                  <span className="text-sm font-body">{user.email}</span>
                 </div>
-                <div className="flex items-center gap-2 text-slate-600 dark:text-[#A8A29E]">
-                  <Calendar className="w-4 h-4" />
-                  <span className="text-sm font-body">Tham gia từ {mockUser.joinDate}</span>
-                </div>
+                {user.isEmailVerified && (
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-100 dark:bg-green-500/10 text-green-600 dark:text-green-400">
+                    <Shield className="w-4 h-4" />
+                    <span className="text-sm font-body">Đã xác thực</span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -185,16 +244,10 @@ export default function ProfilePage() {
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label className="text-slate-600 dark:text-[#A8A29E]">Họ và tên</Label>
-                  {isEditing ? (
-                    <Input
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="bg-card/5 border-slate-200 dark:border-white/[0.08] text-foreground h-12 rounded-xl"
-                    />
-                  ) : (
-                    <p className="text-foreground font-body h-12 flex items-center">{formData.name}</p>
-                  )}
+                  <Label className="text-slate-600 dark:text-[#A8A29E]">Tên đăng nhập</Label>
+                  <p className="text-foreground font-body h-12 flex items-center px-4 bg-muted rounded-xl">
+                    {user.username}
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label className="text-slate-600 dark:text-[#A8A29E]">Email</Label>
@@ -205,19 +258,23 @@ export default function ProfilePage() {
                       className="bg-card/5 border-slate-200 dark:border-white/[0.08] text-foreground h-12 rounded-xl"
                     />
                   ) : (
-                    <p className="text-foreground font-body h-12 flex items-center">{formData.email}</p>
+                    <p className="text-foreground font-body h-12 flex items-center px-4 bg-muted rounded-xl">
+                      {formData.email}
+                    </p>
                   )}
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-slate-600 dark:text-[#A8A29E]">Đội bóng yêu thích</Label>
+                <div className="space-y-2 md:col-span-2">
+                  <Label className="text-slate-600 dark:text-[#A8A29E]">Họ và tên</Label>
                   {isEditing ? (
                     <Input
-                      value={formData.favoriteTeam}
-                      onChange={(e) => setFormData({ ...formData, favoriteTeam: e.target.value })}
-                      className="bg-card border-slate-200 dark:border-white/[0.08] text-foreground h-12 rounded-xl"
+                      value={formData.fullName}
+                      onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                      className="bg-card/5 border-slate-200 dark:border-white/[0.08] text-foreground h-12 rounded-xl"
                     />
                   ) : (
-                    <p className="text-foreground font-body h-12 flex items-center">{formData.favoriteTeam}</p>
+                    <p className="text-foreground font-body h-12 flex items-center px-4 bg-muted rounded-xl">
+                      {formData.fullName}
+                    </p>
                   )}
                 </div>
               </div>
