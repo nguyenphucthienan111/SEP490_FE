@@ -1,13 +1,16 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock, User, ArrowRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { authService } from "@/services/authService";
 
 export default function RegisterPage() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
+    username: "",
     fullName: "",
     email: "",
     password: "",
@@ -17,6 +20,7 @@ export default function RegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const passwordRequirements = [
     { label: "Ít nhất 8 ký tự", met: formData.password.length >= 8 },
@@ -32,14 +36,28 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
+      setError("Mật khẩu không khớp");
       return;
     }
     setIsLoading(true);
-    // Simulate registration - replace with actual auth logic
-    setTimeout(() => {
+    setError("");
+
+    try {
+      await authService.register({
+        username: formData.username,
+        email: formData.email,
+        password: formData.password,
+        confirmPassword: formData.confirmPassword,
+        fullName: formData.fullName,
+      });
+
+      // Navigate to login or home after successful registration
+      navigate("/login");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Đăng ký thất bại. Vui lòng thử lại.");
+    } finally {
       setIsLoading(false);
-      // Navigate to verification page or home
-    }, 1500);
+    }
   };
 
   return (
@@ -109,6 +127,29 @@ export default function RegisterPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
+              {error && (
+                <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                  {error}
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="username" className="text-[#E8E6E1] font-body">Tên đăng nhập</Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-600 dark:text-[#A8A29E]" />
+                  <Input
+                    id="username"
+                    name="username"
+                    type="text"
+                    placeholder="username"
+                    value={formData.username}
+                    onChange={handleChange}
+                    className="pl-10 bg-card border-slate-200 dark:border-white/[0.08] text-foreground placeholder:text-slate-600 dark:text-[#A8A29E]/50 h-12 rounded-xl focus:border-[#00D9FF] focus:ring-[#00D9FF]/20"
+                    required
+                  />
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="fullName" className="text-slate-700 dark:text-[#E8E6E1] font-body font-medium">Họ và tên</Label>
                 <div className="relative">
