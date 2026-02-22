@@ -146,7 +146,7 @@ export default function RegisterPage() {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="username" className="text-[#E8E6E1] font-body">Tên đăng nhập</Label>
+                <Label htmlFor="username" className="text-slate-700 dark:text-[#E8E6E1] font-body font-medium">Tên đăng nhập</Label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-600 dark:text-[#A8A29E]" />
                   <Input
@@ -156,7 +156,7 @@ export default function RegisterPage() {
                     placeholder="username"
                     value={formData.username}
                     onChange={handleChange}
-                    className="pl-10 bg-card border-slate-200 dark:border-white/[0.08] text-foreground placeholder:text-slate-600 dark:text-[#A8A29E]/50 h-12 rounded-xl focus:border-[#00D9FF] focus:ring-[#00D9FF]/20"
+                    className="pl-10 bg-white dark:bg-card border-slate-300 dark:border-white/[0.08] text-slate-900 dark:text-foreground placeholder:text-slate-400 dark:placeholder:text-[#A8A29E]/50 h-12 rounded-xl focus:border-[#00D9FF] focus:ring-[#00D9FF]/20"
                     required
                   />
                 </div>
