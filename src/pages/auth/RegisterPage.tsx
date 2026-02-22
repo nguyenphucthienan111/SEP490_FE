@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { authService } from "@/services/authService";
+import { TermsModal } from "@/components/TermsModal";
+import { PrivacyModal } from "@/components/PrivacyModal";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -22,6 +24,8 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [registeredEmail, setRegisteredEmail] = useState("");
+  const [showTerms, setShowTerms] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
 
   const passwordRequirements = [
     { label: "Ít nhất 8 ký tự", met: formData.password.length >= 8 },
@@ -268,11 +272,23 @@ export default function RegisterPage() {
                   onCheckedChange={(checked) => setAgreeTerms(checked as boolean)}
                   className="border-slate-400 dark:border-white/20 data-[state=checked]:bg-[#00D9FF] data-[state=checked]:border-[#00D9FF] mt-0.5"
                 />
-                <Label htmlFor="terms" className="text-slate-700 dark:text-[#A8A29E] text-sm font-body cursor-pointer leading-relaxed">
+                <Label htmlFor="terms" className="text-slate-600 dark:text-[#A8A29E] text-sm font-body cursor-pointer leading-relaxed">
                   Tôi đồng ý với{" "}
-                  <Link to="/terms" className="text-[#00D9FF] hover:underline">Điều khoản sử dụng</Link>
+                  <button
+                    type="button"
+                    onClick={() => setShowTerms(true)}
+                    className="text-[#00D9FF] hover:underline"
+                  >
+                    Điều khoản sử dụng
+                  </button>
                   {" "}và{" "}
-                  <Link to="/privacy" className="text-[#00D9FF] hover:underline">Chính sách bảo mật</Link>
+                  <button
+                    type="button"
+                    onClick={() => setShowPrivacy(true)}
+                    className="text-[#00D9FF] hover:underline"
+                  >
+                    Chính sách bảo mật
+                  </button>
                 </Label>
               </div>
 
@@ -333,6 +349,10 @@ export default function RegisterPage() {
           </div>
         </div>
       </div>
+
+      {/* Modals */}
+      <TermsModal open={showTerms} onOpenChange={setShowTerms} />
+      <PrivacyModal open={showPrivacy} onOpenChange={setShowPrivacy} />
     </div>
   );
 }

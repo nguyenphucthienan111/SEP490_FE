@@ -9,6 +9,8 @@ import { authService } from "@/services/authService";
 import { emailVerificationService } from "@/services/emailVerificationService";
 import { userService } from "@/services/userService";
 import { toast } from "sonner";
+import { TermsModal } from "@/components/TermsModal";
+import { PrivacyModal } from "@/components/PrivacyModal";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -20,6 +22,9 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [showResendButton, setShowResendButton] = useState(false);
   const [isResending, setIsResending] = useState(false);
+  const [needsVerification, setNeedsVerification] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -269,10 +274,26 @@ export default function LoginPage() {
 
           <p className="text-center text-slate-600 dark:text-[#A8A29E]/50 text-sm mt-6 font-body">
             Bằng việc đăng nhập, bạn đồng ý với{" "}
-            <Link to="/terms" className="text-slate-700 dark:text-[#A8A29E] hover:underline">Điều khoản sử dụng</Link>
+            <button
+              type="button"
+              onClick={() => setShowTerms(true)}
+              className="text-slate-700 dark:text-[#A8A29E] hover:underline"
+            >
+              Điều khoản sử dụng
+            </button>
             {" "}và{" "}
-            <Link to="/privacy" className="text-slate-700 dark:text-[#A8A29E] hover:underline">Chính sách bảo mật</Link>
+            <button
+              type="button"
+              onClick={() => setShowPrivacy(true)}
+              className="text-slate-700 dark:text-[#A8A29E] hover:underline"
+            >
+              Chính sách bảo mật
+            </button>
           </p>
+
+          {/* Modals */}
+          <TermsModal open={showTerms} onOpenChange={setShowTerms} />
+          <PrivacyModal open={showPrivacy} onOpenChange={setShowPrivacy} />
         </div>
       </div>
     </div>
