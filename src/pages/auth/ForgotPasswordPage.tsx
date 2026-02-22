@@ -21,7 +21,16 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-8">
+    <div className="min-h-screen bg-background flex items-center justify-center p-8 relative">
+      {/* Back to Home Button */}
+      <Link
+        to="/"
+        className="absolute top-6 left-6 z-20 flex items-center gap-2 text-white hover:text-slate-200 transition-colors group font-body font-semibold"
+      >
+        <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+        <span>Trang chủ</span>
+      </Link>
+
       <div className="absolute inset-0 opacity-30">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#FF4444] rounded-full blur-[128px]" />
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#00D9FF] rounded-full blur-[128px]" />
@@ -40,7 +49,7 @@ export default function ForgotPasswordPage() {
           {!isSubmitted ? (
             <>
               <div className="text-center mb-8">
-                <h2 className="font-display font-extrabold text-3xl text-foreground mb-2">Quên Mật Khẩu?</h2>
+                <h2 className="font-serif text-3xl font-bold text-foreground mb-2">Quên Mật Khẩu?</h2>
                 <p className="text-slate-600 dark:text-[#A8A29E] font-body">
                   Nhập email của bạn và chúng tôi sẽ gửi link đặt lại mật khẩu.
                 </p>

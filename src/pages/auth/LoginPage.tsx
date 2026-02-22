@@ -42,10 +42,10 @@ export default function LoginPage() {
       {/* Back to Home Button */}
       <Link
         to="/"
-        className="absolute top-6 left-6 z-20 flex items-center gap-2 text-slate-600 dark:text-[#A8A29E] hover:text-foreground transition-colors group"
+        className="absolute top-6 left-6 z-20 flex items-center gap-2 text-white hover:text-slate-200 transition-colors group font-body font-semibold"
       >
         <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-        <span className="font-body">Trang chủ</span>
+        <span>Trang chủ</span>
       </Link>
 
       {/* Left Side - Decorative */}
@@ -96,7 +96,7 @@ export default function LoginPage() {
 
           <div className="bg-card border border-slate-200 dark:border-white/[0.08] rounded-2xl p-8 backdrop-blur-xl">
             <div className="text-center mb-8">
-              <h2 className="font-display font-extrabold text-3xl text-slate-900 dark:text-foreground mb-2">Đăng Nhập</h2>
+              <h2 className="font-serif text-3xl font-bold text-slate-900 dark:text-foreground mb-2">Đăng Nhập</h2>
               <p className="text-slate-700 dark:text-[#A8A29E] font-body">Chào mừng bạn quay trở lại!</p>
             </div>
 

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Mail, Lock, User, ArrowRight, Check } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, ArrowRight, Check, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -61,7 +61,16 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="min-h-screen bg-background flex relative">
+      {/* Back to Home Button */}
+      <Link
+        to="/"
+        className="absolute top-6 left-6 z-20 flex items-center gap-2 text-white hover:text-slate-200 transition-colors group font-body font-semibold"
+      >
+        <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+        <span>Trang chủ</span>
+      </Link>
+
       {/* Left Side - Decorative */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-slate-800 dark:from-midnight-navy via-dark-purple to-slate-300 dark:to-midnight-navy" />
@@ -122,7 +131,7 @@ export default function RegisterPage() {
 
           <div className="bg-card border border-slate-200 dark:border-white/[0.08] rounded-2xl p-8 backdrop-blur-xl">
             <div className="text-center mb-8">
-              <h2 className="font-display font-extrabold text-3xl text-slate-900 dark:text-foreground mb-2">Đăng Ký</h2>
+              <h2 className="font-serif text-3xl font-bold text-slate-900 dark:text-foreground mb-2">Đăng Ký</h2>
               <p className="text-slate-700 dark:text-[#A8A29E] font-body">Tạo tài khoản mới</p>
             </div>
 
