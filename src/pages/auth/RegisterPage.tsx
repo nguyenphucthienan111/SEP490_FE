@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Mail, Lock, User, ArrowRight, Check, ArrowLeft } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, ArrowRight, Check, ArrowLeft, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,6 +21,7 @@ export default function RegisterPage() {
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [registeredEmail, setRegisteredEmail] = useState("");
 
   const passwordRequirements = [
     { label: "Ít nhất 8 ký tự", met: formData.password.length >= 8 },
@@ -51,8 +52,8 @@ export default function RegisterPage() {
         fullName: formData.fullName,
       });
 
-      // Navigate to login or home after successful registration
-      navigate("/login");
+      // Save email and show success message
+      setRegisteredEmail(formData.email);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Đăng ký thất bại. Vui lòng thử lại.");
     } finally {
@@ -82,7 +83,7 @@ export default function RegisterPage() {
           <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#FF4444] to-[#FF6666] flex items-center justify-center mb-8 shadow-lg shadow-[#FF4444]/30">
             <span className="font-display font-extrabold text-white text-3xl">VN</span>
           </div>
-          <h1 className="font-display font-extrabold text-5xl text-white mb-4">
+          <h1 className="font-serif font-extrabold text-5xl text-white mb-4">
             Tham gia cùng chúng tôi
           </h1>
           <p className="text-white/90 text-lg max-w-md font-body">
@@ -126,16 +127,18 @@ export default function RegisterPage() {
             <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-[#FF4444] to-[#FF6666] flex items-center justify-center mb-4">
               <span className="font-display font-extrabold text-foreground text-2xl">VN</span>
             </div>
-            <h1 className="font-display font-extrabold text-2xl text-foreground">VN Football Analytics</h1>
+            <h1 className="font-serif font-extrabold text-2xl text-foreground">VN Football Analytics</h1>
           </div>
 
           <div className="bg-card border border-slate-200 dark:border-white/[0.08] rounded-2xl p-8 backdrop-blur-xl">
-            <div className="text-center mb-8">
-              <h2 className="font-serif text-3xl font-bold text-slate-900 dark:text-foreground mb-2">Đăng Ký</h2>
-              <p className="text-slate-700 dark:text-[#A8A29E] font-body">Tạo tài khoản mới</p>
-            </div>
+            {!registeredEmail ? (
+              <>
+                <div className="text-center mb-8">
+                  <h2 className="font-serif text-3xl font-bold text-slate-900 dark:text-foreground mb-2">Đăng Ký</h2>
+                  <p className="text-slate-700 dark:text-[#A8A29E] font-body">Tạo tài khoản mới</p>
+                </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+                <form onSubmit={handleSubmit} className="space-y-5">
               {error && (
                 <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
                   {error}
@@ -291,13 +294,40 @@ export default function RegisterPage() {
             </form>
 
             <div className="mt-6 text-center">
-              <p className="text-slate-700 dark:text-[#A8A29E] font-body">
+              <p className="text-slate-600 dark:text-[#A8A29E] font-body">
                 Đã có tài khoản?{" "}
                 <Link to="/login" className="text-[#00D9FF] hover:underline font-semibold">
                   Đăng nhập
                 </Link>
               </p>
             </div>
+          </>
+        ) : (
+          <div className="text-center">
+            <div className="flex justify-center mb-6">
+              <CheckCircle className="w-16 h-16 text-green-400" />
+            </div>
+            <h2 className="font-serif text-3xl font-bold text-slate-900 dark:text-foreground mb-2">
+              Đăng ký thành công!
+            </h2>
+            <p className="text-slate-600 dark:text-[#A8A29E] font-body mb-6">
+              Chúng tôi đã gửi email xác thực đến <span className="font-semibold text-foreground">{registeredEmail}</span>.
+              Vui lòng kiểm tra hộp thư và click vào link để xác thực tài khoản.
+            </p>
+            <div className="space-y-3">
+              <Link to="/login">
+                <Button className="w-full bg-gradient-to-r from-[#FF4444] to-[#FF6666] text-white">
+                  Đăng nhập
+                </Button>
+              </Link>
+              <Link to="/resend-verification">
+                <Button variant="ghost" className="w-full text-slate-600 dark:text-[#A8A29E] font-body">
+                  Chưa nhận được email? Gửi lại
+                </Button>
+              </Link>
+            </div>
+          </div>
+        )}
           </div>
         </div>
       </div>
