@@ -1,5 +1,7 @@
 // API base configuration
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+// In development, use empty string to use Vite proxy
+// In production, use the actual API URL
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? '' : 'http://localhost:5000');
 
 // Debug: log API URL to console
 console.log('API Base URL:', API_BASE_URL);

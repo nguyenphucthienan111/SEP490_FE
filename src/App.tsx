@@ -16,6 +16,7 @@ const PredictionsPage = lazy(() => import("@/pages/PredictionsPage"));
 const LoginPage = lazy(() => import("@/pages/auth/LoginPage"));
 const RegisterPage = lazy(() => import("@/pages/auth/RegisterPage"));
 const ForgotPasswordPage = lazy(() => import("@/pages/auth/ForgotPasswordPage"));
+const VerifyEmailPage = lazy(() => import("@/pages/auth/VerifyEmailPage"));
 
 // User pages
 const ProfilePage = lazy(() => import("@/pages/ProfilePage"));
@@ -70,6 +71,7 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/verify-email" element={<VerifyEmailPage />} />
 
         {/* User Routes */}
         <Route path="/profile" element={<ProfilePage />} />

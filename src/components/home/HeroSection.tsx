@@ -101,7 +101,7 @@ export function HeroSection() {
                 </Button>
               </Link>
               <Link to="/matches">
-                <Button variant="outline" className="border-secondary/50 text-secondary hover:bg-secondary/10 font-label font-semibold px-8 h-12 rounded-xl transition-all duration-200">
+                <Button variant="outline" className="border-slate-300 dark:border-secondary/50 text-slate-900 dark:text-secondary hover:bg-slate-100 dark:hover:bg-secondary/10 font-label font-semibold px-8 h-12 rounded-xl transition-all duration-200">
                   View Matches
                 </Button>
               </Link>
@@ -210,23 +210,23 @@ export function HeroSection() {
 
                   {/* Stats Grid */}
                   <div className="grid grid-cols-3 gap-4">
-                    <div className="text-center p-3 rounded-xl bg-muted">
-                      <p className="font-mono-data text-xl font-bold text-blue-600 dark:text-[#00D9FF]">
+                    <div className="text-center p-3 rounded-xl bg-slate-200 dark:bg-muted border border-slate-300 dark:border-transparent">
+                      <p className="font-mono-data text-2xl font-extrabold text-blue-700 dark:text-[#00D9FF]">
                         {currentPlayer.stats.goals}
                       </p>
-                      <p className="text-xs text-slate-600 dark:text-slate-400">Goals</p>
+                      <p className="text-xs text-slate-800 dark:text-slate-400 font-semibold">Goals</p>
                     </div>
-                    <div className="text-center p-3 rounded-xl bg-muted">
-                      <p className="font-mono-data text-xl font-bold text-blue-600 dark:text-[#00D9FF]">
+                    <div className="text-center p-3 rounded-xl bg-slate-200 dark:bg-muted border border-slate-300 dark:border-transparent">
+                      <p className="font-mono-data text-2xl font-extrabold text-blue-700 dark:text-[#00D9FF]">
                         {currentPlayer.stats.assists}
                       </p>
-                      <p className="text-xs text-slate-600 dark:text-slate-400">Assists</p>
+                      <p className="text-xs text-slate-800 dark:text-slate-400 font-semibold">Assists</p>
                     </div>
-                    <div className="text-center p-3 rounded-xl bg-muted">
-                      <p className="font-mono-data text-xl font-bold text-blue-600 dark:text-[#00D9FF]">
+                    <div className="text-center p-3 rounded-xl bg-slate-200 dark:bg-muted border border-slate-300 dark:border-transparent">
+                      <p className="font-mono-data text-2xl font-extrabold text-blue-700 dark:text-[#00D9FF]">
                         {currentPlayer.stats.matches}
                       </p>
-                      <p className="text-xs text-slate-600 dark:text-slate-400">Matches</p>
+                      <p className="text-xs text-slate-800 dark:text-slate-400 font-semibold">Matches</p>
                     </div>
                   </div>
                 </motion.div>

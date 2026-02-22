@@ -96,19 +96,19 @@ export function FeaturedPlayers() {
                     {/* Stats Row */}
                     <div className="grid grid-cols-3 gap-3 pt-4 border-t border-border">
                       <div className="text-center">
-                        <p className="font-mono-data text-lg font-semibold text-secondary">
+                        <p className="font-mono-data text-lg font-semibold text-foreground">
                           {player.stats.goals}
                         </p>
                         <p className="text-xs text-muted-foreground">Goals</p>
                       </div>
                       <div className="text-center">
-                        <p className="font-mono-data text-lg font-semibold text-secondary">
+                        <p className="font-mono-data text-lg font-semibold text-foreground">
                           {player.stats.assists}
                         </p>
                         <p className="text-xs text-muted-foreground">Assists</p>
                       </div>
                       <div className="text-center">
-                        <p className="font-mono-data text-lg font-semibold text-secondary">
+                        <p className="font-mono-data text-lg font-semibold text-foreground">
                           {player.stats.matches}
                         </p>
                         <p className="text-xs text-muted-foreground">Matches</p>
