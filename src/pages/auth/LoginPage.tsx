@@ -1,26 +1,40 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock, ArrowRight, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { authService } from "@/services/authService";
 
 export default function LoginPage() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // Simulate login - replace with actual auth logic
-    setTimeout(() => {
+    setError("");
+
+    try {
+      await authService.login({
+        email,
+        password,
+        rememberMe,
+      });
+
+      // Navigate to home or dashboard after successful login
+      navigate("/");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Đăng nhập thất bại. Vui lòng thử lại.");
+    } finally {
       setIsLoading(false);
-      // Navigate to home or dashboard
-    }, 1500);
+    }
   };
 
   return (
@@ -87,6 +101,12 @@ export default function LoginPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
+              {error && (
+                <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                  {error}
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-[#E8E6E1] font-body">Email</Label>
                 <div className="relative">
