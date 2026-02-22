@@ -6,7 +6,9 @@ export interface ResendVerificationRequest {
 
 export const emailVerificationService = {
   async verifyEmail(token: string): Promise<void> {
-    await apiClient.get(`/api/auth/verify-email?token=${token}`);
+    // Encode token to handle special characters in URL
+    const encodedToken = encodeURIComponent(token);
+    await apiClient.get(`/api/auth/verify-email?token=${encodedToken}`);
   },
 
   async resendVerification(data: ResendVerificationRequest): Promise<void> {

@@ -4,20 +4,36 @@ import { Mail, ArrowRight, ArrowLeft, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { passwordService } from "@/services/passwordService";
+import { toast } from "sonner";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // Simulate sending reset email
-    setTimeout(() => {
-      setIsLoading(false);
+    setError("");
+
+    try {
+      await passwordService.forgotPassword({ email });
       setIsSubmitted(true);
-    }, 1500);
+      toast.success("Email đặt lại mật khẩu đã được gửi!");
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Gửi email thất bại. Vui lòng thử lại.";
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    setIsSubmitted(false);
+    setEmail("");
   };
 
   return (
@@ -56,6 +72,12 @@ export default function ForgotPasswordPage() {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-6">
+                {error && (
+                  <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                    {error}
+                  </div>
+                )}
+
                 <div className="space-y-2">
                   <Label htmlFor="email" className="text-slate-700 dark:text-[#E8E6E1] font-body">Email</Label>
                   <div className="relative">
@@ -102,7 +124,7 @@ export default function ForgotPasswordPage() {
                 Vui lòng kiểm tra hộp thư (bao gồm thư mục spam).
               </p>
               <Button
-                onClick={() => setIsSubmitted(false)}
+                onClick={handleResend}
                 variant="outline"
                 className="border-slate-300 dark:border-white/20 text-foreground hover:bg-slate-200 dark:bg-white/10"
               >

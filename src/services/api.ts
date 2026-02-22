@@ -35,7 +35,14 @@ async function request<T>(
     throw new Error(error.message || `HTTP error! status: ${response.status}`);
   }
 
-  return response.json();
+  const result = await response.json();
+  
+  // If response has 'data' property, return it, otherwise return the whole response
+  if (result && typeof result === 'object' && 'data' in result) {
+    return result.data as T;
+  }
+  
+  return result as T;
 }
 
 export const apiClient = {

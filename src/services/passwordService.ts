@@ -16,6 +16,7 @@ export const passwordService = {
   },
 
   async resetPassword(data: ResetPasswordRequest): Promise<void> {
+    // Don't encode token - it's already encoded in URL
     await apiClient.post('/api/auth/reset-password', data);
   },
 };

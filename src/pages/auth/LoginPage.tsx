@@ -6,6 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { authService } from "@/services/authService";
+import { emailVerificationService } from "@/services/emailVerificationService";
+import { userService } from "@/services/userService";
+import { toast } from "sonner";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -15,25 +18,77 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showResendButton, setShowResendButton] = useState(false);
+  const [isResending, setIsResending] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
+    setShowResendButton(false);
 
     try {
-      await authService.login({
+      const loginResponse = await authService.login({
         email,
         password,
         rememberMe,
       });
+      
+      console.log('Login response:', loginResponse);
+      console.log('Access token:', localStorage.getItem('accessToken'));
+      console.log('Refresh token:', localStorage.getItem('refreshToken'));
 
-      // Navigate to home or dashboard after successful login
-      navigate("/");
+      // Fetch user info after successful login
+      try {
+        const userData = await userService.getMe();
+        console.log('User data from /me:', userData);
+        localStorage.setItem('user', JSON.stringify(userData));
+      } catch (err) {
+        console.error('Failed to fetch user info:', err);
+        // If API /me fails, try to use user from login response
+        if (loginResponse.user) {
+          console.log('Using user from login response:', loginResponse.user);
+          localStorage.setItem('user', JSON.stringify(loginResponse.user));
+        }
+      }
+
+      toast.success("Đăng nhập thành công!");
+      
+      // Reload page to update header
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 2000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Đăng nhập thất bại. Vui lòng thử lại.");
+      const errorMessage = err instanceof Error ? err.message : "Đăng nhập thất bại. Vui lòng thử lại.";
+      setError(errorMessage);
+      toast.error(errorMessage);
+      
+      // Show resend button if error is about email verification
+      if (errorMessage.toLowerCase().includes("email") && 
+          (errorMessage.toLowerCase().includes("xác thực") || 
+           errorMessage.toLowerCase().includes("verified"))) {
+        setShowResendButton(true);
+      }
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!email) {
+      toast.error("Vui lòng nhập email của bạn.");
+      return;
+    }
+
+    setIsResending(true);
+    try {
+      await emailVerificationService.resendVerification({ email });
+      toast.success("Email xác thực đã được gửi! Vui lòng kiểm tra hộp thư.");
+      setShowResendButton(false);
+    } catch (error: any) {
+      toast.error(error.message || "Gửi lại email thất bại. Vui lòng thử lại.");
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -104,6 +159,22 @@ export default function LoginPage() {
               {error && (
                 <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
                   {error}
+                </div>
+              )}
+
+              {showResendButton && (
+                <div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                  <p className="text-sm text-blue-400 mb-3">
+                    Email của bạn chưa được xác thực. Vui lòng kiểm tra hộp thư hoặc gửi lại email xác thực.
+                  </p>
+                  <Button
+                    type="button"
+                    onClick={handleResendVerification}
+                    disabled={isResending}
+                    className="w-full h-10 bg-gradient-to-r from-[#00D9FF] to-[#00B8D4] hover:from-[#00E8FF] hover:to-[#00C8E4] text-white font-semibold rounded-xl shadow-lg shadow-[#00D9FF]/30 transition-all duration-200 disabled:opacity-50"
+                  >
+                    {isResending ? "Đang gửi..." : "Gửi lại email xác thực"}
+                  </Button>
                 </div>
               )}
 
