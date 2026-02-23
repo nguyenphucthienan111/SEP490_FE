@@ -66,7 +66,6 @@ export default function LoginPage() {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Đăng nhập thất bại. Vui lòng thử lại.";
       setError(errorMessage);
-      toast.error(errorMessage);
       
       // Show resend button if error is about email verification
       if (errorMessage.toLowerCase().includes("email") && 
@@ -81,7 +80,7 @@ export default function LoginPage() {
 
   const handleResendVerification = async () => {
     if (!email) {
-      toast.error("Vui lòng nhập email của bạn.");
+      setError("Vui lòng nhập email của bạn.");
       return;
     }
 
@@ -91,7 +90,7 @@ export default function LoginPage() {
       toast.success("Email xác thực đã được gửi! Vui lòng kiểm tra hộp thư.");
       setShowResendButton(false);
     } catch (error: any) {
-      toast.error(error.message || "Gửi lại email thất bại. Vui lòng thử lại.");
+      setError(error.message || "Gửi lại email thất bại. Vui lòng thử lại.");
     } finally {
       setIsResending(false);
     }

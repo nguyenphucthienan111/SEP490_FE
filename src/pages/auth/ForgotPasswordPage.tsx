@@ -25,7 +25,6 @@ export default function ForgotPasswordPage() {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Gửi email thất bại. Vui lòng thử lại.";
       setError(errorMessage);
-      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }

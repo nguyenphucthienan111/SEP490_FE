@@ -37,6 +37,11 @@ async function request<T>(
 
   const result = await response.json();
   
+  // Check if response has success field and it's false
+  if (result && typeof result === 'object' && 'success' in result && result.success === false) {
+    throw new Error(result.message || 'Request failed');
+  }
+  
   // If response has 'data' property, return it, otherwise return the whole response
   if (result && typeof result === 'object' && 'data' in result) {
     return result.data as T;

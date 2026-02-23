@@ -17,13 +17,31 @@ export default function ResetPasswordPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isTokenInvalid, setIsTokenInvalid] = useState(false);
 
-  const token = searchParams.get('token');
+  // Get token from URL - try both methods
+  const tokenFromParams = searchParams.get('token');
+  const tokenFromUrl = window.location.search.split('token=')[1];
+  const token = tokenFromUrl || tokenFromParams;
+
+  console.log('Token from searchParams:', tokenFromParams);
+  console.log('Token from URL:', tokenFromUrl);
+  console.log('Using token:', token);
 
   useEffect(() => {
-    if (!token) {
-      setError('Token không hợp lệ hoặc đã hết hạn.');
-    }
+    const validateToken = async () => {
+      if (!token) {
+        setIsTokenInvalid(true);
+        setError('Token không hợp lệ hoặc đã hết hạn.');
+        return;
+      }
+
+      // Try to validate token by making a test request
+      // We'll check if token is valid when user tries to submit
+      // For now, just check if token exists
+    };
+
+    validateToken();
   }, [token]);
 
   const passwordRequirements = [
@@ -38,20 +56,17 @@ export default function ResetPasswordPage() {
     e.preventDefault();
     
     if (!token) {
-      toast.error("Token không hợp lệ");
       return;
     }
 
     if (password !== confirmPassword) {
       setError("Mật khẩu không khớp");
-      toast.error("Mật khẩu không khớp");
       return;
     }
 
     const allRequirementsMet = passwordRequirements.every(req => req.met);
     if (!allRequirementsMet) {
       setError("Mật khẩu không đáp ứng yêu cầu");
-      toast.error("Mật khẩu không đáp ứng yêu cầu");
       return;
     }
 
@@ -59,13 +74,11 @@ export default function ResetPasswordPage() {
     setError("");
 
     try {
-      // Decode token from URL before sending to API
-      const decodedToken = decodeURIComponent(token);
-      console.log('Original token from URL:', token);
-      console.log('Decoded token:', decodedToken);
+      // Use token as-is from URL without decoding
+      console.log('Sending token to API:', token);
       
       await passwordService.resetPassword({
-        token: decodedToken,
+        token: token,
         newPassword: password,
         confirmNewPassword: confirmPassword,
       });
@@ -82,7 +95,14 @@ export default function ResetPasswordPage() {
       console.error('Password reset failed:', err);
       const errorMessage = err instanceof Error ? err.message : "Đặt lại mật khẩu thất bại. Vui lòng thử lại.";
       setError(errorMessage);
-      toast.error(errorMessage);
+      
+      // Check if token is invalid/expired
+      if (errorMessage.toLowerCase().includes('token') && 
+          (errorMessage.toLowerCase().includes('hết hạn') ||
+           errorMessage.toLowerCase().includes('không hợp lệ') ||
+           errorMessage.toLowerCase().includes('khong hop le'))) {
+        setIsTokenInvalid(true);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -114,7 +134,31 @@ export default function ResetPasswordPage() {
         </div>
 
         <div className="bg-card border border-slate-200 dark:border-white/[0.08] rounded-2xl p-8 backdrop-blur-xl">
-          {!isSuccess ? (
+          {isTokenInvalid ? (
+            <div className="text-center py-4">
+              <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-500/10 flex items-center justify-center mx-auto mb-6">
+                <XCircle className="w-8 h-8 text-red-500" />
+              </div>
+              <h2 className="font-serif text-3xl font-bold text-slate-900 dark:text-foreground mb-2">
+                Link Không Hợp Lệ
+              </h2>
+              <p className="text-slate-700 dark:text-[#A8A29E] font-body font-medium mb-6">
+                {error || 'Link đặt lại mật khẩu không hợp lệ hoặc đã hết hạn. Vui lòng yêu cầu link mới.'}
+              </p>
+              <div className="flex flex-col gap-3">
+                <Link to="/forgot-password">
+                  <Button className="w-full bg-gradient-to-r from-[#FF4444] to-[#FF6666] hover:from-[#FF5555] hover:to-[#FF7777] text-slate-900 dark:text-white font-semibold rounded-xl shadow-lg shadow-[#FF4444]/30">
+                    Yêu cầu link mới
+                  </Button>
+                </Link>
+                <Link to="/login">
+                  <Button variant="outline" className="w-full border-slate-300 dark:border-white/20 text-foreground hover:bg-slate-100 dark:hover:bg-white/10">
+                    Quay lại đăng nhập
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          ) : !isSuccess ? (
             <>
               <div className="text-center mb-8">
                 <h2 className="font-serif text-3xl font-bold text-slate-900 dark:text-foreground mb-2">Đặt Lại Mật Khẩu</h2>
@@ -224,7 +268,8 @@ export default function ResetPasswordPage() {
             </div>
           )}
 
-          <div className="mt-6 text-center">
+          {!isTokenInvalid && (
+            <div className="mt-6 text-center">
             <Link
               to="/login"
               className="inline-flex items-center gap-2 text-slate-700 dark:text-[#A8A29E] hover:text-slate-900 dark:hover:text-foreground transition-colors font-body"
@@ -233,6 +278,7 @@ export default function ResetPasswordPage() {
               Quay lại đăng nhập
             </Link>
           </div>
+          )}
         </div>
       </div>
     </div>
