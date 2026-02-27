@@ -1,15 +1,99 @@
-import { Player, Match, League, Article, Team, Position } from '@/types';
+import { Player, Match, League, Article, Team, Position, Stadium } from '@/types';
+
+// Stadiums
+export const stadiums: Stadium[] = [
+  {
+    id: 's1',
+    name: 'Sân vận động Pleiku',
+    city: 'Pleiku, Gia Lai',
+    capacity: 25000,
+    yearBuilt: 2004,
+    surface: 'grass',
+    imageUrl: 'https://images.unsplash.com/photo-1459865264687-595d652de67e?w=800&q=80',
+    address: 'Đường Hùng Vương, Pleiku, Gia Lai',
+  },
+  {
+    id: 's2',
+    name: 'Sân vận động Hàng Đẫy',
+    city: 'Hà Nội',
+    capacity: 22500,
+    yearBuilt: 1958,
+    surface: 'grass',
+    imageUrl: 'https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=800&q=80',
+    address: 'Số 1 Đường Cù Chính Lan, Ba Đình, Hà Nội',
+  },
+  {
+    id: 's3',
+    name: 'Sân vận động Hàng Đẫy',
+    city: 'Hà Nội',
+    capacity: 22500,
+    yearBuilt: 1958,
+    surface: 'grass',
+    imageUrl: 'https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=800&q=80',
+    address: 'Số 1 Đường Cù Chính Lan, Ba Đình, Hà Nội',
+  },
+  {
+    id: 's4',
+    name: 'Sân vận động Lạch Tray',
+    city: 'Hải Phòng',
+    capacity: 30000,
+    yearBuilt: 1960,
+    surface: 'grass',
+    imageUrl: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=800&q=80',
+    address: 'Đường Lạch Tray, Ngô Quyền, Hải Phòng',
+  },
+  {
+    id: 's5',
+    name: 'Sân vận động Thiên Trường',
+    city: 'Nam Định',
+    capacity: 25000,
+    yearBuilt: 1970,
+    surface: 'grass',
+    imageUrl: 'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=800&q=80',
+    address: 'Đường Trần Hưng Đạo, Nam Định',
+  },
+  {
+    id: 's6',
+    name: 'Sân vận động Quy Nhơn',
+    city: 'Quy Nhơn, Bình Định',
+    capacity: 25000,
+    yearBuilt: 1976,
+    surface: 'grass',
+    imageUrl: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&q=80',
+    address: 'Đường Nguyễn Tất Thành, Quy Nhơn, Bình Định',
+  },
+  {
+    id: 's7',
+    name: 'Sân vận động Hàng Đẫy',
+    city: 'Hà Nội',
+    capacity: 22500,
+    yearBuilt: 1958,
+    surface: 'grass',
+    imageUrl: 'https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=800&q=80',
+    address: 'Số 1 Đường Cù Chính Lan, Ba Đình, Hà Nội',
+  },
+  {
+    id: 's8',
+    name: 'Sân vận động Thanh Hóa',
+    city: 'Thanh Hóa',
+    capacity: 20000,
+    yearBuilt: 2017,
+    surface: 'grass',
+    imageUrl: 'https://images.unsplash.com/photo-1551958219-acbc608c6377?w=800&q=80',
+    address: 'Đường Trường Thi, Thanh Hóa',
+  },
+];
 
 // Teams
 export const teams: Team[] = [
-  { id: 't1', name: 'Hoàng Anh Gia Lai', logo: '', league: 'V.League 1' },
-  { id: 't2', name: 'Hà Nội FC', logo: '', league: 'V.League 1' },
-  { id: 't3', name: 'Viettel FC', logo: '', league: 'V.League 1' },
-  { id: 't4', name: 'Hải Phòng FC', logo: '', league: 'V.League 1' },
-  { id: 't5', name: 'Nam Định FC', logo: '', league: 'V.League 1' },
-  { id: 't6', name: 'Bình Định FC', logo: '', league: 'V.League 1' },
-  { id: 't7', name: 'Công An Hà Nội', logo: '', league: 'V.League 1' },
-  { id: 't8', name: 'Thanh Hoá FC', logo: '', league: 'V.League 1' },
+  { id: 't1', name: 'Hoàng Anh Gia Lai', logo: '', league: 'V.League 1', homeStadium: stadiums[0] },
+  { id: 't2', name: 'Hà Nội FC', logo: '', league: 'V.League 1', homeStadium: stadiums[1] },
+  { id: 't3', name: 'Viettel FC', logo: '', league: 'V.League 1', homeStadium: stadiums[2] },
+  { id: 't4', name: 'Hải Phòng FC', logo: '', league: 'V.League 1', homeStadium: stadiums[3] },
+  { id: 't5', name: 'Nam Định FC', logo: '', league: 'V.League 1', homeStadium: stadiums[4] },
+  { id: 't6', name: 'Bình Định FC', logo: '', league: 'V.League 1', homeStadium: stadiums[5] },
+  { id: 't7', name: 'Công An Hà Nội', logo: '', league: 'V.League 1', homeStadium: stadiums[6] },
+  { id: 't8', name: 'Thanh Hoá FC', logo: '', league: 'V.League 1', homeStadium: stadiums[7] },
 ];
 
 // Players
@@ -244,7 +328,8 @@ export const matches: Match[] = [
     awayTeam: teams[0],
     homeScore: 2,
     awayScore: 1,
-    venue: 'Hàng Đẫy Stadium',
+    venue: 'Sân vận động Hàng Đẫy',
+    stadium: teams[1].homeStadium, // Sân nhà của Hà Nội FC
     league: 'V.League 1',
     season: '2025',
     status: 'completed',
@@ -272,7 +357,8 @@ export const matches: Match[] = [
     awayTeam: teams[3],
     homeScore: 1,
     awayScore: 1,
-    venue: 'Thống Nhất Stadium',
+    venue: 'Sân vận động Hàng Đẫy',
+    stadium: teams[2].homeStadium, // Sân nhà của Viettel FC
     league: 'V.League 1',
     season: '2025',
     status: 'completed',
@@ -283,7 +369,8 @@ export const matches: Match[] = [
     time: '19:00',
     homeTeam: teams[4],
     awayTeam: teams[5],
-    venue: 'Thiên Trường Stadium',
+    venue: 'Sân vận động Thiên Trường',
+    stadium: teams[4].homeStadium, // Sân nhà của Nam Định FC
     league: 'V.League 1',
     season: '2025',
     status: 'scheduled',
@@ -294,7 +381,8 @@ export const matches: Match[] = [
     time: '19:00',
     homeTeam: teams[6],
     awayTeam: teams[7],
-    venue: 'Hàng Đẫy Stadium',
+    venue: 'Sân vận động Hàng Đẫy',
+    stadium: teams[6].homeStadium, // Sân nhà của Công An Hà Nội
     league: 'V.League 1',
     season: '2025',
     status: 'live',
@@ -309,7 +397,8 @@ export const matches: Match[] = [
     awayTeam: teams[2],
     homeScore: 3,
     awayScore: 2,
-    venue: 'Pleiku Stadium',
+    venue: 'Sân vận động Pleiku',
+    stadium: teams[0].homeStadium, // Sân nhà của Hoàng Anh Gia Lai
     league: 'V.League 1',
     season: '2025',
     status: 'completed',
@@ -409,3 +498,9 @@ export const getTopRatedPlayers = (count: number = 5): Player[] =>
   [...players]
     .sort((a, b) => b.rating - a.rating)
     .slice(0, count);
+
+export const getStadiumById = (id: string): Stadium | undefined =>
+  stadiums.find(s => s.id === id);
+
+export const getTeamById = (id: string): Team | undefined =>
+  teams.find(t => t.id === id);

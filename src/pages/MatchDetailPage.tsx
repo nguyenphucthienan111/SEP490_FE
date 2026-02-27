@@ -158,19 +158,43 @@ export default function MatchDetailPage() {
             </div>
 
             {/* Match Info */}
-            <div className="flex items-center justify-center gap-6 sm:gap-10 text-sm text-slate-700 dark:text-[#A8A29E] font-medium">
-              <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4" />
-                <span>{new Date(match.date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span>
+            <div className="flex flex-col items-center gap-4">
+              <div className="flex items-center justify-center gap-6 sm:gap-10 text-sm text-slate-700 dark:text-[#A8A29E] font-medium flex-wrap">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4" />
+                  <span>{new Date(match.date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  <span>{match.time}</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4" />
-                <span>{match.time}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <MapPin className="w-4 h-4" />
-                <span>{match.venue}</span>
-              </div>
+              
+              {/* Stadium Info */}
+              {match.stadium && (
+                <Link 
+                  to={`/stadiums/${match.stadium.id}`}
+                  className="mt-2 px-6 py-4 bg-slate-100 dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors block"
+                >
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <MapPin className="w-4 h-4 text-[#00D9FF]" />
+                    <span className="font-display font-bold text-slate-900 dark:text-foreground">
+                      {match.stadium.name}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-center gap-4 text-xs text-slate-600 dark:text-[#A8A29E]">
+                    <span>{match.stadium.city}</span>
+                    <span>•</span>
+                    <span>Sức chứa: {match.stadium.capacity.toLocaleString()}</span>
+                    <span>•</span>
+                    <span className="capitalize">{match.stadium.surface === 'grass' ? 'Cỏ tự nhiên' : match.stadium.surface === 'artificial' ? 'Cỏ nhân tạo' : 'Cỏ lai'}</span>
+                  </div>
+                  <div className="flex items-center justify-center gap-1 mt-2 text-xs text-[#00D9FF]">
+                    <span>Xem chi tiết sân</span>
+                    <ArrowLeft className="w-3 h-3 rotate-180" />
+                  </div>
+                </Link>
+              )}
             </div>
           </motion.div>
 

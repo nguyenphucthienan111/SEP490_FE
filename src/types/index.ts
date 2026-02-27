@@ -54,6 +54,22 @@ export interface RatingContribution {
   description: string;
 }
 
+// Stadium types
+export interface Stadium {
+  id: string;
+  name: string;
+  city: string;
+  capacity: number;
+  yearBuilt: number;
+  surface: 'grass' | 'artificial' | 'hybrid';
+  imageUrl?: string;
+  address?: string;
+  coordinates?: {
+    lat: number;
+    lng: number;
+  };
+}
+
 // Match types
 export interface Match {
   id: string;
@@ -63,7 +79,8 @@ export interface Match {
   awayTeam: Team;
   homeScore?: number;
   awayScore?: number;
-  venue: string;
+  venue: string; // Stadium name for display
+  stadium?: Stadium; // Full stadium details
   league: string;
   season: string;
   status: 'scheduled' | 'live' | 'completed';
@@ -75,6 +92,7 @@ export interface Team {
   name: string;
   logo?: string;
   league: string;
+  homeStadium?: Stadium; // Sân nhà của câu lạc bộ
 }
 
 export interface PlayerMatchPerformance {
