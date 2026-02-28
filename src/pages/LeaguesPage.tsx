@@ -226,14 +226,17 @@ export default function LeaguesPage() {
                             </div>
                           </td>
                           <td className="py-3 px-3">
-                            <div className="flex items-center gap-2">
+                            <Link 
+                              to={`/teams/${teams.find(t => t.name === team.team)?.id || ''}`}
+                              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                            >
                               <div className="w-8 h-8 rounded-lg bg-slate-200 dark:bg-white/5 flex items-center justify-center text-xs font-display font-bold text-slate-900 dark:text-foreground border border-slate-300 dark:border-white/10">
                                 {team.team.charAt(0)}
                               </div>
-                              <span className="font-body font-semibold text-sm text-slate-900 dark:text-foreground">
+                              <span className="font-body font-semibold text-sm text-slate-900 dark:text-foreground hover:text-[#00D9FF] transition-colors">
                                 {team.team}
                               </span>
-                            </div>
+                            </Link>
                           </td>
                           <td className="py-3 px-3 text-center">
                             <span className="font-mono-data text-sm text-slate-700 dark:text-slate-400">{team.played}</span>
