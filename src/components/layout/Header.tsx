@@ -40,11 +40,19 @@ export function Header() {
           const userData = await userService.getMe();
           setUser(userData);
         } catch (error) {
-          console.error('Failed to fetch user from API:', error);
           // Fallback to localStorage
           const localUser = authService.getCurrentUser();
           if (localUser) {
-            setUser(localUser as UserResponse);
+            // Map id to userId if needed for compatibility
+            const mappedUser: UserResponse = {
+              userId: (localUser as any).userId || (localUser as any).id,
+              username: (localUser as any).username,
+              email: (localUser as any).email,
+              fullName: (localUser as any).fullName,
+              roles: (localUser as any).roles,
+              isEmailVerified: (localUser as any).isEmailVerified,
+            };
+            setUser(mappedUser);
           } else {
             // If token is invalid, clear it
             localStorage.removeItem('accessToken');
