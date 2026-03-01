@@ -21,12 +21,9 @@ export default function VerifyEmailPage() {
         setMessage('Token xác thực không hợp lệ.');
         return;
       }
-
-      console.log('Starting email verification with token:', token);
       
       try {
         await emailVerificationService.verifyEmail(token);
-        console.log('Email verification successful');
         setStatus('success');
         setMessage('Email của bạn đã được xác thực thành công!');
         
@@ -35,7 +32,6 @@ export default function VerifyEmailPage() {
           navigate('/login');
         }, 3000);
       } catch (error: any) {
-        console.error('Email verification failed:', error);
         setStatus('error');
         setMessage(error.message || 'Xác thực email thất bại. Token có thể đã hết hạn.');
       }

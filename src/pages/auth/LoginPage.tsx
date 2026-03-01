@@ -38,21 +38,14 @@ export default function LoginPage() {
         password,
         rememberMe,
       });
-      
-      console.log('Login response:', loginResponse);
-      console.log('Access token:', localStorage.getItem('accessToken'));
-      console.log('Refresh token:', localStorage.getItem('refreshToken'));
 
       // Fetch user info after successful login
       try {
         const userData = await userService.getMe();
-        console.log('User data from /me:', userData);
         localStorage.setItem('user', JSON.stringify(userData));
       } catch (err) {
-        console.error('Failed to fetch user info:', err);
         // If API /me fails, try to use user from login response
         if (loginResponse.user) {
-          console.log('Using user from login response:', loginResponse.user);
           localStorage.setItem('user', JSON.stringify(loginResponse.user));
         }
       }
