@@ -14,6 +14,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       <Toaster 
         position="top-right"
         offset="80px"
+        duration={3000}
         toastOptions={{
           classNames: {
             success: 'bg-green-500 text-white border-green-600',
