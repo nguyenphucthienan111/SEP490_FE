@@ -3,9 +3,6 @@
 // In production, use the actual API URL
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? '' : 'http://localhost:5000');
 
-// Debug: log API URL to console
-console.log('API Base URL:', API_BASE_URL);
-
 async function request<T>(
   endpoint: string,
   options: RequestInit = {}
@@ -28,14 +25,17 @@ async function request<T>(
     headers,
   });
 
-
   if (!response.ok) {
     const error = await response.json().catch(() => ({ message: 'An error occurred' }));
-    console.error('API Error:', error);
     throw new Error(error.message || `HTTP error! status: ${response.status}`);
   }
 
   const result = await response.json();
+  
+  // For email verification endpoint, if status is 200, consider it success regardless of response body
+  if (endpoint.includes('/verify-email') && response.status === 200) {
+    return result as T;
+  }
   
   // Check if response has success field and it's false
   if (result && typeof result === 'object' && 'success' in result && result.success === false) {

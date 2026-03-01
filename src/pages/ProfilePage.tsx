@@ -244,7 +244,7 @@ export default function ProfilePage() {
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label className="text-slate-600 dark:text-[#A8A29E]">Tên đăng nhập</Label>
+                  <Label className="text-slate-600 dark:text-[#A8A29E]">Username</Label>
                   <p className="text-foreground font-body h-12 flex items-center px-4 bg-muted rounded-xl">
                     {user.username}
                   </p>

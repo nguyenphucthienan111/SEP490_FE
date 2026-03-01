@@ -150,7 +150,7 @@ export default function RegisterPage() {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="username" className="text-slate-700 dark:text-[#E8E6E1] font-body font-medium">Tên đăng nhập</Label>
+                <Label htmlFor="username" className="text-slate-700 dark:text-[#E8E6E1] font-body font-medium">Username</Label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-600 dark:text-[#A8A29E]" />
                   <Input
