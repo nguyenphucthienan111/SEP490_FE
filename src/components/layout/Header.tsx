@@ -71,13 +71,29 @@ export function Header() {
     try {
       const refreshToken = authService.getRefreshToken();
       if (refreshToken) {
-        await authService.logout(refreshToken);
+        // Try to call logout API, but don't fail if it returns 401
+        try {
+          await authService.logout(refreshToken);
+        } catch (error) {
+          // Ignore 401 errors on logout - token might already be expired
+        }
       }
+      
+      // Always clear local storage and state
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('user');
       setUser(null);
       toast.success('Đăng xuất thành công!');
       navigate('/');
     } catch (error) {
-      toast.error('Đăng xuất thất bại');
+      // Even if API fails, still clear local data
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('user');
+      setUser(null);
+      toast.success('Đăng xuất thành công!');
+      navigate('/');
     }
   };
 
