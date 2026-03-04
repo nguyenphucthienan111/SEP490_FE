@@ -78,7 +78,7 @@ export function HeroSection() {
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent border border-border mb-6 shadow-sm"
             >
               <span className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
-              <span className="text-sm font-label text-muted-foreground uppercase tracking-wider">
+              <span className="text-sm font-label text-slate-900 dark:text-slate-900 uppercase tracking-wider font-semibold">
                 Season 2025 Active
               </span>
             </motion.div>

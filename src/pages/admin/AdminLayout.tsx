@@ -13,6 +13,7 @@ import {
   LogOut
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ThemeToggle } from '@/components/layout/ThemeToggle';
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -33,7 +34,14 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const location = useLocation();
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="min-h-screen bg-background flex relative overflow-hidden">
+      {/* Gradient Blur Background Effects */}
+      <div className="absolute inset-0 opacity-20 pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#FF4444] rounded-full blur-[128px]" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#00D9FF] rounded-full blur-[128px]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-[#FF6666] rounded-full blur-[150px]" />
+      </div>
+
       {/* Mobile Overlay */}
       {sidebarOpen && (
         <div 
@@ -44,7 +52,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
       {/* Sidebar */}
       <aside className={cn(
-        "fixed lg:static inset-y-0 left-0 z-50 w-72 bg-card border-r border-slate-200 dark:border-white/5 transform transition-transform duration-300 lg:transform-none",
+        "fixed lg:static inset-y-0 left-0 z-50 w-72 bg-card/95 backdrop-blur-xl border-r border-slate-200 dark:border-white/5 transform transition-transform duration-300 lg:transform-none",
         sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       )}>
         <div className="flex flex-col h-full">
@@ -98,9 +106,9 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 relative z-10">
         {/* Top Bar */}
-        <header className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-slate-200 dark:border-white/5 px-4 lg:px-8 py-4">
+        <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl border-b border-slate-200 dark:border-white/5 px-4 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <button
               onClick={() => setSidebarOpen(true)}
@@ -110,6 +118,9 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             </button>
 
             <div className="ml-auto flex items-center gap-4">
+              {/* Theme Toggle */}
+              <ThemeToggle />
+              
               <div className="text-right">
                 <p className="text-sm font-medium text-foreground">Admin User</p>
                 <p className="text-xs text-slate-600 dark:text-[#A8A29E]">admin@vleague.vn</p>
