@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   Plus,
@@ -10,6 +10,7 @@ import {
   Users,
   ChevronRight,
   MoreVertical,
+  RefreshCw,
 } from "lucide-react";
 import { AdminLayout } from "./AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -35,64 +36,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-// Mock leagues data
-const mockLeagues = [
-  {
-    id: "1",
-    name: "V.League 1",
-    season: "2025",
-    country: "Vietnam",
-    teams: 14,
-    matches: 182,
-    status: "active",
-    startDate: "2025-02-15",
-    endDate: "2025-10-30",
-    logo: "🏆",
-  },
-  {
-    id: "2",
-    name: "V.League 2",
-    season: "2025",
-    country: "Vietnam",
-    teams: 12,
-    matches: 132,
-    status: "active",
-    startDate: "2025-03-01",
-    endDate: "2025-10-15",
-    logo: "🥈",
-  },
-  {
-    id: "3",
-    name: "Cúp Quốc gia",
-    season: "2025",
-    country: "Vietnam",
-    teams: 24,
-    matches: 47,
-    status: "active",
-    startDate: "2025-04-10",
-    endDate: "2025-09-20",
-    logo: "🏅",
-  },
-  {
-    id: "4",
-    name: "V.League 1",
-    season: "2023",
-    country: "Vietnam",
-    teams: 14,
-    matches: 182,
-    status: "completed",
-    startDate: "2023-02-15",
-    endDate: "2023-10-30",
-    logo: "🏆",
-  },
-];
+import { leagueService, League } from "@/services/leagueService";
+import { toast } from "sonner";
 
 export default function AdminLeaguesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [seasonFilter, setSeasonFilter] = useState("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingLeague, setEditingLeague] = useState<typeof mockLeagues[0] | null>(null);
+  const [editingLeague, setEditingLeague] = useState<League | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     season: "",
@@ -100,21 +51,60 @@ export default function AdminLeaguesPage() {
     startDate: "",
     endDate: "",
   });
+  const [leagues, setLeagues] = useState<League[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
-  const filteredLeagues = mockLeagues.filter((league) => {
-    const matchesSearch = league.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesSeason = seasonFilter === "all" || league.season === seasonFilter;
-    return matchesSearch && matchesSeason;
+  useEffect(() => {
+    // Load leagues from localStorage on mount
+    loadLeaguesFromCache();
+  }, []);
+
+  const loadLeaguesFromCache = () => {
+    const cached = localStorage.getItem('leagues');
+    if (cached) {
+      try {
+        const data = JSON.parse(cached);
+        setLeagues(data);
+        console.log('Loaded leagues from localStorage:', data);
+      } catch (e) {
+        console.error('Failed to parse cached leagues:', e);
+      }
+    }
+  };
+
+  const handleSyncLeagues = async () => {
+    setIsSyncing(true);
+    try {
+      const syncedLeagues = await leagueService.syncLeagues();
+      console.log('Synced leagues:', syncedLeagues);
+      
+      // Save to localStorage
+      localStorage.setItem('leagues', JSON.stringify(syncedLeagues));
+      setLeagues(syncedLeagues);
+      
+      toast.success(`Đồng bộ thành công ${syncedLeagues.length} giải đấu!`);
+    } catch (error) {
+      console.error('Failed to sync leagues:', error);
+      toast.error('Đồng bộ giải đấu thất bại');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const filteredLeagues = leagues.filter((league) => {
+    const matchesSearch = league.leagueName.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesSearch;
   });
 
-  const handleEdit = (league: typeof mockLeagues[0]) => {
+  const handleEdit = (league: League) => {
     setEditingLeague(league);
     setFormData({
-      name: league.name,
-      season: league.season,
-      country: league.country,
-      startDate: league.startDate,
-      endDate: league.endDate,
+      name: league.leagueName,
+      season: "",
+      country: league.country || "Vietnam",
+      startDate: "",
+      endDate: "",
     });
     setIsDialogOpen(true);
   };
@@ -137,6 +127,16 @@ export default function AdminLeaguesPage() {
             </h1>
             <p className="text-slate-600 dark:text-[#A8A29E]">Tạo và quản lý các giải đấu bóng đá</p>
           </div>
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={handleSyncLeagues}
+              disabled={isSyncing}
+              variant="outline"
+              className="border-slate-300 dark:border-white/20 text-slate-900 dark:text-foreground hover:bg-slate-100 dark:hover:bg-white/10"
+            >
+              <RefreshCw className={`w-5 h-5 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
+              {isSyncing ? 'Đang đồng bộ...' : 'Đồng bộ giải đấu'}
+            </Button>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="bg-gradient-to-r from-[#FF4444] to-[#FF6666] text-white shadow-lg hover:shadow-xl transition-all duration-200">
@@ -144,7 +144,7 @@ export default function AdminLeaguesPage() {
                   Thêm giải đấu
                 </Button>
               </DialogTrigger>
-              <DialogContent className="bg-white border-slate-200 text-slate-800 max-w-md shadow-2xl">
+              <DialogContent className="bg-white/95 dark:bg-card/95 backdrop-blur-xl border-slate-200 dark:border-white/10 text-slate-800 dark:text-foreground max-w-md shadow-2xl">
                 <DialogHeader>
                   <DialogTitle className="font-display font-bold text-xl text-slate-800">
                     {editingLeague ? "Chỉnh sửa giải đấu" : "Thêm giải đấu mới"}
@@ -218,6 +218,7 @@ export default function AdminLeaguesPage() {
               </DialogContent>
             </Dialog>
           </div>
+        </div>
 
           {/* Filters */}
           <div className="flex items-center gap-4 mb-6">
@@ -227,14 +228,14 @@ export default function AdminLeaguesPage() {
                 placeholder="Tìm kiếm giải đấu..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-white border-slate-200 text-slate-800 shadow-sm focus:border-blue-400 focus:ring-blue-400/20"
+                className="pl-10 bg-white/80 dark:bg-card/80 backdrop-blur-xl border-slate-200 dark:border-white/10 text-slate-800 dark:text-foreground shadow-sm focus:border-blue-400 focus:ring-blue-400/20"
               />
             </div>
             <Select value={seasonFilter} onValueChange={setSeasonFilter}>
-              <SelectTrigger className="w-[140px] bg-white border-slate-200 text-slate-800 shadow-sm focus:border-blue-400 focus:ring-blue-400/20">
+              <SelectTrigger className="w-[140px] bg-white/80 dark:bg-card/80 backdrop-blur-xl border-slate-200 dark:border-white/10 text-slate-800 dark:text-foreground shadow-sm focus:border-blue-400 focus:ring-blue-400/20">
                 <SelectValue placeholder="Mùa giải" />
               </SelectTrigger>
-              <SelectContent className="bg-white border-slate-200 shadow-xl">
+              <SelectContent className="bg-white/95 dark:bg-card/95 backdrop-blur-xl border-slate-200 dark:border-white/10 shadow-xl">
                 <SelectItem value="all">Tất cả</SelectItem>
                 <SelectItem value="2025">2025</SelectItem>
                 <SelectItem value="2023">2023</SelectItem>
@@ -243,74 +244,85 @@ export default function AdminLeaguesPage() {
           </div>
 
           {/* Leagues Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredLeagues.map((league) => (
-              <div
-                key={league.id}
-                className="bg-white border border-slate-200 rounded-2xl p-6 hover:shadow-lg hover:border-slate-300 transition-all duration-200 group"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-100 to-blue-50 flex items-center justify-center text-3xl border border-blue-200/50">
-                      {league.logo}
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <RefreshCw className="w-8 h-8 animate-spin text-slate-400 dark:text-slate-500" />
+            </div>
+          ) : filteredLeagues.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {filteredLeagues.map((league) => (
+                <div
+                  key={league.leagueId}
+                  className="bg-white/80 dark:bg-card/80 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-2xl p-6 hover:shadow-xl hover:shadow-[#FF4444]/10 hover:border-slate-300 dark:hover:border-white/20 transition-all duration-200 group"
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-100 to-blue-50 flex items-center justify-center border border-blue-200/50 overflow-hidden">
+                        {league.logoUrl ? (
+                          <img src={league.logoUrl} alt={league.leagueName} className="w-10 h-10 object-contain" />
+                        ) : (
+                          <span className="text-3xl">🏆</span>
+                        )}
+                      </div>
+                      <div>
+                        <h3 className="font-display font-bold text-xl text-slate-800 dark:text-foreground">{league.leagueName}</h3>
+                        <p className="text-slate-600 dark:text-[#A8A29E]">{league.leagueType}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="font-display font-bold text-xl text-slate-800">{league.name}</h3>
-                      <p className="text-slate-600">Mùa giải {league.season}</p>
-                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="text-slate-500 hover:text-slate-700 hover:bg-slate-100">
+                          <MoreVertical className="w-5 h-5" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="bg-white dark:bg-card backdrop-blur-xl border-slate-200 dark:border-white/10 shadow-xl">
+                        <DropdownMenuItem onClick={() => handleEdit(league)} className="text-slate-700 dark:text-foreground hover:bg-slate-50 dark:hover:bg-white/10 focus:bg-slate-50 dark:focus:bg-white/10">
+                          <Edit className="w-4 h-4 mr-2" />
+                          Chỉnh sửa
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 focus:bg-red-50 dark:focus:bg-red-500/10">
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Xóa
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="text-slate-500 hover:text-slate-700 hover:bg-slate-100">
-                        <MoreVertical className="w-5 h-5" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="bg-white border-slate-200 shadow-xl">
-                      <DropdownMenuItem onClick={() => handleEdit(league)} className="text-slate-700 hover:bg-slate-50 focus:bg-slate-50">
-                        <Edit className="w-4 h-4 mr-2" />
-                        Chỉnh sửa
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="text-red-600 hover:bg-red-50 focus:bg-red-50">
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Xóa
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
 
-                <div className="grid grid-cols-3 gap-4 mb-4">
-                  <div className="text-center p-3 rounded-xl bg-slate-50 border border-slate-100">
-                    <p className="font-mono text-2xl font-bold text-slate-800">{league.teams}</p>
-                    <p className="text-slate-500 text-xs">Đội</p>
-                  </div>
-                  <div className="text-center p-3 rounded-xl bg-slate-50 border border-slate-100">
-                    <p className="font-mono text-2xl font-bold text-slate-800">{league.matches}</p>
-                    <p className="text-slate-500 text-xs">Trận</p>
-                  </div>
-                  <div className="text-center p-3 rounded-xl bg-slate-50 border border-slate-100">
-                    <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                      league.status === "active"
-                        ? "bg-green-100 text-green-700 border border-green-200"
-                        : "bg-slate-100 text-slate-600 border border-slate-200"
-                    }`}>
-                      {league.status === "active" ? "Đang diễn ra" : "Hoàn thành"}
+                  <div className="grid grid-cols-3 gap-4 mb-4">
+                    <div className="text-center p-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10">
+                      <p className="font-mono text-2xl font-bold text-slate-800 dark:text-foreground">{league.teams?.length || 0}</p>
+                      <p className="text-slate-500 dark:text-[#A8A29E] text-xs">Đội</p>
+                    </div>
+                    <div className="text-center p-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10">
+                      <p className="font-mono text-2xl font-bold text-slate-800 dark:text-foreground">{league.seasons?.length || 0}</p>
+                      <p className="text-slate-500 dark:text-[#A8A29E] text-xs">Mùa</p>
+                    </div>
+                    <div className="text-center p-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10">
+                      <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-[#A8A29E] border border-slate-200 dark:border-white/10">
+                        {league.country || "Vietnam"}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="flex items-center justify-between text-sm text-slate-500 pt-4 border-t border-slate-100">
-                  <span>{league.startDate} - {league.endDate}</span>
-                  <Link
-                    to={`/admin/leagues/${league.id}`}
-                    className="flex items-center gap-1 text-blue-600 hover:text-blue-700 hover:underline font-medium"
-                  >
-                    Chi tiết
-                    <ChevronRight className="w-4 h-4" />
-                  </Link>
+                  <div className="flex items-center justify-between text-sm text-slate-500 dark:text-[#A8A29E] pt-4 border-t border-slate-100 dark:border-white/10">
+                    <span>API ID: {league.apiLeagueId}</span>
+                    <Link
+                      to={`/admin/leagues/${league.leagueId}`}
+                      className="flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:underline font-medium"
+                    >
+                      Chi tiết
+                      <ChevronRight className="w-4 h-4" />
+                    </Link>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <Trophy className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+              <p className="text-slate-500 dark:text-[#A8A29E]">Chưa có giải đấu nào. Nhấn "Đồng bộ giải đấu" để tải dữ liệu.</p>
+            </div>
+          )}
         </div>
       </AdminLayout>
   );
