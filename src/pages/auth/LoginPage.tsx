@@ -256,7 +256,7 @@ export default function LoginPage() {
 
             <div className="mt-6 text-center">
               <p className="text-slate-700 dark:text-[#A8A29E] font-body">
-                Chưa có tài khoản?{" "}
+                Bạn chưa có tài khoản?{" "}
                 <Link to="/register" className="text-[#00D9FF] hover:underline font-semibold">
                   Đăng ký ngay
                 </Link>

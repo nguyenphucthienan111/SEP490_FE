@@ -313,7 +313,7 @@ export default function RegisterPage() {
 
             <div className="mt-6 text-center">
               <p className="text-slate-600 dark:text-[#A8A29E] font-body">
-                Đã có tài khoản?{" "}
+                Bạn đã có tài khoản?{" "}
                 <Link to="/login" className="text-[#00D9FF] hover:underline font-semibold">
                   Đăng nhập
                 </Link>

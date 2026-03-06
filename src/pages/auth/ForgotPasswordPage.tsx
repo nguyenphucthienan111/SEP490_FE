@@ -105,7 +105,7 @@ export default function ForgotPasswordPage() {
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
-                      Gửi link đặt lại
+                      Gửi link đặt lại mật khẩu
                       <ArrowRight className="w-5 h-5" />
                     </div>
                   )}
