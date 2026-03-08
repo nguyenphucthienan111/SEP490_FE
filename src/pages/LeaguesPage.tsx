@@ -271,7 +271,7 @@ export default function LeaguesPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
-              className="mb-16 scroll-mt-8"
+              className="mb-16"
             >
             <div className="glass-card rounded-2xl p-6 sm:p-8 border-2 border-[#FF4444]/20 dark:border-[#FF4444]/30">
               {/* Header with Trophy Icon */}

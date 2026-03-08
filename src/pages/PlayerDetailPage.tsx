@@ -41,6 +41,9 @@ export default function PlayerDetailPage() {
   const [expandedContribution, setExpandedContribution] = useState<string | null>(null);
 
   useEffect(() => {
+    // Scroll to top when page loads
+    window.scrollTo(0, 0);
+    
     // Check if we came from a team detail page
     const state = location.state as { fromTeamId?: string } | undefined;
     if (state?.fromTeamId) {
@@ -608,21 +611,19 @@ export default function PlayerDetailPage() {
           )}
 
           {/* Compare Button */}
-          {player && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5 }}
-              className="text-center"
-            >
-              <Link to={`/compare?player1=${player.id}`}>
-                <Button className="bg-[#00D9FF] hover:bg-[#00E8FF] text-slate-900 font-label font-semibold px-8 h-12 rounded-xl">
-                  <Users className="w-4 h-4 mr-2" />
-                  So sánh với cầu thủ khác
-                </Button>
-              </Link>
-            </motion.div>
-          )}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+            className="text-center"
+          >
+            <Link to={`/compare?player1=${apiPlayer ? apiPlayer.playerId : player?.id}`}>
+              <Button className="bg-[#00D9FF] hover:bg-[#00E8FF] text-slate-900 font-label font-semibold px-8 h-12 rounded-xl">
+                <Users className="w-4 h-4 mr-2" />
+                So sánh với cầu thủ khác
+              </Button>
+            </Link>
+          </motion.div>
         </div>
       </div>
     </MainLayout>

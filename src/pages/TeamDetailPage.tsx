@@ -19,6 +19,9 @@ export default function TeamDetailPage() {
   const team = getTeamById(teamId || '');
 
   React.useEffect(() => {
+    // Scroll to top when page loads
+    window.scrollTo(0, 0);
+    
     setIsLoading(true);
     
     // Load team from localStorage

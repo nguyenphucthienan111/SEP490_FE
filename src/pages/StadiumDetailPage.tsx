@@ -25,6 +25,9 @@ export default function StadiumDetailPage() {
   };
 
   React.useEffect(() => {
+    // Scroll to top when page loads
+    window.scrollTo(0, 0);
+
     // Check if we came from a team detail page
     const state = location.state as { fromTeamId?: string } | undefined;
     if (state?.fromTeamId) {
