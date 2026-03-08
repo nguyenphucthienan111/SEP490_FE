@@ -30,7 +30,7 @@ export default function LeaguesPage() {
   const [apiTeams, setApiTeams] = React.useState<Team[]>([]);
   const [isLoadingLeagues, setIsLoadingLeagues] = React.useState(false);
   const [isLoadingTeams, setIsLoadingTeams] = React.useState(false);
-  const [selectedSeason, setSelectedSeason] = React.useState(new Date().getFullYear());
+  const [selectedSeason, setSelectedSeason] = React.useState(2024);
 
   React.useEffect(() => {
     // Load leagues and teams from localStorage on mount
@@ -179,13 +179,13 @@ export default function LeaguesPage() {
               
               return (
                 <motion.div
-                  key={league.id}
+                  key={leagueId}
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
                 >
                   <div 
-                    onClick={() => handleLeagueClick(league.id)}
+                    onClick={() => handleLeagueClick(isApiLeague && league.apiLeagueId === 340 ? 'l1' : leagueId)}
                     className={cn(
                       "group glass-card rounded-2xl p-8 hover:translate-y-[-4px] hover:shadow-xl transition-all duration-300 cursor-pointer h-full",
                       isSelected 
@@ -195,18 +195,22 @@ export default function LeaguesPage() {
                   >
                     <div className="flex items-start justify-between mb-6">
                       <div className={cn(
-                        "w-16 h-16 rounded-2xl flex items-center justify-center transition-all",
+                        "w-16 h-16 rounded-2xl flex items-center justify-center transition-all overflow-hidden",
                         isSelected
                           ? "bg-gradient-to-br from-[#FF4444] to-[#FF6666] shadow-lg shadow-[#FF4444]/30"
                           : "bg-gradient-to-br from-red-200 dark:from-[#FF4444]/20 to-blue-200 dark:to-[#00D9FF]/20"
                       )}>
-                        <Trophy className={cn(
-                          "w-8 h-8 transition-colors",
-                          isSelected ? "text-white" : "text-[#FF4444]"
-                        )} />
+                        {isApiLeague && league.logoUrl ? (
+                          <img src={league.logoUrl} alt={league.leagueName} className="w-12 h-12 object-contain" />
+                        ) : (
+                          <Trophy className={cn(
+                            "w-8 h-8 transition-colors",
+                            isSelected ? "text-white" : "text-[#FF4444]"
+                          )} />
+                        )}
                       </div>
                       <span className="px-4 py-1.5 rounded-full bg-blue-100 dark:bg-[#00D9FF]/10 text-[#00D9FF] text-sm font-label font-semibold">
-                        {league.season}
+                        {isApiLeague ? '2024' : league.season}
                       </span>
                     </div>
 
@@ -216,36 +220,42 @@ export default function LeaguesPage() {
                         ? "text-[#FF4444]" 
                         : "text-slate-900 dark:text-foreground group-hover:text-[#FF4444]"
                     )}>
-                      {league.name}
+                      {isApiLeague ? league.leagueName : league.name}
                     </h3>
-                    <p className="text-slate-600 dark:text-[#A8A29E] mb-6">{league.country}</p>
+                    <p className="text-slate-600 dark:text-[#A8A29E] mb-6">
+                      {isApiLeague ? (league.country || 'Vietnam') : league.country}
+                    </p>
 
                     <div className="grid grid-cols-2 gap-4 pt-6 border-t border-slate-200 dark:border-white/5">
                       <div>
                         <div className="flex items-center gap-2 mb-1">
                           <Users className="w-4 h-4 text-slate-600 dark:text-[#A8A29E]" />
-                          <span className="font-mono-data text-xl font-bold text-slate-900 dark:text-foreground">{league.teamCount}</span>
+                          <span className="font-mono-data text-xl font-bold text-slate-900 dark:text-foreground">
+                            {isApiLeague ? (league.teams?.length || 0) : league.teamCount}
+                          </span>
                         </div>
-                        <p className="text-xs text-slate-600 dark:text-[#A8A29E]">Teams</p>
+                        <p className="text-xs text-slate-600 dark:text-[#A8A29E]">Đội</p>
                       </div>
                       <div>
                         <div className="flex items-center gap-2 mb-1">
                           <Calendar className="w-4 h-4 text-slate-600 dark:text-[#A8A29E]" />
-                          <span className="font-mono-data text-xl font-bold text-slate-900 dark:text-foreground">{league.matchesPlayed}</span>
+                          <span className="font-mono-data text-xl font-bold text-slate-900 dark:text-foreground">
+                            {isApiLeague ? '-' : league.matchesPlayed}
+                          </span>
                         </div>
-                        <p className="text-xs text-slate-600 dark:text-[#A8A29E]">Matches</p>
+                        <p className="text-xs text-slate-600 dark:text-[#A8A29E]">Trận đấu</p>
                       </div>
                     </div>
 
-                    {isSelected && league.id === 'l1' && (
+                    {isSelected && (isApiLeague && league.apiLeagueId === 340 || leagueId === 'l1') && (
                       <div className="mt-6 flex items-center justify-center gap-2 px-4 py-2 bg-[#FF4444] text-white rounded-lg font-label font-semibold text-sm">
-                        <span>Viewing Standings</span>
+                        <span>Đang xem bảng xếp hạng</span>
                         <ArrowRight className="w-4 h-4" />
                       </div>
                     )}
-                    {isSelected && league.id !== 'l1' && (
+                    {isSelected && !(isApiLeague && league.apiLeagueId === 340 || leagueId === 'l1') && (
                       <div className="mt-6 flex items-center justify-center gap-2 px-4 py-2 bg-slate-400 text-white rounded-lg font-label font-semibold text-sm">
-                        <span>No Data Available</span>
+                        <span>Chưa có dữ liệu</span>
                       </div>
                     )}
                   </div>
@@ -272,15 +282,15 @@ export default function LeaguesPage() {
                   </div>
                   <div>
                     <h2 className="font-display font-extrabold text-3xl text-slate-900 dark:text-foreground mb-1">
-                      V.League 1 Standings
+                      Bảng xếp hạng V.League 1
                     </h2>
                     <p className="text-sm text-slate-600 dark:text-[#A8A29E] font-medium">
-                      Current season rankings and team performance
+                      Xếp hạng và thành tích các đội
                     </p>
                   </div>
                 </div>
                 <span className="px-5 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-[#00D9FF] text-white text-base font-label font-bold shadow-lg">
-                  2025
+                  {selectedSeason}
                 </span>
               </div>
 
@@ -288,8 +298,8 @@ export default function LeaguesPage() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b-2 border-slate-300 dark:border-white/10">
-                      <th className="text-left py-4 px-3 font-label text-xs text-slate-700 dark:text-[#A8A29E] uppercase tracking-wider font-bold">Pos</th>
-                      <th className="text-left py-4 px-3 font-label text-xs text-slate-700 dark:text-[#A8A29E] uppercase tracking-wider font-bold">Team</th>
+                      <th className="text-left py-4 px-3 font-label text-xs text-slate-700 dark:text-[#A8A29E] uppercase tracking-wider font-bold">POS</th>
+                      <th className="text-left py-4 px-3 font-label text-xs text-slate-700 dark:text-[#A8A29E] uppercase tracking-wider font-bold">TEAM</th>
                       <th className="text-center py-4 px-3 font-label text-xs text-slate-700 dark:text-[#A8A29E] uppercase tracking-wider font-bold">P</th>
                       <th className="text-center py-4 px-3 font-label text-xs text-slate-700 dark:text-[#A8A29E] uppercase tracking-wider font-bold">W</th>
                       <th className="text-center py-4 px-3 font-label text-xs text-slate-700 dark:text-[#A8A29E] uppercase tracking-wider font-bold">D</th>
@@ -297,18 +307,22 @@ export default function LeaguesPage() {
                       <th className="text-center py-4 px-3 font-label text-xs text-slate-700 dark:text-[#A8A29E] uppercase tracking-wider font-bold">GF</th>
                       <th className="text-center py-4 px-3 font-label text-xs text-slate-700 dark:text-[#A8A29E] uppercase tracking-wider font-bold">GA</th>
                       <th className="text-center py-4 px-3 font-label text-xs text-slate-700 dark:text-[#A8A29E] uppercase tracking-wider font-bold">GD</th>
-                      <th className="text-center py-4 px-3 font-label text-xs text-slate-700 dark:text-[#A8A29E] uppercase tracking-wider font-bold">Pts</th>
-                      <th className="text-center py-4 px-3 font-label text-xs text-slate-700 dark:text-[#A8A29E] uppercase tracking-wider font-bold">Form</th>
+                      <th className="text-center py-4 px-3 font-label text-xs text-slate-700 dark:text-[#A8A29E] uppercase tracking-wider font-bold">PTS</th>
+                      <th className="text-center py-4 px-3 font-label text-xs text-slate-700 dark:text-[#A8A29E] uppercase tracking-wider font-bold">FORM</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {standings.map((team, index) => {
-                      const isTopThree = team.position <= 3;
-                      const isRelegation = team.position >= 11;
+                    {(apiTeams.length > 0 ? [...apiTeams].sort((a, b) => a.teamId - b.teamId) : standings).map((item, index) => {
+                      const isApiTeam = 'teamId' in item;
+                      const position = isApiTeam ? (index + 1) : item.position;
+                      const teamName = isApiTeam ? item.teamName : item.team;
+                      const totalTeams = apiTeams.length > 0 ? apiTeams.length : standings.length;
+                      const isTopThree = position <= 3;
+                      const isRelegation = position > (totalTeams - 3);
 
                       return (
                         <motion.tr
-                          key={team.position}
+                          key={isApiTeam ? item.teamId : item.position}
                           initial={{ opacity: 0, x: -20 }}
                           whileInView={{ opacity: 1, x: 0 }}
                           viewport={{ once: true }}
@@ -328,7 +342,7 @@ export default function LeaguesPage() {
                                 isRelegation && "text-red-600 dark:text-red-400",
                                 !isTopThree && !isRelegation && "text-slate-700 dark:text-slate-400"
                               )}>
-                                {team.position}
+                                {position}
                               </span>
                               {isTopThree && <TrendingUp className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />}
                               {isRelegation && <TrendingDown className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />}
@@ -336,65 +350,89 @@ export default function LeaguesPage() {
                           </td>
                           <td className="py-3 px-3">
                             <Link 
-                              to={`/teams/${teams.find(t => t.name === team.team)?.id || ''}`}
+                              to={isApiTeam ? `/teams/${item.teamId}` : `/teams/${teams.find(t => t.name === teamName)?.id || ''}`}
                               className="flex items-center gap-2 hover:opacity-80 transition-opacity"
                             >
-                              <div className="w-8 h-8 rounded-lg bg-slate-200 dark:bg-white/5 flex items-center justify-center text-xs font-display font-bold text-slate-900 dark:text-foreground border border-slate-300 dark:border-white/10">
-                                {team.team.charAt(0)}
-                              </div>
+                              {isApiTeam && item.logoUrl ? (
+                                <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center border border-slate-300 dark:border-white/10">
+                                  <img src={item.logoUrl} alt={teamName} className="w-7 h-7 object-contain" />
+                                </div>
+                              ) : (
+                                <div className="w-8 h-8 rounded-lg bg-slate-200 dark:bg-white/5 flex items-center justify-center text-xs font-display font-bold text-slate-900 dark:text-foreground border border-slate-300 dark:border-white/10">
+                                  {teamName.charAt(0)}
+                                </div>
+                              )}
                               <span className="font-body font-semibold text-sm text-slate-900 dark:text-foreground hover:text-[#00D9FF] transition-colors">
-                                {team.team}
+                                {teamName}
                               </span>
                             </Link>
                           </td>
                           <td className="py-3 px-3 text-center">
-                            <span className="font-mono-data text-sm text-slate-700 dark:text-slate-400">{team.played}</span>
+                            <span className="font-mono-data text-sm text-slate-700 dark:text-slate-400">
+                              {isApiTeam ? 0 : item.played}
+                            </span>
                           </td>
                           <td className="py-3 px-3 text-center">
-                            <span className="font-mono-data text-sm text-slate-700 dark:text-slate-400">{team.won}</span>
+                            <span className="font-mono-data text-sm text-slate-700 dark:text-slate-400">
+                              {isApiTeam ? 0 : item.won}
+                            </span>
                           </td>
                           <td className="py-3 px-3 text-center">
-                            <span className="font-mono-data text-sm text-slate-700 dark:text-slate-400">{team.drawn}</span>
+                            <span className="font-mono-data text-sm text-slate-700 dark:text-slate-400">
+                              {isApiTeam ? 0 : item.drawn}
+                            </span>
                           </td>
                           <td className="py-3 px-3 text-center">
-                            <span className="font-mono-data text-sm text-slate-700 dark:text-slate-400">{team.lost}</span>
+                            <span className="font-mono-data text-sm text-slate-700 dark:text-slate-400">
+                              {isApiTeam ? 0 : item.lost}
+                            </span>
                           </td>
                           <td className="py-3 px-3 text-center">
-                            <span className="font-mono-data text-sm text-slate-700 dark:text-slate-400">{team.goalsFor}</span>
+                            <span className="font-mono-data text-sm text-slate-700 dark:text-slate-400">
+                              {isApiTeam ? 0 : item.goalsFor}
+                            </span>
                           </td>
                           <td className="py-3 px-3 text-center">
-                            <span className="font-mono-data text-sm text-slate-700 dark:text-slate-400">{team.goalsAgainst}</span>
+                            <span className="font-mono-data text-sm text-slate-700 dark:text-slate-400">
+                              {isApiTeam ? 0 : item.goalsAgainst}
+                            </span>
                           </td>
                           <td className="py-3 px-3 text-center">
                             <span className={cn(
                               "font-mono-data text-sm font-semibold",
-                              team.goalDifference > 0 ? "text-green-600 dark:text-green-400" : 
-                              team.goalDifference < 0 ? "text-red-600 dark:text-red-400" : 
+                              isApiTeam ? "text-slate-700 dark:text-slate-400" :
+                              item.goalDifference > 0 ? "text-green-600 dark:text-green-400" : 
+                              item.goalDifference < 0 ? "text-red-600 dark:text-red-400" : 
                               "text-slate-700 dark:text-slate-400"
                             )}>
-                              {team.goalDifference > 0 ? '+' : ''}{team.goalDifference}
+                              {isApiTeam ? 0 : (item.goalDifference > 0 ? '+' : '') + item.goalDifference}
                             </span>
                           </td>
                           <td className="py-3 px-3 text-center">
                             <span className="font-mono-data text-sm font-bold text-slate-900 dark:text-foreground">
-                              {team.points}
+                              {isApiTeam ? 0 : item.points}
                             </span>
                           </td>
                           <td className="py-3 px-3">
                             <div className="flex items-center justify-center gap-1">
-                              {team.form.map((result, i) => (
-                                <div
-                                  key={i}
-                                  className={cn(
-                                    "w-6 h-6 rounded flex items-center justify-center text-xs font-bold",
-                                    result === 'W' && "bg-green-500 text-white",
-                                    result === 'D' && "bg-slate-400 text-white",
-                                    result === 'L' && "bg-red-500 text-white"
-                                  )}
-                                >
-                                  {result}
-                                </div>
-                              ))}
+                              {isApiTeam ? (
+                                // Empty form for API teams
+                                <span className="text-xs text-slate-400 dark:text-slate-500">-</span>
+                              ) : (
+                                item.form.map((result, i) => (
+                                  <div
+                                    key={i}
+                                    className={cn(
+                                      "w-6 h-6 rounded flex items-center justify-center text-xs font-bold",
+                                      result === 'W' && "bg-green-500 text-white",
+                                      result === 'D' && "bg-slate-400 text-white",
+                                      result === 'L' && "bg-red-500 text-white"
+                                    )}
+                                  >
+                                    {result}
+                                  </div>
+                                ))
+                              )}
                             </div>
                           </td>
                         </motion.tr>
@@ -411,10 +449,10 @@ export default function LeaguesPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <TrendingDown className="w-4 h-4 text-red-600 dark:text-red-400" />
-                  <span>Relegation Zone</span>
+                  <span>Khu vực xuống hạng</span>
                 </div>
                 <span>•</span>
-                <span>P: Played, W: Won, D: Drawn, L: Lost, GF: Goals For, GA: Goals Against, GD: Goal Difference, Pts: Points</span>
+                <span>P: Played, W: Won, D: Drawn, L: Lost, GF: Goals For, GA: Goals Against, GD: Goal Difference, PTS: Points</span>
               </div>
             </div>
           </motion.div>
