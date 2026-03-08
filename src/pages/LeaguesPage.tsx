@@ -1,10 +1,12 @@
 import { motion } from 'framer-motion';
-import { Trophy, Calendar, Users, ArrowRight, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { Trophy, Calendar, Users, ArrowRight, TrendingUp, TrendingDown, Minus, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { leagues, teams, matches } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 import React from 'react';
+import { leagueService, League, Team } from '@/services/leagueService';
+import { toast } from 'sonner';
 
 // Mock standings data
 const standings = [
@@ -24,6 +26,65 @@ const standings = [
 
 export default function LeaguesPage() {
   const [selectedLeague, setSelectedLeague] = React.useState<string | null>('l1');
+  const [apiTeams, setApiTeams] = React.useState<Team[]>([]);
+  const [isLoadingTeams, setIsLoadingTeams] = React.useState(false);
+  const [selectedSeason, setSelectedSeason] = React.useState(new Date().getFullYear());
+
+  React.useEffect(() => {
+    // Load teams from localStorage on mount
+    loadTeamsFromCache();
+  }, []);
+
+  const loadTeamsFromCache = () => {
+    try {
+      const cached = localStorage.getItem('leagues');
+      if (cached) {
+        const leagues: League[] = JSON.parse(cached);
+        // Find V.League 1 (apiLeagueId: 340)
+        const vLeague1 = leagues.find(l => l.apiLeagueId === 340);
+        if (vLeague1 && Array.isArray(vLeague1.teams) && vLeague1.teams.length > 0) {
+          setApiTeams(vLeague1.teams);
+          console.log('Loaded teams from localStorage:', vLeague1.teams);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to parse cached leagues:', e);
+    }
+  };
+
+  const handleSyncTeams = async () => {
+    setIsLoadingTeams(true);
+    try {
+      // V.League 1 has apiLeagueId: 340
+      const teams = await leagueService.syncTeams(340, selectedSeason);
+      console.log('=== SYNC TEAMS DEBUG ===');
+      console.log('Season:', selectedSeason);
+      console.log('Teams response:', teams);
+      console.log('Number of teams:', teams.length);
+      console.log('All teams:', teams);
+      
+      // Update localStorage
+      const cached = localStorage.getItem('leagues');
+      if (cached) {
+        const leagues: League[] = JSON.parse(cached);
+        const updatedLeagues = leagues.map(l => 
+          l.apiLeagueId === 340 
+            ? { ...l, teams: teams || [] }
+            : l
+        );
+        localStorage.setItem('leagues', JSON.stringify(updatedLeagues));
+        console.log('Updated leagues in localStorage');
+      }
+      
+      setApiTeams(teams || []);
+      toast.success(`Đồng bộ thành công ${teams.length} đội cho mùa ${selectedSeason}!`);
+    } catch (error) {
+      console.error('Failed to sync teams:', error);
+      toast.error('Đồng bộ đội thất bại');
+    } finally {
+      setIsLoadingTeams(false);
+    }
+  };
 
   const scrollToStandings = () => {
     const standingsElement = document.getElementById('standings-section');
@@ -318,32 +379,98 @@ export default function LeaguesPage() {
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <h2 className="font-display font-bold text-2xl text-foreground mb-6">
-              V.League 1 Teams
-            </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-              {teams.map((team, index) => (
-                <motion.div
-                  key={team.id}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.3, delay: index * 0.05 }}
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="font-display font-bold text-2xl text-foreground">
+                V.League 1 Teams {apiTeams.length > 0 && `(${apiTeams.length})`}
+              </h2>
+              <div className="flex items-center gap-3">
+                <select
+                  value={selectedSeason}
+                  onChange={(e) => setSelectedSeason(parseInt(e.target.value))}
+                  className="px-4 py-2 rounded-lg bg-white dark:bg-card border border-slate-200 dark:border-white/10 text-slate-900 dark:text-foreground text-sm font-medium"
                 >
-                  <div className="glass-card rounded-xl p-4 hover:bg-slate-100 dark:bg-white/5 transition-colors cursor-pointer">
-                    <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-white/5 flex items-center justify-center mb-3">
-                      <span className="font-display font-bold text-lg text-foreground">
-                        {team.name.charAt(0)}
-                      </span>
-                    </div>
-                    <h4 className="font-body font-medium text-sm text-foreground truncate">
-                      {team.name}
-                    </h4>
-                    <p className="text-xs text-slate-600 dark:text-[#A8A29E]">{team.league}</p>
-                  </div>
-                </motion.div>
-              ))}
+                  <option value={2025}>2025</option>
+                  <option value={2024}>2024</option>
+                  <option value={2023}>2023</option>
+                  <option value={2022}>2022</option>
+                </select>
+                <button
+                  onClick={handleSyncTeams}
+                  disabled={isLoadingTeams}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-[#FF4444] to-[#FF6666] text-white font-medium text-sm hover:shadow-lg transition-all disabled:opacity-50"
+                >
+                  <RefreshCw className={cn("w-4 h-4", isLoadingTeams && "animate-spin")} />
+                  {isLoadingTeams ? 'Đang đồng bộ...' : 'Đồng bộ đội'}
+                </button>
+              </div>
             </div>
+            
+            {isLoadingTeams ? (
+              <div className="flex items-center justify-center py-12">
+                <RefreshCw className="w-8 h-8 animate-spin text-slate-400 dark:text-slate-500" />
+              </div>
+            ) : (apiTeams && apiTeams.length > 0) ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                {apiTeams.map((team, index) => (
+                  <motion.div
+                    key={team.teamId}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.3, delay: index * 0.05 }}
+                  >
+                    <Link to={`/teams/${team.teamId}`}>
+                      <div className="glass-card rounded-xl p-4 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors cursor-pointer">
+                        <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-white/5 flex items-center justify-center mb-3 overflow-hidden">
+                          {team.logoUrl ? (
+                            <img src={team.logoUrl} alt={team.teamName} className="w-10 h-10 object-contain" />
+                          ) : (
+                            <span className="font-display font-bold text-lg text-foreground">
+                              {team.teamName.charAt(0)}
+                            </span>
+                          )}
+                        </div>
+                        <h4 className="font-body font-medium text-sm text-foreground truncate" title={team.teamName}>
+                          {team.teamName}
+                        </h4>
+                        <p className="text-xs text-slate-600 dark:text-[#A8A29E]">
+                          V.League 1
+                        </p>
+                        {team.founded && (
+                          <p className="text-xs text-slate-500 dark:text-[#A8A29E] mt-1">
+                            Thành lập: {team.founded}
+                          </p>
+                        )}
+                      </div>
+                    </Link>
+                  </motion.div>
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                {teams && teams.map((team, index) => (
+                  <motion.div
+                    key={team.id}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.3, delay: index * 0.05 }}
+                  >
+                    <div className="glass-card rounded-xl p-4 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors cursor-pointer">
+                      <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-white/5 flex items-center justify-center mb-3">
+                        <span className="font-display font-bold text-lg text-foreground">
+                          {team.name.charAt(0)}
+                        </span>
+                      </div>
+                      <h4 className="font-body font-medium text-sm text-foreground truncate">
+                        {team.name}
+                      </h4>
+                      <p className="text-xs text-slate-600 dark:text-[#A8A29E]">{team.league}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
           </motion.div>
         </div>
       </div>

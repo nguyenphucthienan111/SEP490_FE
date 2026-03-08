@@ -11,6 +11,7 @@ import {
   ChevronRight,
   MoreVertical,
   RefreshCw,
+  Download,
 } from "lucide-react";
 import { AdminLayout } from "./AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -54,6 +55,8 @@ export default function AdminLeaguesPage() {
   const [leagues, setLeagues] = useState<League[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [syncingTeams, setSyncingTeams] = useState<{ [key: number]: boolean }>({});
+  const [selectedSeason, setSelectedSeason] = useState<{ [key: number]: number }>({});
 
   useEffect(() => {
     // Load leagues from localStorage on mount
@@ -89,6 +92,34 @@ export default function AdminLeaguesPage() {
       toast.error('Đồng bộ giải đấu thất bại');
     } finally {
       setIsSyncing(false);
+    }
+  };
+
+  const handleSyncTeams = async (league: League) => {
+    const season = selectedSeason[league.leagueId] || new Date().getFullYear();
+    
+    setSyncingTeams(prev => ({ ...prev, [league.leagueId]: true }));
+    try {
+      const teams = await leagueService.syncTeams(league.apiLeagueId, season);
+      console.log('Synced teams:', teams);
+      
+      // Update league with synced teams
+      const updatedLeagues = leagues.map(l => 
+        l.leagueId === league.leagueId 
+          ? { ...l, teams: teams }
+          : l
+      );
+      
+      // Save to localStorage
+      localStorage.setItem('leagues', JSON.stringify(updatedLeagues));
+      setLeagues(updatedLeagues);
+      
+      toast.success(`Đồng bộ thành công ${teams.length} đội cho ${league.leagueName}!`);
+    } catch (error) {
+      console.error('Failed to sync teams:', error);
+      toast.error(`Đồng bộ đội thất bại cho ${league.leagueName}`);
+    } finally {
+      setSyncingTeams(prev => ({ ...prev, [league.leagueId]: false }));
     }
   };
 
@@ -301,6 +332,45 @@ export default function AdminLeaguesPage() {
                       <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-[#A8A29E] border border-slate-200 dark:border-white/10">
                         {league.country || "Vietnam"}
                       </div>
+                    </div>
+                  </div>
+
+                  {/* Sync Teams Section */}
+                  <div className="mb-4 p-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Users className="w-4 h-4 text-slate-600 dark:text-[#A8A29E]" />
+                      <span className="text-sm font-medium text-slate-700 dark:text-foreground">Đồng bộ đội</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Select 
+                        value={selectedSeason[league.leagueId]?.toString() || new Date().getFullYear().toString()}
+                        onValueChange={(value) => setSelectedSeason(prev => ({ ...prev, [league.leagueId]: parseInt(value) }))}
+                      >
+                        <SelectTrigger className="flex-1 bg-white dark:bg-card border-slate-200 dark:border-white/10 text-slate-800 dark:text-foreground">
+                          <SelectValue placeholder="Chọn mùa" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white/95 dark:bg-card/95 backdrop-blur-xl border-slate-200 dark:border-white/10 shadow-xl">
+                          <SelectItem value="2025">2025</SelectItem>
+                          <SelectItem value="2024">2024</SelectItem>
+                          <SelectItem value="2023">2023</SelectItem>
+                          <SelectItem value="2022">2022</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        size="sm"
+                        onClick={() => handleSyncTeams(league)}
+                        disabled={syncingTeams[league.leagueId]}
+                        className="bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700"
+                      >
+                        {syncingTeams[league.leagueId] ? (
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <>
+                            <Download className="w-4 h-4 mr-1" />
+                            Đồng bộ
+                          </>
+                        )}
+                      </Button>
                     </div>
                   </div>
 

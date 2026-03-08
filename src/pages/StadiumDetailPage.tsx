@@ -1,17 +1,74 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, MapPin, Users, Calendar, Home, TrendingUp, Leaf } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { getStadiumById, matches, teams } from '@/data/mockData';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import React from 'react';
+import { Stadium, League } from '@/services/leagueService';
 
 export default function StadiumDetailPage() {
   const { stadiumId } = useParams<{ stadiumId: string }>();
-  const stadium = getStadiumById(stadiumId || '');
+  const location = useLocation();
+  const [apiStadium, setApiStadium] = React.useState<Stadium | null>(null);
+  const [fromTeamId, setFromTeamId] = React.useState<string | null>(null);
+  const [homeTeamsFromApi, setHomeTeamsFromApi] = React.useState<any[]>([]);
+  const mockStadium = getStadiumById(stadiumId || '');
 
-  console.log('Stadium ID:', stadiumId);
-  console.log('Stadium found:', stadium);
+  // Helper function to safely convert to string, return empty if object
+  const safeString = (value: any, fallback: string = ''): string => {
+    if (value === null || value === undefined) return fallback;
+    if (typeof value === 'object') return fallback;
+    return String(value);
+  };
+
+  React.useEffect(() => {
+    // Check if we came from a team detail page
+    const state = location.state as { fromTeamId?: string } | undefined;
+    if (state?.fromTeamId) {
+      setFromTeamId(state.fromTeamId);
+    }
+
+    // Load stadium from localStorage (from teams data)
+    const cached = localStorage.getItem('leagues');
+    if (cached && stadiumId) {
+      try {
+        const leagues: League[] = JSON.parse(cached);
+        const teamsWithThisStadium: any[] = [];
+        
+        // Find stadium and all teams using it
+        for (const league of leagues) {
+          if (league.teams && Array.isArray(league.teams)) {
+            for (const team of league.teams) {
+              if (team.stadium && team.stadium.stadiumId.toString() === stadiumId) {
+                if (!apiStadium) {
+                  setApiStadium(team.stadium);
+                  console.log('Found stadium from API:', team.stadium);
+                }
+                teamsWithThisStadium.push(team);
+                
+                // If we don't have fromTeamId from state, use this team
+                if (!state?.fromTeamId && !fromTeamId) {
+                  setFromTeamId(team.teamId.toString());
+                }
+              }
+            }
+          }
+        }
+        
+        setHomeTeamsFromApi(teamsWithThisStadium);
+        console.log('Teams using this stadium:', teamsWithThisStadium);
+      } catch (e) {
+        console.error('Failed to parse cached leagues:', e);
+      }
+    }
+  }, [stadiumId, location.state]);
+
+  const stadium = apiStadium || mockStadium;
+
+  // Find teams that use this stadium as home
+  const homeTeams = homeTeamsFromApi.length > 0 ? homeTeamsFromApi : teams.filter(team => team.homeStadium?.id === stadium?.id);
 
   if (!stadium) {
     return (
@@ -35,19 +92,21 @@ export default function StadiumDetailPage() {
     );
   }
 
-  // Find teams that use this stadium as home
-  const homeTeams = teams.filter(team => team.homeStadium?.id === stadium.id);
-
   // Find matches played at this stadium
-  const stadiumMatches = matches.filter(match => match.stadium?.id === stadium.id);
+  const stadiumMatches = stadium ? matches.filter(match => match.stadium?.id === stadium.id) : [];
   const upcomingMatches = stadiumMatches.filter(m => m.status === 'scheduled');
   const recentMatches = stadiumMatches
     .filter(m => m.status === 'completed')
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 5);
 
-  const surfaceLabel = stadium.surface === 'grass' ? 'Cỏ tự nhiên' : 
-                       stadium.surface === 'artificial' ? 'Cỏ nhân tạo' : 'Cỏ lai';
+  const surfaceLabel = stadium?.surface 
+    ? (typeof stadium.surface === 'string' 
+        ? (stadium.surface === 'grass' ? 'Cỏ tự nhiên' : 
+           stadium.surface === 'artificial' ? 'Cỏ nhân tạo' : 
+           safeString(stadium.surface, 'Không rõ'))
+        : 'Không rõ')
+    : 'Không rõ';
 
   return (
     <MainLayout>
@@ -59,7 +118,10 @@ export default function StadiumDetailPage() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <Link to="/leagues" className="inline-flex items-center gap-2 text-slate-700 dark:text-[#A8A29E] hover:text-slate-900 dark:hover:text-foreground transition-colors mb-8">
+            <Link 
+              to={fromTeamId ? `/teams/${fromTeamId}` : '/leagues'} 
+              className="inline-flex items-center gap-2 text-slate-700 dark:text-[#A8A29E] hover:text-slate-900 dark:hover:text-foreground transition-colors mb-8"
+            >
               <ArrowLeft className="w-4 h-4" />
               <span className="font-label text-sm font-medium">Quay lại</span>
             </Link>
@@ -73,32 +135,32 @@ export default function StadiumDetailPage() {
             className="glass-card rounded-3xl overflow-hidden mb-8"
           >
             {/* Stadium Image */}
-            {stadium.imageUrl ? (
+            {stadium?.imageUrl ? (
               <div className="relative h-64 sm:h-96 overflow-hidden">
                 <img 
                   src={stadium.imageUrl} 
-                  alt={stadium.name}
+                  alt={String(stadium.name || 'Stadium')}
                   className="w-full h-full object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-slate-900/40 to-transparent" />
                 <div className="absolute bottom-0 left-0 right-0 p-8">
                   <h1 className="font-display font-bold text-4xl sm:text-5xl text-white mb-2">
-                    {stadium.name}
+                    {apiStadium ? safeString(apiStadium.stadiumName, 'Stadium') : safeString(stadium?.name, 'Stadium')}
                   </h1>
                   <div className="flex items-center gap-2 text-white/90">
                     <MapPin className="w-5 h-5" />
-                    <span className="font-body text-lg">{stadium.city}</span>
+                    <span className="font-body text-lg">{safeString(stadium?.city)}</span>
                   </div>
                 </div>
               </div>
             ) : (
               <div className="p-8 bg-gradient-to-br from-[#00D9FF]/10 to-[#FF4444]/10">
                 <h1 className="font-display font-bold text-4xl sm:text-5xl text-slate-900 dark:text-foreground mb-2">
-                  {stadium.name}
+                  {apiStadium ? safeString(apiStadium.stadiumName, 'Stadium') : safeString(stadium?.name, 'Stadium')}
                 </h1>
                 <div className="flex items-center gap-2 text-slate-700 dark:text-[#A8A29E]">
                   <MapPin className="w-5 h-5" />
-                  <span className="font-body text-lg">{stadium.city}</span>
+                  <span className="font-body text-lg">{safeString(stadium?.city)}</span>
                 </div>
               </div>
             )}
@@ -109,7 +171,7 @@ export default function StadiumDetailPage() {
                 <div className="text-center p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10">
                   <Users className="w-8 h-8 text-[#00D9FF] mx-auto mb-2" />
                   <p className="font-mono-data text-2xl font-bold text-slate-900 dark:text-foreground mb-1">
-                    {stadium.capacity.toLocaleString()}
+                    {stadium?.capacity ? stadium.capacity.toLocaleString() : '-'}
                   </p>
                   <p className="text-xs text-slate-600 dark:text-[#A8A29E] font-label uppercase tracking-wider font-semibold">
                     Sức chứa
@@ -119,17 +181,17 @@ export default function StadiumDetailPage() {
                 <div className="text-center p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10">
                   <Calendar className="w-8 h-8 text-[#00D9FF] mx-auto mb-2" />
                   <p className="font-mono-data text-2xl font-bold text-slate-900 dark:text-foreground mb-1">
-                    {stadium.yearBuilt}
+                    {apiStadium ? String(apiStadium.stadiumId || '-') : (stadium?.yearBuilt || '-')}
                   </p>
                   <p className="text-xs text-slate-600 dark:text-[#A8A29E] font-label uppercase tracking-wider font-semibold">
-                    Năm xây dựng
+                    {apiStadium ? 'Stadium ID' : 'Năm xây dựng'}
                   </p>
                 </div>
 
                 <div className="text-center p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10">
                   <Leaf className="w-8 h-8 text-[#00D9FF] mx-auto mb-2" />
                   <p className="font-body text-lg font-bold text-slate-900 dark:text-foreground mb-1">
-                    {surfaceLabel}
+                    {String(surfaceLabel)}
                   </p>
                   <p className="text-xs text-slate-600 dark:text-[#A8A29E] font-label uppercase tracking-wider font-semibold">
                     Mặt sân
@@ -147,7 +209,7 @@ export default function StadiumDetailPage() {
                 </div>
               </div>
 
-              {stadium.address && (
+              {stadium?.address && typeof stadium.address === 'string' && (
                 <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-500/10 rounded-2xl border border-blue-200 dark:border-blue-500/30">
                   <div className="flex items-start gap-3">
                     <MapPin className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
@@ -178,22 +240,29 @@ export default function StadiumDetailPage() {
             {homeTeams.length > 0 ? (
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {homeTeams.map((team) => (
-                  <div
-                    key={team.id}
+                  <Link
+                    key={team.teamId || team.id}
+                    to={`/teams/${team.teamId || team.id}`}
                     className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
                   >
-                    <div className="w-16 h-16 rounded-xl bg-slate-200 dark:bg-white/5 flex items-center justify-center border border-slate-300 dark:border-white/10">
-                      <span className="font-display font-bold text-2xl text-slate-900 dark:text-foreground">
-                        {team.name.charAt(0)}
-                      </span>
+                    <div className="w-16 h-16 rounded-xl bg-slate-200 dark:bg-white/5 flex items-center justify-center border border-slate-300 dark:border-white/10 overflow-hidden">
+                      {team.logoUrl ? (
+                        <img src={team.logoUrl} alt={safeString(team.teamName || team.name, 'Team')} className="w-12 h-12 object-contain" />
+                      ) : (
+                        <span className="font-display font-bold text-2xl text-slate-900 dark:text-foreground">
+                          {safeString(team.teamName || team.name, 'T').charAt(0)}
+                        </span>
+                      )}
                     </div>
                     <div className="flex-1">
                       <h4 className="font-display font-bold text-lg text-slate-900 dark:text-foreground">
-                        {team.name}
+                        {safeString(team.teamName || team.name, 'Team')}
                       </h4>
-                      <p className="text-sm text-slate-600 dark:text-[#A8A29E]">{team.league}</p>
+                      <p className="text-sm text-slate-600 dark:text-[#A8A29E]">
+                        {safeString(team.shortName || team.league, 'V.League 1')}
+                      </p>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             ) : (
