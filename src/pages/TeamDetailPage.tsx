@@ -218,25 +218,6 @@ export default function TeamDetailPage() {
                 </>
               )}
             </div>
-
-            {apiTeam && (
-              <div className="grid grid-cols-2 gap-4 pt-6 border-t border-slate-200 dark:border-white/10">
-                <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-white/5 rounded-xl">
-                  <Building2 className="w-5 h-5 text-slate-600 dark:text-[#A8A29E]" />
-                  <div>
-                    <p className="text-xs text-slate-600 dark:text-[#A8A29E]">Club ID</p>
-                    <p className="font-mono-data text-sm font-bold text-slate-900 dark:text-foreground">{apiTeam.clubId}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-white/5 rounded-xl">
-                  <Trophy className="w-5 h-5 text-slate-600 dark:text-[#A8A29E]" />
-                  <div>
-                    <p className="text-xs text-slate-600 dark:text-[#A8A29E]">API Team ID</p>
-                    <p className="font-mono-data text-sm font-bold text-slate-900 dark:text-foreground">{apiTeam.apiTeamId}</p>
-                  </div>
-                </div>
-              </div>
-            )}
           </motion.div>
 
           {/* Home Stadium */}

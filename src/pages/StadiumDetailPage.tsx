@@ -14,6 +14,7 @@ export default function StadiumDetailPage() {
   const [apiStadium, setApiStadium] = React.useState<Stadium | null>(null);
   const [fromTeamId, setFromTeamId] = React.useState<string | null>(null);
   const [homeTeamsFromApi, setHomeTeamsFromApi] = React.useState<any[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
   const mockStadium = getStadiumById(stadiumId || '');
 
   // Helper function to safely convert to string, return empty if object
@@ -63,12 +64,26 @@ export default function StadiumDetailPage() {
         console.error('Failed to parse cached leagues:', e);
       }
     }
+    setIsLoading(false);
   }, [stadiumId, location.state]);
 
   const stadium = apiStadium || mockStadium;
 
   // Find teams that use this stadium as home
   const homeTeams = homeTeamsFromApi.length > 0 ? homeTeamsFromApi : teams.filter(team => team.homeStadium?.id === stadium?.id);
+
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <div className="min-h-screen flex items-center justify-center py-20">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-[#00D9FF] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-slate-600 dark:text-[#A8A29E]">Đang tải...</p>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
 
   if (!stadium) {
     return (
@@ -167,7 +182,7 @@ export default function StadiumDetailPage() {
 
             {/* Stadium Info Grid */}
             <div className="p-6 sm:p-8">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
                 <div className="text-center p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10">
                   <Users className="w-8 h-8 text-[#00D9FF] mx-auto mb-2" />
                   <p className="font-mono-data text-2xl font-bold text-slate-900 dark:text-foreground mb-1">
@@ -175,16 +190,6 @@ export default function StadiumDetailPage() {
                   </p>
                   <p className="text-xs text-slate-600 dark:text-[#A8A29E] font-label uppercase tracking-wider font-semibold">
                     Sức chứa
-                  </p>
-                </div>
-
-                <div className="text-center p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10">
-                  <Calendar className="w-8 h-8 text-[#00D9FF] mx-auto mb-2" />
-                  <p className="font-mono-data text-2xl font-bold text-slate-900 dark:text-foreground mb-1">
-                    {apiStadium ? String(apiStadium.stadiumId || '-') : (stadium?.yearBuilt || '-')}
-                  </p>
-                  <p className="text-xs text-slate-600 dark:text-[#A8A29E] font-label uppercase tracking-wider font-semibold">
-                    {apiStadium ? 'Stadium ID' : 'Năm xây dựng'}
                   </p>
                 </div>
 
