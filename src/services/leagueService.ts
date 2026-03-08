@@ -36,6 +36,30 @@ export interface Stadium {
   imageUrl: string | null;
 }
 
+export interface PlayerStatistic {
+  season: number;
+  leagueId: number;
+  teamId: number;
+  appearances: number;
+  lineups: number;
+  minutes: number;
+  goals: number;
+  assists: number;
+  yellowCards: number;
+  redCards: number;
+  rating: number | null;
+}
+
+export interface Player {
+  playerId: number;
+  fullName: string;
+  nationality: string | null;
+  heightCm: number | null;
+  weightKg: number | null;
+  photoUrl: string | null;
+  statistics: PlayerStatistic[];
+}
+
 export interface SyncTeamsResponse {
   success: boolean;
   message: string;
@@ -64,5 +88,11 @@ export const leagueService = {
 
   async syncStadiums(): Promise<Stadium[]> {
     return await apiClient.post<Stadium[]>('/api/Football/sync-stadiums');
+  },
+
+  async syncPlayers(apiLeagueId: number, season: number): Promise<Player[]> {
+    return await apiClient.post<Player[]>(
+      `/api/Football/sync-players?apiLeagueId=${apiLeagueId}&season=${season}`
+    );
   },
 };

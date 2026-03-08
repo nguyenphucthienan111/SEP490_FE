@@ -1,11 +1,12 @@
-import { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, TrendingUp, TrendingDown, ChevronDown, ChevronUp, Calendar, Clock, Users } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { getPlayerById, players } from '@/data/mockData';
 import { cn } from '@/lib/utils';
+import { Player as ApiPlayer } from '@/services/leagueService';
 import { 
   LineChart, 
   Line, 
@@ -33,18 +34,53 @@ const performanceTrend = [
 
 export default function PlayerDetailPage() {
   const { playerId } = useParams<{ playerId: string }>();
+  const location = useLocation();
+  const [apiPlayer, setApiPlayer] = useState<ApiPlayer | null>(null);
+  const [fromTeamId, setFromTeamId] = useState<string | null>(null);
   const player = getPlayerById(playerId || '');
   const [expandedContribution, setExpandedContribution] = useState<string | null>(null);
 
-  if (!player) {
+  useEffect(() => {
+    // Check if we came from a team detail page
+    const state = location.state as { fromTeamId?: string } | undefined;
+    if (state?.fromTeamId) {
+      setFromTeamId(state.fromTeamId);
+    }
+
+    // Load player from localStorage
+    const cached = localStorage.getItem('players');
+    if (cached && playerId) {
+      try {
+        const allPlayers: ApiPlayer[] = JSON.parse(cached);
+        const foundPlayer = allPlayers.find(p => p.playerId.toString() === playerId);
+        if (foundPlayer) {
+          setApiPlayer(foundPlayer);
+          
+          // If no fromTeamId from state, try to get from player's first statistic
+          if (!state?.fromTeamId && foundPlayer.statistics.length > 0) {
+            setFromTeamId(foundPlayer.statistics[0].teamId.toString());
+          }
+        }
+      } catch (e) {
+        console.error('Failed to parse cached players:', e);
+      }
+    }
+  }, [playerId, location.state]);
+
+  // Use API player if available, otherwise fallback to mock data
+  const displayPlayer = apiPlayer || player;
+
+  if (!displayPlayer) {
     return (
       <MainLayout>
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-center">
-            <h2 className="font-display font-bold text-2xl text-foreground mb-4">Player Not Found</h2>
+            <h2 className="font-display font-bold text-2xl text-slate-900 dark:text-foreground mb-4">
+              Không tìm thấy cầu thủ
+            </h2>
             <Link to="/players">
               <Button variant="outline" className="border-[#00D9FF] text-[#00D9FF]">
-                Back to Players
+                Quay lại
               </Button>
             </Link>
           </div>
@@ -53,8 +89,40 @@ export default function PlayerDetailPage() {
     );
   }
 
+  // Get player data - handle both API and mock data
+  const playerName = apiPlayer ? apiPlayer.fullName : player?.name || '';
+  const playerPhoto = apiPlayer ? apiPlayer.photoUrl : player?.photoUrl;
+  const playerNationality = apiPlayer ? apiPlayer.nationality : player?.nationality;
+  const playerHeight = apiPlayer ? apiPlayer.heightCm : player?.height;
+  const playerWeight = apiPlayer ? apiPlayer.weightKg : player?.weight;
+  
+  // Calculate aggregate stats from API player statistics
+  const aggregateStats = apiPlayer ? {
+    matches: apiPlayer.statistics.reduce((sum, s) => sum + s.appearances, 0),
+    goals: apiPlayer.statistics.reduce((sum, s) => sum + s.goals, 0),
+    assists: apiPlayer.statistics.reduce((sum, s) => sum + s.assists, 0),
+    minutesPlayed: apiPlayer.statistics.reduce((sum, s) => sum + s.minutes, 0),
+    yellowCards: apiPlayer.statistics.reduce((sum, s) => sum + s.yellowCards, 0),
+    redCards: apiPlayer.statistics.reduce((sum, s) => sum + s.redCards, 0),
+    avgRating: apiPlayer.statistics.filter(s => s.rating).length > 0
+      ? apiPlayer.statistics.reduce((sum, s) => sum + (s.rating || 0), 0) / apiPlayer.statistics.filter(s => s.rating).length
+      : 0,
+  } : null;
+
   // Generate radar data based on player position
   const getRadarData = () => {
+    if (!player) {
+      // Default radar for API players without position info
+      return [
+        { stat: 'Ghi bàn', value: 70, fullMark: 100 },
+        { stat: 'Kiến tạo', value: 65, fullMark: 100 },
+        { stat: 'Chuyền bóng', value: 75, fullMark: 100 },
+        { stat: 'Phòng ngự', value: 60, fullMark: 100 },
+        { stat: 'Thể lực', value: 80, fullMark: 100 },
+        { stat: 'Kỹ thuật', value: 72, fullMark: 100 },
+      ];
+    }
+    
     if (player.position === 'forward') {
       return [
         { stat: 'Finishing', value: 85, fullMark: 100 },
@@ -94,7 +162,7 @@ export default function PlayerDetailPage() {
     }
   };
 
-  const contributions = player.matchHistory[0]?.contributions || [
+  const contributions = player?.matchHistory?.[0]?.contributions || [
     { category: 'Goals', value: 0.6, positive: true, description: 'Excellent finishing in key moments' },
     { category: 'Key Passes', value: 0.4, positive: true, description: 'Created multiple chances' },
     { category: 'Dribbling', value: 0.3, positive: true, description: 'Beat defenders consistently' },
@@ -111,9 +179,12 @@ export default function PlayerDetailPage() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <Link to="/players" className="inline-flex items-center gap-2 text-slate-600 dark:text-[#A8A29E] hover:text-foreground transition-colors mb-8">
+            <Link 
+              to={fromTeamId ? `/teams/${fromTeamId}` : "/players"} 
+              className="inline-flex items-center gap-2 text-slate-600 dark:text-[#A8A29E] hover:text-slate-900 dark:hover:text-foreground transition-colors mb-8"
+            >
               <ArrowLeft className="w-4 h-4" />
-              <span className="font-label text-sm">Back to Players</span>
+              <span className="font-label text-sm">Quay lại</span>
             </Link>
           </motion.div>
 
@@ -128,38 +199,96 @@ export default function PlayerDetailPage() {
               {/* Player Image & Basic Info */}
               <div className="flex flex-col sm:flex-row gap-6">
                 <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-2xl overflow-hidden bg-slate-100 dark:bg-white/5 flex-shrink-0">
-                  <img
-                    src={player.photoUrl}
-                    alt={player.name}
-                    className="w-full h-full object-cover"
-                  />
+                  {playerPhoto ? (
+                    <img
+                      src={playerPhoto}
+                      alt={playerName}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Users className="w-16 h-16 text-slate-400 dark:text-[#A8A29E]" />
+                    </div>
+                  )}
                 </div>
                 <div>
-                  <div className="flex items-center gap-3 mb-2">
-                    <span className={cn(
-                      "px-3 py-1 rounded-full text-xs font-label font-semibold uppercase tracking-wider border",
-                      player.position === 'forward' && 'bg-red-50 text-red-700 border-red-200 dark:bg-red-500/20 dark:text-red-400 dark:border-red-500/30',
-                      player.position === 'midfielder' && 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-cyan-500/20 dark:text-cyan-400 dark:border-cyan-500/30',
-                      player.position === 'defender' && 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/20 dark:text-amber-400 dark:border-amber-500/30',
-                      player.position === 'goalkeeper' && 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-500/20 dark:text-purple-400 dark:border-purple-500/30'
-                    )}>
-                      {player.position}
-                    </span>
-                    <span className="text-slate-600 dark:text-[#A8A29E] text-sm">#{player.number}</span>
-                  </div>
-                  <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-foreground mb-2">
-                    {player.name}
+                  {player && (
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className={cn(
+                        "px-3 py-1 rounded-full text-xs font-label font-semibold uppercase tracking-wider border",
+                        player.position === 'forward' && 'bg-red-50 text-red-700 border-red-200 dark:bg-red-500/20 dark:text-red-400 dark:border-red-500/30',
+                        player.position === 'midfielder' && 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-cyan-500/20 dark:text-cyan-400 dark:border-cyan-500/30',
+                        player.position === 'defender' && 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/20 dark:text-amber-400 dark:border-amber-500/30',
+                        player.position === 'goalkeeper' && 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-500/20 dark:text-purple-400 dark:border-purple-500/30'
+                      )}>
+                        {player.position}
+                      </span>
+                      <span className="text-slate-600 dark:text-[#A8A29E] text-sm">#{player.number}</span>
+                    </div>
+                  )}
+                  <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-slate-900 dark:text-foreground mb-2">
+                    {playerName}
                   </h1>
-                  <p className="text-lg text-slate-600 dark:text-[#A8A29E] mb-4">{player.team}</p>
                   
-                  <div className="flex flex-wrap gap-4 text-sm text-slate-600 dark:text-[#A8A29E]">
-                    <span>{player.nationality}</span>
-                    <span>•</span>
-                    <span>{player.age} years</span>
-                    <span>•</span>
-                    <span>{player.height} cm</span>
-                    <span>•</span>
-                    <span>{player.weight} kg</span>
+                  {/* Club Name - for API players */}
+                  {apiPlayer && apiPlayer.statistics.length > 0 && (() => {
+                    // Get team name from the most recent season
+                    const latestStat = apiPlayer.statistics[0];
+                    const cached = localStorage.getItem('leagues');
+                    let teamName = null;
+                    if (cached) {
+                      try {
+                        const leagues: any[] = JSON.parse(cached);
+                        for (const league of leagues) {
+                          if (league.teams && Array.isArray(league.teams)) {
+                            const team = league.teams.find((t: any) => t.teamId === latestStat.teamId);
+                            if (team) {
+                              teamName = team.teamName;
+                              break;
+                            }
+                          }
+                        }
+                      } catch (e) {
+                        console.error('Failed to parse leagues:', e);
+                      }
+                    }
+                    return teamName ? (
+                      <p className="text-lg text-[#00D9FF] font-semibold mb-4">{teamName}</p>
+                    ) : null;
+                  })()}
+                  
+                  {/* Club Name - for mock players */}
+                  {player && !apiPlayer && (
+                    <p className="text-lg text-slate-600 dark:text-[#A8A29E] mb-4">{player.team}</p>
+                  )}
+                  
+                  <div className="flex flex-wrap gap-4 text-sm">
+                    <div>
+                      <span className="text-slate-600 dark:text-[#A8A29E]">Quốc tịch: </span>
+                      <span className="text-slate-900 dark:text-foreground font-semibold">
+                        {playerNationality || 'null'}
+                      </span>
+                    </div>
+                    {player?.age && (
+                      <div>
+                        <span className="text-slate-600 dark:text-[#A8A29E]">Tuổi: </span>
+                        <span className="text-slate-900 dark:text-foreground font-semibold">
+                          {player.age}
+                        </span>
+                      </div>
+                    )}
+                    <div>
+                      <span className="text-slate-600 dark:text-[#A8A29E]">Chiều cao: </span>
+                      <span className="text-slate-900 dark:text-foreground font-semibold">
+                        {playerHeight ? `${playerHeight} cm` : 'null'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-600 dark:text-[#A8A29E]">Cân nặng: </span>
+                      <span className="text-slate-900 dark:text-foreground font-semibold">
+                        {playerWeight ? `${playerWeight} kg` : 'null'}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -183,7 +312,7 @@ export default function PlayerDetailPage() {
                       fill="none"
                       stroke="url(#ratingGradient)"
                       strokeWidth="10"
-                      strokeDasharray={`${(player.rating / 10) * 283} 283`}
+                      strokeDasharray={`${((aggregateStats?.avgRating || player?.rating || 0) / 10) * 283} 283`}
                       strokeLinecap="round"
                     />
                     <defs>
@@ -194,49 +323,128 @@ export default function PlayerDetailPage() {
                     </defs>
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="font-mono-data text-4xl font-bold text-foreground">
-                      {player.rating.toFixed(1)}
+                    <span className="font-mono-data text-4xl font-bold text-slate-900 dark:text-foreground">
+                      {(aggregateStats?.avgRating || player?.rating || 0).toFixed(1)}
                     </span>
-                    <span className="text-xs text-slate-600 dark:text-[#A8A29E] uppercase tracking-wider">Rating</span>
+                    <span className="text-xs text-slate-600 dark:text-[#A8A29E] uppercase tracking-wider">Đánh giá</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-green-400" />
-                  <span className="font-mono-data text-lg text-green-400">+0.3</span>
-                  <span className="text-xs text-slate-600 dark:text-[#A8A29E]">Last 5 games</span>
-                </div>
+                {player && (
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-green-400" />
+                    <span className="font-mono-data text-lg text-green-400">+0.3</span>
+                    <span className="text-xs text-slate-600 dark:text-[#A8A29E]">5 trận gần nhất</span>
+                  </div>
+                )}
               </div>
             </div>
           </motion.div>
 
           {/* Stats Grid */}
           <div className="grid lg:grid-cols-3 gap-8 mb-8">
-            {/* Season Stats */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="glass-card rounded-2xl p-6"
-            >
-              <h3 className="font-label font-bold text-foreground uppercase tracking-wider text-sm mb-6">
-                Season Statistics
-              </h3>
-              <div className="space-y-4">
-                {[
-                  { label: 'Matches', value: player.stats.matches },
-                  { label: 'Goals', value: player.stats.goals },
-                  { label: 'Assists', value: player.stats.assists },
-                  { label: 'Minutes Played', value: player.stats.minutesPlayed },
-                  { label: 'Pass Accuracy', value: `${player.stats.passAccuracy}%` },
-                  { label: 'Yellow Cards', value: player.stats.yellowCards },
-                ].map((stat, index) => (
-                  <div key={stat.label} className="flex items-center justify-between py-2 border-b border-slate-200 dark:border-white/5 last:border-0">
-                    <span className="text-slate-600 dark:text-[#A8A29E] text-sm">{stat.label}</span>
-                    <span className="font-mono-data text-lg font-semibold text-foreground">{stat.value}</span>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
+            {/* Season Stats - Detailed stats by season for API players */}
+            {apiPlayer ? (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="glass-card rounded-2xl p-6 lg:col-span-2"
+              >
+                <h3 className="font-label font-bold text-slate-900 dark:text-foreground uppercase tracking-wider text-sm mb-6">
+                  Thống kê chi tiết theo mùa giải
+                </h3>
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+                  {apiPlayer.statistics.map((stat, index) => {
+                    return (
+                      <div key={index} className="p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <span className="font-label font-bold text-lg text-slate-900 dark:text-foreground">
+                              Mùa {stat.season}
+                            </span>
+                          </div>
+                          {stat.rating && (
+                            <span className="font-mono-data text-xl font-bold text-[#00D9FF]">
+                              {stat.rating.toFixed(1)}
+                            </span>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 text-sm">
+                          <div>
+                            <span className="text-slate-600 dark:text-[#A8A29E]">Trận đấu</span>
+                            <div className="font-mono-data text-lg font-semibold text-slate-900 dark:text-foreground">
+                              {stat.appearances}
+                            </div>
+                          </div>
+                          <div>
+                            <span className="text-slate-600 dark:text-[#A8A29E]">Đá chính</span>
+                            <div className="font-mono-data text-lg font-semibold text-slate-900 dark:text-foreground">
+                              {stat.lineups}
+                            </div>
+                          </div>
+                          <div>
+                            <span className="text-slate-600 dark:text-[#A8A29E]">Phút</span>
+                            <div className="font-mono-data text-lg font-semibold text-slate-900 dark:text-foreground">
+                              {stat.minutes}
+                            </div>
+                          </div>
+                          <div>
+                            <span className="text-slate-600 dark:text-[#A8A29E]">Bàn thắng</span>
+                            <div className="font-mono-data text-lg font-semibold text-slate-900 dark:text-foreground">
+                              {stat.goals}
+                            </div>
+                          </div>
+                          <div>
+                            <span className="text-slate-600 dark:text-[#A8A29E]">Kiến tạo</span>
+                            <div className="font-mono-data text-lg font-semibold text-slate-900 dark:text-foreground">
+                              {stat.assists}
+                            </div>
+                          </div>
+                          <div>
+                            <span className="text-slate-600 dark:text-[#A8A29E]">Thẻ vàng</span>
+                            <div className="font-mono-data text-lg font-semibold text-slate-900 dark:text-foreground">
+                              {stat.yellowCards}
+                            </div>
+                          </div>
+                          <div>
+                            <span className="text-slate-600 dark:text-[#A8A29E]">Thẻ đỏ</span>
+                            <div className="font-mono-data text-lg font-semibold text-slate-900 dark:text-foreground">
+                              {stat.redCards}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="glass-card rounded-2xl p-6"
+              >
+                <h3 className="font-label font-bold text-slate-900 dark:text-foreground uppercase tracking-wider text-sm mb-6">
+                  Thống kê mùa giải
+                </h3>
+                <div className="space-y-4">
+                  {player && [
+                    { label: 'Trận đấu', value: player.stats.matches },
+                    { label: 'Bàn thắng', value: player.stats.goals },
+                    { label: 'Kiến tạo', value: player.stats.assists },
+                    { label: 'Phút thi đấu', value: player.stats.minutesPlayed },
+                    { label: 'Độ chính xác chuyền bóng', value: `${player.stats.passAccuracy}%` },
+                    { label: 'Thẻ vàng', value: player.stats.yellowCards },
+                  ].map((stat, index) => (
+                    <div key={stat.label} className="flex items-center justify-between py-2 border-b border-slate-200 dark:border-white/5 last:border-0">
+                      <span className="text-slate-600 dark:text-[#A8A29E] text-sm">{stat.label}</span>
+                      <span className="font-mono-data text-lg font-semibold text-slate-900 dark:text-foreground">{stat.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
 
             {/* Radar Chart */}
             <motion.div
@@ -245,8 +453,8 @@ export default function PlayerDetailPage() {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="glass-card rounded-2xl p-6"
             >
-              <h3 className="font-label font-bold text-foreground uppercase tracking-wider text-sm mb-6">
-                Player Attributes
+              <h3 className="font-label font-bold text-slate-900 dark:text-foreground uppercase tracking-wider text-sm mb-6">
+                Chỉ số cầu thủ
               </h3>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
@@ -262,7 +470,7 @@ export default function PlayerDetailPage() {
                       tick={{ fill: '#A8A29E', fontSize: 10 }}
                     />
                     <Radar
-                      name="Attributes"
+                      name="Chỉ số"
                       dataKey="value"
                       stroke="#00D9FF"
                       fill="#00D9FF"
@@ -274,141 +482,147 @@ export default function PlayerDetailPage() {
               </div>
             </motion.div>
 
-            {/* Rating Breakdown */}
+            {/* Rating Breakdown - only show for mock data */}
+            {player && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+                className="glass-card rounded-2xl p-6"
+              >
+                <h3 className="font-label font-bold text-slate-900 dark:text-foreground uppercase tracking-wider text-sm mb-6">
+                  Phân tích đánh giá
+                </h3>
+                <p className="text-sm text-slate-600 dark:text-[#A8A29E] mb-4">
+                  Đóng góp từ trận đấu gần nhất
+                </p>
+                <div className="space-y-3">
+                  {contributions.map((contrib, index) => (
+                    <div key={index}>
+                      <button
+                        onClick={() => setExpandedContribution(expandedContribution === contrib.category ? null : contrib.category)}
+                        className="w-full"
+                      >
+                        <div className="flex items-center justify-between py-2">
+                          <div className="flex items-center gap-3">
+                            {contrib.positive ? (
+                              <div className="w-2 h-2 rounded-full bg-green-400" />
+                            ) : (
+                              <div className="w-2 h-2 rounded-full bg-red-400" />
+                            )}
+                            <span className="text-sm text-slate-900 dark:text-foreground">{contrib.category}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className={cn(
+                              "font-mono-data text-sm font-semibold",
+                              contrib.positive ? "text-green-400" : "text-red-400"
+                            )}>
+                              {contrib.positive ? '+' : ''}{contrib.value.toFixed(1)}
+                            </span>
+                            {expandedContribution === contrib.category ? (
+                              <ChevronUp className="w-4 h-4 text-slate-600 dark:text-[#A8A29E]" />
+                            ) : (
+                              <ChevronDown className="w-4 h-4 text-slate-600 dark:text-[#A8A29E]" />
+                            )}
+                          </div>
+                        </div>
+                        {/* Progress Bar */}
+                        <div className="h-1.5 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden">
+                          <div 
+                            className={cn(
+                              "h-full rounded-full transition-all duration-500",
+                              contrib.positive ? "bg-green-400" : "bg-red-400"
+                            )}
+                            style={{ width: `${Math.abs(contrib.value) * 100}%` }}
+                          />
+                        </div>
+                      </button>
+                      {expandedContribution === contrib.category && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="pl-5 py-2"
+                        >
+                          <p className="text-xs text-slate-600 dark:text-[#A8A29E]">{contrib.description}</p>
+                        </motion.div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </div>
+
+          {/* Performance Trend - only show for mock data */}
+          {player && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className="glass-card rounded-2xl p-6"
+              transition={{ duration: 0.5, delay: 0.4 }}
+              className="glass-card rounded-2xl p-6 mb-8"
             >
-              <h3 className="font-label font-bold text-foreground uppercase tracking-wider text-sm mb-6">
-                Rating Breakdown
+              <h3 className="font-label font-bold text-slate-900 dark:text-foreground uppercase tracking-wider text-sm mb-6">
+                Xu hướng phong độ
               </h3>
-              <p className="text-sm text-slate-600 dark:text-[#A8A29E] mb-4">
-                Contributions from last match performance
-              </p>
-              <div className="space-y-3">
-                {contributions.map((contrib, index) => (
-                  <div key={index}>
-                    <button
-                      onClick={() => setExpandedContribution(expandedContribution === contrib.category ? null : contrib.category)}
-                      className="w-full"
-                    >
-                      <div className="flex items-center justify-between py-2">
-                        <div className="flex items-center gap-3">
-                          {contrib.positive ? (
-                            <div className="w-2 h-2 rounded-full bg-green-400" />
-                          ) : (
-                            <div className="w-2 h-2 rounded-full bg-red-400" />
-                          )}
-                          <span className="text-sm text-foreground">{contrib.category}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className={cn(
-                            "font-mono-data text-sm font-semibold",
-                            contrib.positive ? "text-green-400" : "text-red-400"
-                          )}>
-                            {contrib.positive ? '+' : ''}{contrib.value.toFixed(1)}
-                          </span>
-                          {expandedContribution === contrib.category ? (
-                            <ChevronUp className="w-4 h-4 text-slate-600 dark:text-[#A8A29E]" />
-                          ) : (
-                            <ChevronDown className="w-4 h-4 text-slate-600 dark:text-[#A8A29E]" />
-                          )}
-                        </div>
-                      </div>
-                      {/* Progress Bar */}
-                      <div className="h-1.5 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden">
-                        <div 
-                          className={cn(
-                            "h-full rounded-full transition-all duration-500",
-                            contrib.positive ? "bg-green-400" : "bg-red-400"
-                          )}
-                          style={{ width: `${Math.abs(contrib.value) * 100}%` }}
-                        />
-                      </div>
-                    </button>
-                    {expandedContribution === contrib.category && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="pl-5 py-2"
-                      >
-                        <p className="text-xs text-slate-600 dark:text-[#A8A29E]">{contrib.description}</p>
-                      </motion.div>
-                    )}
-                  </div>
-                ))}
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={performanceTrend}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                    <XAxis 
+                      dataKey="date" 
+                      stroke="#A8A29E"
+                      tick={{ fill: '#A8A29E', fontSize: 12 }}
+                    />
+                    <YAxis 
+                      domain={[6, 10]}
+                      stroke="#A8A29E"
+                      tick={{ fill: '#A8A29E', fontSize: 12 }}
+                    />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'hsl(var(--background))', 
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        borderRadius: '12px',
+                        color: 'hsl(var(--foreground))'
+                      }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="rating" 
+                      stroke="url(#lineGradient)" 
+                      strokeWidth={3}
+                      dot={{ fill: '#00D9FF', strokeWidth: 2, r: 5 }}
+                      activeDot={{ fill: '#FF4444', strokeWidth: 0, r: 8 }}
+                    />
+                    <defs>
+                      <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#FF4444" />
+                        <stop offset="100%" stopColor="#00D9FF" />
+                      </linearGradient>
+                    </defs>
+                  </LineChart>
+                </ResponsiveContainer>
               </div>
             </motion.div>
-          </div>
-
-          {/* Performance Trend */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-            className="glass-card rounded-2xl p-6 mb-8"
-          >
-            <h3 className="font-label font-bold text-foreground uppercase tracking-wider text-sm mb-6">
-              Performance Trend
-            </h3>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={performanceTrend}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                  <XAxis 
-                    dataKey="date" 
-                    stroke="#A8A29E"
-                    tick={{ fill: '#A8A29E', fontSize: 12 }}
-                  />
-                  <YAxis 
-                    domain={[6, 10]}
-                    stroke="#A8A29E"
-                    tick={{ fill: '#A8A29E', fontSize: 12 }}
-                  />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'hsl(var(--background))', 
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      borderRadius: '12px',
-                      color: 'hsl(var(--foreground))'
-                    }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="rating" 
-                    stroke="url(#lineGradient)" 
-                    strokeWidth={3}
-                    dot={{ fill: '#00D9FF', strokeWidth: 2, r: 5 }}
-                    activeDot={{ fill: '#FF4444', strokeWidth: 0, r: 8 }}
-                  />
-                  <defs>
-                    <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="#FF4444" />
-                      <stop offset="100%" stopColor="#00D9FF" />
-                    </linearGradient>
-                  </defs>
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </motion.div>
+          )}
 
           {/* Compare Button */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="text-center"
-          >
-            <Link to={`/compare?player1=${player.id}`}>
-              <Button className="bg-[#00D9FF] hover:bg-[#00E8FF] text-foreground font-label font-semibold px-8 h-12 rounded-xl">
-                <Users className="w-4 h-4 mr-2" />
-                Compare with Another Player
-              </Button>
-            </Link>
-          </motion.div>
+          {player && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+              className="text-center"
+            >
+              <Link to={`/compare?player1=${player.id}`}>
+                <Button className="bg-[#00D9FF] hover:bg-[#00E8FF] text-slate-900 font-label font-semibold px-8 h-12 rounded-xl">
+                  <Users className="w-4 h-4 mr-2" />
+                  So sánh với cầu thủ khác
+                </Button>
+              </Link>
+            </motion.div>
+          )}
         </div>
       </div>
     </MainLayout>

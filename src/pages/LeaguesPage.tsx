@@ -26,14 +26,30 @@ const standings = [
 
 export default function LeaguesPage() {
   const [selectedLeague, setSelectedLeague] = React.useState<string | null>('l1');
+  const [apiLeagues, setApiLeagues] = React.useState<League[]>([]);
   const [apiTeams, setApiTeams] = React.useState<Team[]>([]);
+  const [isLoadingLeagues, setIsLoadingLeagues] = React.useState(false);
   const [isLoadingTeams, setIsLoadingTeams] = React.useState(false);
   const [selectedSeason, setSelectedSeason] = React.useState(new Date().getFullYear());
 
   React.useEffect(() => {
-    // Load teams from localStorage on mount
+    // Load leagues and teams from localStorage on mount
+    loadLeaguesFromCache();
     loadTeamsFromCache();
   }, []);
+
+  const loadLeaguesFromCache = () => {
+    try {
+      const cached = localStorage.getItem('leagues');
+      if (cached) {
+        const leagues: League[] = JSON.parse(cached);
+        setApiLeagues(leagues);
+        console.log('Loaded leagues from localStorage:', leagues);
+      }
+    } catch (e) {
+      console.error('Failed to parse cached leagues:', e);
+    }
+  };
 
   const loadTeamsFromCache = () => {
     try {
@@ -49,6 +65,24 @@ export default function LeaguesPage() {
       }
     } catch (e) {
       console.error('Failed to parse cached leagues:', e);
+    }
+  };
+
+  const handleSyncLeagues = async () => {
+    setIsLoadingLeagues(true);
+    try {
+      const leagues = await leagueService.syncLeagues();
+      localStorage.setItem('leagues', JSON.stringify(leagues));
+      setApiLeagues(leagues);
+      toast.success(`Đã đồng bộ ${leagues.length} giải đấu!`);
+      
+      // Auto load teams for V.League 1
+      loadTeamsFromCache();
+    } catch (error) {
+      console.error('Failed to sync leagues:', error);
+      toast.error('Không thể đồng bộ giải đấu');
+    } finally {
+      setIsLoadingLeagues(false);
     }
   };
 
@@ -116,18 +150,32 @@ export default function LeaguesPage() {
             transition={{ duration: 0.6 }}
             className="mb-12"
           >
-            <h1 className="font-display font-extrabold text-4xl sm:text-5xl text-foreground mb-3">
-              Vietnamese Leagues
-            </h1>
-            <p className="text-slate-600 dark:text-[#A8A29E] text-lg max-w-2xl">
-              Comprehensive coverage of all Vietnamese football competitions.
-            </p>
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div>
+                <h1 className="font-display font-extrabold text-4xl sm:text-5xl text-slate-900 dark:text-foreground mb-3">
+                  Giải đấu Việt Nam
+                </h1>
+                <p className="text-slate-600 dark:text-[#A8A29E] text-lg max-w-2xl">
+                  Thông tin đầy đủ về các giải đấu bóng đá Việt Nam
+                </p>
+              </div>
+              <button
+                onClick={handleSyncLeagues}
+                disabled={isLoadingLeagues}
+                className="flex items-center gap-2 px-6 py-3 bg-[#00D9FF] hover:bg-[#00E8FF] text-slate-900 font-label font-semibold rounded-xl transition-colors disabled:opacity-50"
+              >
+                <RefreshCw className={cn("w-4 h-4", isLoadingLeagues && "animate-spin")} />
+                {isLoadingLeagues ? 'Đang đồng bộ...' : 'Đồng bộ giải đấu'}
+              </button>
+            </div>
           </motion.div>
 
           {/* Leagues Grid */}
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
-            {leagues.map((league, index) => {
-              const isSelected = selectedLeague === league.id;
+            {(apiLeagues.length > 0 ? apiLeagues : leagues).map((league, index) => {
+              const isApiLeague = 'apiLeagueId' in league;
+              const leagueId = isApiLeague ? `api-${league.leagueId}` : league.id;
+              const isSelected = selectedLeague === leagueId || (selectedLeague === 'l1' && isApiLeague && league.apiLeagueId === 340);
               
               return (
                 <motion.div

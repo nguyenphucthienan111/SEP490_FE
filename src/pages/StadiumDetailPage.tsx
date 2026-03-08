@@ -37,15 +37,15 @@ export default function StadiumDetailPage() {
       try {
         const leagues: League[] = JSON.parse(cached);
         const teamsWithThisStadium: any[] = [];
+        let foundStadium: Stadium | null = null;
         
         // Find stadium and all teams using it
         for (const league of leagues) {
           if (league.teams && Array.isArray(league.teams)) {
             for (const team of league.teams) {
               if (team.stadium && team.stadium.stadiumId.toString() === stadiumId) {
-                if (!apiStadium) {
-                  setApiStadium(team.stadium);
-                  console.log('Found stadium from API:', team.stadium);
+                if (!foundStadium) {
+                  foundStadium = team.stadium;
                 }
                 teamsWithThisStadium.push(team);
                 
@@ -58,14 +58,16 @@ export default function StadiumDetailPage() {
           }
         }
         
+        if (foundStadium) {
+          setApiStadium(foundStadium);
+        }
         setHomeTeamsFromApi(teamsWithThisStadium);
-        console.log('Teams using this stadium:', teamsWithThisStadium);
       } catch (e) {
         console.error('Failed to parse cached leagues:', e);
       }
     }
     setIsLoading(false);
-  }, [stadiumId, location.state]);
+  }, [stadiumId]);
 
   const stadium = apiStadium || mockStadium;
 

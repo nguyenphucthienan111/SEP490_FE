@@ -6,15 +6,21 @@ import { getTeamById, players, matches } from '@/data/mockData';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import React from 'react';
-import { Team, League, Stadium, leagueService } from '@/services/leagueService';
+import { Team, League, Stadium, Player, leagueService } from '@/services/leagueService';
 import { toast } from 'sonner';
 
 export default function TeamDetailPage() {
   const { teamId } = useParams<{ teamId: string }>();
   const [apiTeam, setApiTeam] = React.useState<Team | null>(null);
+  const [apiPlayers, setApiPlayers] = React.useState<Player[]>([]);
+  const [selectedSeason, setSelectedSeason] = React.useState<number>(2024);
+  const [isSyncing, setIsSyncing] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(true);
   const team = getTeamById(teamId || '');
 
   React.useEffect(() => {
+    setIsLoading(true);
+    
     // Load team from localStorage
     const cached = localStorage.getItem('leagues');
     if (cached && teamId) {
@@ -26,8 +32,6 @@ export default function TeamDetailPage() {
             const foundTeam = league.teams.find(t => t.teamId.toString() === teamId);
             if (foundTeam) {
               setApiTeam(foundTeam);
-              console.log('Found team from API:', foundTeam);
-              console.log('Stadium info:', foundTeam.stadium);
               break;
             }
           }
@@ -36,10 +40,85 @@ export default function TeamDetailPage() {
         console.error('Failed to parse cached leagues:', e);
       }
     }
+
+    // Load players from localStorage
+    const cachedPlayers = localStorage.getItem('players');
+    if (cachedPlayers && teamId) {
+      try {
+        const allPlayers: Player[] = JSON.parse(cachedPlayers);
+        // Filter players by teamId from their statistics
+        const teamPlayers = allPlayers.filter(player => 
+          player.statistics.some(stat => stat.teamId.toString() === teamId)
+        );
+        setApiPlayers(teamPlayers);
+      } catch (e) {
+        console.error('Failed to parse cached players:', e);
+      }
+    }
+    
+    setIsLoading(false);
   }, [teamId]);
+
+  const handleSyncPlayers = async () => {
+    if (!apiTeam) {
+      toast.error('Không tìm thấy thông tin đội bóng');
+      return;
+    }
+
+    setIsSyncing(true);
+    try {
+      // Get league info to get apiLeagueId
+      const cached = localStorage.getItem('leagues');
+      if (!cached) {
+        toast.error('Không tìm thấy thông tin giải đấu');
+        setIsSyncing(false);
+        return;
+      }
+
+      const leagues: League[] = JSON.parse(cached);
+      const league = leagues.find(l => l.leagueId === apiTeam.leagueId);
+      
+      if (!league) {
+        toast.error('Không tìm thấy thông tin giải đấu');
+        setIsSyncing(false);
+        return;
+      }
+
+      const players = await leagueService.syncPlayers(league.apiLeagueId, selectedSeason);
+      
+      // Store in localStorage
+      localStorage.setItem('players', JSON.stringify(players));
+      
+      // Filter players for this team
+      const teamPlayers = players.filter(player => 
+        player.statistics.some(stat => stat.teamId === apiTeam.teamId)
+      );
+      setApiPlayers(teamPlayers);
+      
+      toast.success(`Đã đồng bộ ${teamPlayers.length} cầu thủ`);
+    } catch (error) {
+      console.error('Failed to sync players:', error);
+      toast.error('Không thể đồng bộ cầu thủ');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   // Use API team if available, otherwise fallback to mock data
   const displayTeam = apiTeam || team;
+
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <div className="min-h-screen flex items-center justify-center py-20">
+          <div className="text-center">
+            <Loader2 className="w-16 h-16 text-[#00D9FF] animate-spin mx-auto mb-4" />
+            <p className="text-slate-600 dark:text-[#A8A29E]">Đang tải...</p>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
 
   if (!displayTeam) {
     return (
@@ -273,6 +352,115 @@ export default function TeamDetailPage() {
                   </div>
                 </Link>
               ) : null}
+            </motion.div>
+          )}
+
+          {/* Squad - show API players if available, otherwise mock data */}
+          {apiTeam && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="glass-card rounded-2xl p-6 sm:p-8 mb-8"
+            >
+              <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
+                <h3 className="font-display font-bold text-xl text-slate-900 dark:text-foreground">
+                  Đội hình ({apiPlayers.length})
+                </h3>
+                <div className="flex items-center gap-3">
+                  <select
+                    value={selectedSeason}
+                    onChange={(e) => setSelectedSeason(Number(e.target.value))}
+                    className="px-4 py-2 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-300 dark:border-white/10 text-slate-900 dark:text-foreground font-label text-sm"
+                  >
+                    <option value={2022}>2022</option>
+                    <option value={2023}>2023</option>
+                    <option value={2024}>2024</option>
+                    <option value={2025}>2025</option>
+                  </select>
+                  <Button
+                    onClick={handleSyncPlayers}
+                    disabled={isSyncing}
+                    className="bg-[#00D9FF] hover:bg-[#00E8FF] text-slate-900 font-label font-semibold"
+                  >
+                    {isSyncing ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Đang đồng bộ...
+                      </>
+                    ) : (
+                      'Đồng bộ cầu thủ'
+                    )}
+                  </Button>
+                </div>
+              </div>
+
+              {apiPlayers.length > 0 ? (
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {apiPlayers.map((player) => {
+                    // Get stats for this team and season
+                    const stats = player.statistics.find(
+                      s => s.teamId === apiTeam.teamId && s.season === selectedSeason
+                    );
+                    
+                    return (
+                      <Link
+                        key={player.playerId}
+                        to={`/players/${player.playerId}`}
+                        state={{ fromTeamId: teamId }}
+                        className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors group"
+                      >
+                        <div className="w-14 h-14 rounded-xl bg-slate-200 dark:bg-white/5 flex items-center justify-center border border-slate-300 dark:border-white/10 overflow-hidden">
+                          {player.photoUrl ? (
+                            <img src={player.photoUrl} alt={player.fullName} className="w-full h-full object-cover" />
+                          ) : (
+                            <User className="w-8 h-8 text-slate-400 dark:text-[#A8A29E]" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-body font-semibold text-slate-900 dark:text-foreground group-hover:text-[#00D9FF] transition-colors truncate">
+                            {player.fullName}
+                          </h4>
+                          <div className="flex items-center gap-2 mt-1">
+                            {player.nationality && (
+                              <span className="text-xs text-slate-600 dark:text-[#A8A29E]">
+                                {player.nationality}
+                              </span>
+                            )}
+                            {stats?.rating && (
+                              <>
+                                <span className="text-slate-400 dark:text-[#A8A29E]">•</span>
+                                <span className="font-mono-data text-sm font-bold text-[#00D9FF]">
+                                  {stats.rating.toFixed(1)}
+                                </span>
+                              </>
+                            )}
+                          </div>
+                          {stats && (
+                            <div className="flex items-center gap-2 mt-1 text-xs text-slate-600 dark:text-[#A8A29E]">
+                              <span>{stats.goals}G</span>
+                              <span>•</span>
+                              <span>{stats.assists}A</span>
+                              <span>•</span>
+                              <span>{stats.appearances} trận</span>
+                            </div>
+                          )}
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Users className="w-16 h-16 text-slate-400 dark:text-[#A8A29E] mx-auto mb-3" />
+                  <p className="text-slate-600 dark:text-[#A8A29E] mb-4">
+                    Chưa có thông tin cầu thủ
+                  </p>
+                  <p className="text-sm text-slate-500 dark:text-[#A8A29E]">
+                    Nhấn "Đồng bộ cầu thủ" để tải dữ liệu
+                  </p>
+                </div>
+              )}
             </motion.div>
           )}
 
