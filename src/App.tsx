@@ -28,10 +28,12 @@ const NotFoundPage = lazy(() => import("@/pages/NotFoundPage"));
 
 // Admin pages
 const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
+const AdminUsersPage = lazy(() => import("@/pages/admin/AdminUsersPage"));
 const AdminPlayersPage = lazy(() => import("@/pages/admin/AdminPlayersPage"));
 const AdminMatchesPage = lazy(() => import("@/pages/admin/AdminMatchesPage"));
 const AdminRatingsPage = lazy(() => import("@/pages/admin/AdminRatingsPage"));
 const AdminLeaguesPage = lazy(() => import("@/pages/admin/AdminLeaguesPage"));
+const AdminPredictionsPage = lazy(() => import("@/pages/admin/AdminPredictionsPage"));
 const AdminContentPage = lazy(() => import("@/pages/admin/AdminContentPage"));
 const AdminSettingsPage = lazy(() => import("@/pages/admin/AdminSettingsPage"));
 
@@ -86,10 +88,12 @@ function App() {
 
         {/* Admin Routes */}
         <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/admin/users" element={<AdminUsersPage />} />
         <Route path="/admin/players" element={<AdminPlayersPage />} />
         <Route path="/admin/matches" element={<AdminMatchesPage />} />
         <Route path="/admin/leagues" element={<AdminLeaguesPage />} />
         <Route path="/admin/leagues/:leagueId" element={<AdminLeaguesPage />} />
+        <Route path="/admin/predictions" element={<AdminPredictionsPage />} />
         <Route path="/admin/ratings" element={<AdminRatingsPage />} />
         <Route path="/admin/content" element={<AdminContentPage />} />
         <Route path="/admin/settings" element={<AdminSettingsPage />} />

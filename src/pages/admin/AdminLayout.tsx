@@ -20,9 +20,11 @@ interface AdminLayoutProps {
 
 const sidebarItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
+  { icon: Users, label: 'Users', path: '/admin/users' },
   { icon: Users, label: 'Players', path: '/admin/players' },
   { icon: Calendar, label: 'Matches', path: '/admin/matches' },
   { icon: Trophy, label: 'Leagues', path: '/admin/leagues' },
+  { icon: BarChart3, label: 'Predictions', path: '/admin/predictions' },
   { icon: BarChart3, label: 'Rating Engine', path: '/admin/ratings' },
   { icon: FileText, label: 'Content', path: '/admin/content' },
   { icon: Settings, label: 'Settings', path: '/admin/settings' },
