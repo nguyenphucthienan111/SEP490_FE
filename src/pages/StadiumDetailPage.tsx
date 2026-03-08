@@ -73,9 +73,11 @@ export default function StadiumDetailPage() {
   }, [stadiumId]);
 
   const stadium = apiStadium || mockStadium;
+  const stadiumId_display = apiStadium ? apiStadium.stadiumId : mockStadium?.id;
+  const stadiumName_display = apiStadium ? apiStadium.stadiumName : mockStadium?.name;
 
   // Find teams that use this stadium as home
-  const homeTeams = homeTeamsFromApi.length > 0 ? homeTeamsFromApi : teams.filter(team => team.homeStadium?.id === stadium?.id);
+  const homeTeams = homeTeamsFromApi.length > 0 ? homeTeamsFromApi : teams.filter(team => team.homeStadium?.id === stadiumId_display);
 
   if (isLoading) {
     return (
@@ -113,7 +115,7 @@ export default function StadiumDetailPage() {
   }
 
   // Find matches played at this stadium
-  const stadiumMatches = stadium ? matches.filter(match => match.stadium?.id === stadium.id) : [];
+  const stadiumMatches = stadium ? matches.filter(match => match.stadium?.id === stadiumId_display) : [];
   const upcomingMatches = stadiumMatches.filter(m => m.status === 'scheduled');
   const recentMatches = stadiumMatches
     .filter(m => m.status === 'completed')
@@ -159,13 +161,13 @@ export default function StadiumDetailPage() {
               <div className="relative h-64 sm:h-96 overflow-hidden">
                 <img 
                   src={stadium.imageUrl} 
-                  alt={String(stadium.name || 'Stadium')}
+                  alt={stadiumName_display || 'Stadium'}
                   className="w-full h-full object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-slate-900/40 to-transparent" />
                 <div className="absolute bottom-0 left-0 right-0 p-8">
                   <h1 className="font-display font-bold text-4xl sm:text-5xl text-white mb-2">
-                    {apiStadium ? safeString(apiStadium.stadiumName, 'Stadium') : safeString(stadium?.name, 'Stadium')}
+                    {stadiumName_display || 'Stadium'}
                   </h1>
                   <div className="flex items-center gap-2 text-white/90">
                     <MapPin className="w-5 h-5" />
@@ -176,7 +178,7 @@ export default function StadiumDetailPage() {
             ) : (
               <div className="p-8 bg-gradient-to-br from-[#00D9FF]/10 to-[#FF4444]/10">
                 <h1 className="font-display font-bold text-4xl sm:text-5xl text-slate-900 dark:text-foreground mb-2">
-                  {apiStadium ? safeString(apiStadium.stadiumName, 'Stadium') : safeString(stadium?.name, 'Stadium')}
+                  {stadiumName_display || 'Stadium'}
                 </h1>
                 <div className="flex items-center gap-2 text-slate-700 dark:text-[#A8A29E]">
                   <MapPin className="w-5 h-5" />

@@ -143,7 +143,7 @@ export default function TeamDetailPage() {
   }
 
   // Get team name - handle both API and mock data
-  const teamName = apiTeam ? apiTeam.teamName : displayTeam.name;
+  const teamName = apiTeam ? apiTeam.teamName : (team?.name || '');
   const teamShortName = apiTeam ? apiTeam.shortName : null;
   const teamLogo = apiTeam ? apiTeam.logoUrl : null;
   const teamFounded = apiTeam ? apiTeam.founded : null;
