@@ -1,5 +1,5 @@
 import { ReactNode, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Users, 
@@ -10,10 +10,19 @@ import {
   FileText,
   Menu,
   X,
-  LogOut
+  LogOut,
+  User,
+  ChevronDown
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -28,12 +37,18 @@ const sidebarItems = [
   { icon: BarChart3, label: 'Predictions', path: '/admin/predictions' },
   { icon: BarChart3, label: 'Rating Engine', path: '/admin/ratings' },
   { icon: FileText, label: 'Content', path: '/admin/content' },
-  { icon: Settings, label: 'Settings', path: '/admin/settings' },
 ];
 
 export function AdminLayout({ children }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/');
+  };
 
   return (
     <div className="min-h-screen bg-background flex relative overflow-hidden">
@@ -123,13 +138,35 @@ export function AdminLayout({ children }: AdminLayoutProps) {
               {/* Theme Toggle */}
               <ThemeToggle />
               
-              <div className="text-right">
-                <p className="text-sm font-medium text-foreground">Admin User</p>
-                <p className="text-xs text-slate-600 dark:text-[#A8A29E]">admin@vleague.vn</p>
-              </div>
-              <div className="w-10 h-10 rounded-xl bg-[#FF4444] flex items-center justify-center">
-                <span className="font-display font-bold text-slate-900 dark:text-white">A</span>
-              </div>
+              {/* User Menu */}
+              <DropdownMenu>
+                <DropdownMenuTrigger className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                  <div className="text-right hidden sm:block">
+                    <p className="text-sm font-medium text-foreground">Admin User</p>
+                    <p className="text-xs text-slate-600 dark:text-[#A8A29E]">admin@vleague.vn</p>
+                  </div>
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF4444] to-[#FF6666] flex items-center justify-center">
+                    <span className="font-display font-bold text-white">A</span>
+                  </div>
+                  <ChevronDown className="w-4 h-4 text-slate-600 dark:text-[#A8A29E]" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <div className="px-2 py-1.5 text-sm">
+                    <p className="font-medium text-foreground">Admin User</p>
+                    <p className="text-xs text-slate-600 dark:text-[#A8A29E]">admin@vleague.vn</p>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate('/')}>
+                    <FileText className="w-4 h-4 mr-2" />
+                    Trang chủ
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleLogout} className="text-red-600 dark:text-red-400">
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Đăng xuất
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </header>
