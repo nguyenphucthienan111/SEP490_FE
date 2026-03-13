@@ -1,11 +1,11 @@
 import { motion } from 'framer-motion';
-import { Trophy, Calendar, Users, ArrowRight, TrendingUp, TrendingDown, Minus, RefreshCw } from 'lucide-react';
+import { Trophy, Calendar, Users, ArrowRight, TrendingUp, TrendingDown } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { leagues, teams, matches } from '@/data/mockData';
+import { leagues, teams } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 import React from 'react';
-import { leagueService, League, Team } from '@/services/leagueService';
+import { leagueService, League, Team, Standing } from '@/services/leagueService';
 import { toast } from 'sonner';
 
 // Mock standings data
@@ -28,95 +28,42 @@ export default function LeaguesPage() {
   const [selectedLeague, setSelectedLeague] = React.useState<string | null>('l1');
   const [apiLeagues, setApiLeagues] = React.useState<League[]>([]);
   const [apiTeams, setApiTeams] = React.useState<Team[]>([]);
-  const [isLoadingLeagues, setIsLoadingLeagues] = React.useState(false);
-  const [isLoadingTeams, setIsLoadingTeams] = React.useState(false);
-  const [selectedSeason, setSelectedSeason] = React.useState(2024);
+  const [apiStandings, setApiStandings] = React.useState<Standing[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [selectedSeason] = React.useState(13); // Season 13 = 2024
 
   React.useEffect(() => {
-    // Load leagues and teams from localStorage on mount
-    loadLeaguesFromCache();
-    loadTeamsFromCache();
+    // Fetch leagues and teams on mount
+    loadData();
   }, []);
 
-  const loadLeaguesFromCache = () => {
+  const loadData = async () => {
+    setIsLoading(true);
     try {
-      const cached = localStorage.getItem('leagues');
-      if (cached) {
-        const leagues: League[] = JSON.parse(cached);
-        setApiLeagues(leagues);
-        console.log('Loaded leagues from localStorage:', leagues);
-      }
-    } catch (e) {
-      console.error('Failed to parse cached leagues:', e);
-    }
-  };
-
-  const loadTeamsFromCache = () => {
-    try {
-      const cached = localStorage.getItem('leagues');
-      if (cached) {
-        const leagues: League[] = JSON.parse(cached);
-        // Find V.League 1 (apiLeagueId: 340)
-        const vLeague1 = leagues.find(l => l.apiLeagueId === 340);
-        if (vLeague1 && Array.isArray(vLeague1.teams) && vLeague1.teams.length > 0) {
-          setApiTeams(vLeague1.teams);
-          console.log('Loaded teams from localStorage:', vLeague1.teams);
+      // Fetch leagues
+      const leagues = await leagueService.getLeagues();
+      setApiLeagues(leagues);
+      
+      // Find V.League 1 (leagueId: 1 based on the API response)
+      const vLeague1 = leagues.find(l => l.leagueId === 1);
+      if (vLeague1) {
+        // Fetch teams for V.League 1
+        const teams = await leagueService.getTeams(vLeague1.leagueId);
+        setApiTeams(teams);
+        
+        // Fetch standings for V.League 1
+        try {
+          const standings = await leagueService.getStandings(vLeague1.leagueId, selectedSeason);
+          setApiStandings(standings);
+        } catch (error) {
+          console.error('Failed to load standings:', error);
         }
       }
-    } catch (e) {
-      console.error('Failed to parse cached leagues:', e);
-    }
-  };
-
-  const handleSyncLeagues = async () => {
-    setIsLoadingLeagues(true);
-    try {
-      const leagues = await leagueService.syncLeagues();
-      localStorage.setItem('leagues', JSON.stringify(leagues));
-      setApiLeagues(leagues);
-      toast.success(`Đã đồng bộ ${leagues.length} giải đấu!`);
-      
-      // Auto load teams for V.League 1
-      loadTeamsFromCache();
     } catch (error) {
-      console.error('Failed to sync leagues:', error);
-      toast.error('Không thể đồng bộ giải đấu');
+      console.error('Failed to load data:', error);
+      toast.error('Không thể tải dữ liệu');
     } finally {
-      setIsLoadingLeagues(false);
-    }
-  };
-
-  const handleSyncTeams = async () => {
-    setIsLoadingTeams(true);
-    try {
-      // V.League 1 has apiLeagueId: 340
-      const teams = await leagueService.syncTeams(340, selectedSeason);
-      console.log('=== SYNC TEAMS DEBUG ===');
-      console.log('Season:', selectedSeason);
-      console.log('Teams response:', teams);
-      console.log('Number of teams:', teams.length);
-      console.log('All teams:', teams);
-      
-      // Update localStorage
-      const cached = localStorage.getItem('leagues');
-      if (cached) {
-        const leagues: League[] = JSON.parse(cached);
-        const updatedLeagues = leagues.map(l => 
-          l.apiLeagueId === 340 
-            ? { ...l, teams: teams || [] }
-            : l
-        );
-        localStorage.setItem('leagues', JSON.stringify(updatedLeagues));
-        console.log('Updated leagues in localStorage');
-      }
-      
-      setApiTeams(teams || []);
-      toast.success(`Đồng bộ thành công ${teams.length} đội cho mùa ${selectedSeason}!`);
-    } catch (error) {
-      console.error('Failed to sync teams:', error);
-      toast.error('Đồng bộ đội thất bại');
-    } finally {
-      setIsLoadingTeams(false);
+      setIsLoading(false);
     }
   };
 
@@ -150,32 +97,30 @@ export default function LeaguesPage() {
             transition={{ duration: 0.6 }}
             className="mb-12"
           >
-            <div className="flex items-center justify-between flex-wrap gap-4">
-              <div>
-                <h1 className="font-display font-extrabold text-4xl sm:text-5xl text-slate-900 dark:text-foreground mb-3">
-                  Giải đấu Việt Nam
-                </h1>
-                <p className="text-slate-600 dark:text-[#A8A29E] text-lg max-w-2xl">
-                  Thông tin đầy đủ về các giải đấu bóng đá Việt Nam
-                </p>
-              </div>
-              <button
-                onClick={handleSyncLeagues}
-                disabled={isLoadingLeagues}
-                className="flex items-center gap-2 px-6 py-3 bg-[#00D9FF] hover:bg-[#00E8FF] text-slate-900 font-label font-semibold rounded-xl transition-colors disabled:opacity-50"
-              >
-                <RefreshCw className={cn("w-4 h-4", isLoadingLeagues && "animate-spin")} />
-                {isLoadingLeagues ? 'Đang đồng bộ...' : 'Đồng bộ giải đấu'}
-              </button>
+            <div>
+              <h1 className="font-display font-extrabold text-4xl sm:text-5xl text-slate-900 dark:text-foreground mb-3">
+                Giải đấu Việt Nam
+              </h1>
+              <p className="text-slate-600 dark:text-[#A8A29E] text-lg max-w-2xl">
+                Thông tin đầy đủ về các giải đấu bóng đá Việt Nam
+              </p>
             </div>
           </motion.div>
 
           {/* Leagues Grid */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
-            {(apiLeagues.length > 0 ? apiLeagues : leagues).map((league, index) => {
-              const isApiLeague = 'apiLeagueId' in league;
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12 mb-16">
+              <div className="text-center">
+                <div className="w-12 h-12 border-4 border-[#00D9FF] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-slate-600 dark:text-[#A8A29E]">Đang tải dữ liệu...</p>
+              </div>
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+              {(apiLeagues.length > 0 ? apiLeagues : leagues).map((league, index) => {
+              const isApiLeague = 'leagueId' in league;
               const leagueId = isApiLeague ? `api-${league.leagueId}` : league.id;
-              const isSelected = selectedLeague === leagueId || (selectedLeague === 'l1' && isApiLeague && league.apiLeagueId === 340);
+              const isSelected = selectedLeague === leagueId || (selectedLeague === 'l1' && isApiLeague && league.leagueId === 1);
               
               return (
                 <motion.div
@@ -185,7 +130,7 @@ export default function LeaguesPage() {
                   transition={{ duration: 0.5, delay: index * 0.1 }}
                 >
                   <div 
-                    onClick={() => handleLeagueClick(isApiLeague && league.apiLeagueId === 340 ? 'l1' : leagueId)}
+                    onClick={() => handleLeagueClick(isApiLeague && league.leagueId === 1 ? 'l1' : leagueId)}
                     className={cn(
                       "group glass-card rounded-2xl p-8 hover:translate-y-[-4px] hover:shadow-xl transition-all duration-300 cursor-pointer h-full",
                       isSelected 
@@ -247,13 +192,13 @@ export default function LeaguesPage() {
                       </div>
                     </div>
 
-                    {isSelected && (isApiLeague && league.apiLeagueId === 340 || leagueId === 'l1') && (
+                    {isSelected && (isApiLeague && league.leagueId === 1 || leagueId === 'l1') && (
                       <div className="mt-6 flex items-center justify-center gap-2 px-4 py-2 bg-[#FF4444] text-white rounded-lg font-label font-semibold text-sm">
                         <span>Đang xem bảng xếp hạng</span>
                         <ArrowRight className="w-4 h-4" />
                       </div>
                     )}
-                    {isSelected && !(isApiLeague && league.apiLeagueId === 340 || leagueId === 'l1') && (
+                    {isSelected && !(isApiLeague && league.leagueId === 1 || leagueId === 'l1') && (
                       <div className="mt-6 flex items-center justify-center gap-2 px-4 py-2 bg-slate-400 text-white rounded-lg font-label font-semibold text-sm">
                         <span>Chưa có dữ liệu</span>
                       </div>
@@ -262,7 +207,8 @@ export default function LeaguesPage() {
                 </motion.div>
               );
             })}
-          </div>
+            </div>
+          )}
 
           {/* V.League 1 Standings */}
           {selectedLeague === 'l1' && (
@@ -290,7 +236,7 @@ export default function LeaguesPage() {
                   </div>
                 </div>
                 <span className="px-5 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-[#00D9FF] text-white text-base font-label font-bold shadow-lg">
-                  {selectedSeason}
+                  2024
                 </span>
               </div>
 
@@ -312,17 +258,32 @@ export default function LeaguesPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {(apiTeams.length > 0 ? [...apiTeams].sort((a, b) => a.teamId - b.teamId) : standings).map((item, index) => {
-                      const isApiTeam = 'teamId' in item;
-                      const position = isApiTeam ? (index + 1) : item.position;
-                      const teamName = isApiTeam ? item.teamName : item.team;
-                      const totalTeams = apiTeams.length > 0 ? apiTeams.length : standings.length;
+                    {(apiStandings.length > 0 ? apiStandings : apiTeams.length > 0 ? [...apiTeams].sort((a, b) => a.teamId - b.teamId) : standings).map((item, index) => {
+                      const isApiStanding = 'standingId' in item;
+                      const isApiTeam = !isApiStanding && 'teamId' in item;
+                      
+                      const position = isApiStanding ? (item as Standing).rank : isApiTeam ? (index + 1) : (item as any).position;
+                      const teamName = isApiStanding ? (item as Standing).team.teamName : isApiTeam ? (item as Team).teamName : (item as any).team;
+                      const teamLogo = isApiStanding ? (item as Standing).team.logoUrl : isApiTeam ? (item as Team).logoUrl : null;
+                      const teamId = isApiStanding ? (item as Standing).team.teamId : isApiTeam ? (item as Team).teamId : null;
+                      
+                      const played = isApiStanding ? (item as Standing).played : isApiTeam ? 0 : (item as any).played;
+                      const won = isApiStanding ? (item as Standing).win : isApiTeam ? 0 : (item as any).won;
+                      const drawn = isApiStanding ? (item as Standing).draw : isApiTeam ? 0 : (item as any).drawn;
+                      const lost = isApiStanding ? (item as Standing).loss : isApiTeam ? 0 : (item as any).lost;
+                      const goalsFor = isApiStanding ? (item as Standing).goalsFor : isApiTeam ? 0 : (item as any).goalsFor;
+                      const goalsAgainst = isApiStanding ? (item as Standing).goalsAgainst : isApiTeam ? 0 : (item as any).goalsAgainst;
+                      const goalDifference = isApiStanding ? (item as Standing).goalDifference : isApiTeam ? 0 : (item as any).goalDifference;
+                      const points = isApiStanding ? (item as Standing).points : isApiTeam ? 0 : (item as any).points;
+                      const form = isApiStanding ? (item as Standing).form.split('') : isApiTeam ? [] : (item as any).form;
+                      
+                      const totalTeams = apiStandings.length > 0 ? apiStandings.length : apiTeams.length > 0 ? apiTeams.length : standings.length;
                       const isTopThree = position <= 3;
                       const isRelegation = position > (totalTeams - 3);
 
                       return (
                         <motion.tr
-                          key={isApiTeam ? item.teamId : item.position}
+                          key={isApiStanding ? (item as Standing).standingId : isApiTeam ? (item as Team).teamId : (item as any).position}
                           initial={{ opacity: 0, x: -20 }}
                           whileInView={{ opacity: 1, x: 0 }}
                           viewport={{ once: true }}
@@ -350,12 +311,12 @@ export default function LeaguesPage() {
                           </td>
                           <td className="py-3 px-3">
                             <Link 
-                              to={isApiTeam ? `/teams/${item.teamId}` : `/teams/${teams.find(t => t.name === teamName)?.id || ''}`}
+                              to={teamId ? `/teams/${teamId}` : `/teams/${teams.find(t => t.name === teamName)?.id || ''}`}
                               className="flex items-center gap-2 hover:opacity-80 transition-opacity"
                             >
-                              {isApiTeam && item.logoUrl ? (
+                              {teamLogo ? (
                                 <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center border border-slate-300 dark:border-white/10">
-                                  <img src={item.logoUrl} alt={teamName} className="w-7 h-7 object-contain" />
+                                  <img src={teamLogo} alt={teamName} className="w-7 h-7 object-contain" />
                                 </div>
                               ) : (
                                 <div className="w-8 h-8 rounded-lg bg-slate-200 dark:bg-white/5 flex items-center justify-center text-xs font-display font-bold text-slate-900 dark:text-foreground border border-slate-300 dark:border-white/10">
@@ -369,57 +330,53 @@ export default function LeaguesPage() {
                           </td>
                           <td className="py-3 px-3 text-center">
                             <span className="font-mono-data text-sm text-slate-700 dark:text-slate-400">
-                              {isApiTeam ? 0 : item.played}
+                              {played}
                             </span>
                           </td>
                           <td className="py-3 px-3 text-center">
                             <span className="font-mono-data text-sm text-slate-700 dark:text-slate-400">
-                              {isApiTeam ? 0 : item.won}
+                              {won}
                             </span>
                           </td>
                           <td className="py-3 px-3 text-center">
                             <span className="font-mono-data text-sm text-slate-700 dark:text-slate-400">
-                              {isApiTeam ? 0 : item.drawn}
+                              {drawn}
                             </span>
                           </td>
                           <td className="py-3 px-3 text-center">
                             <span className="font-mono-data text-sm text-slate-700 dark:text-slate-400">
-                              {isApiTeam ? 0 : item.lost}
+                              {lost}
                             </span>
                           </td>
                           <td className="py-3 px-3 text-center">
                             <span className="font-mono-data text-sm text-slate-700 dark:text-slate-400">
-                              {isApiTeam ? 0 : item.goalsFor}
+                              {goalsFor}
                             </span>
                           </td>
                           <td className="py-3 px-3 text-center">
                             <span className="font-mono-data text-sm text-slate-700 dark:text-slate-400">
-                              {isApiTeam ? 0 : item.goalsAgainst}
+                              {goalsAgainst}
                             </span>
                           </td>
                           <td className="py-3 px-3 text-center">
                             <span className={cn(
                               "font-mono-data text-sm font-semibold",
-                              isApiTeam ? "text-slate-700 dark:text-slate-400" :
-                              item.goalDifference > 0 ? "text-green-600 dark:text-green-400" : 
-                              item.goalDifference < 0 ? "text-red-600 dark:text-red-400" : 
+                              goalDifference > 0 ? "text-green-600 dark:text-green-400" : 
+                              goalDifference < 0 ? "text-red-600 dark:text-red-400" : 
                               "text-slate-700 dark:text-slate-400"
                             )}>
-                              {isApiTeam ? 0 : (item.goalDifference > 0 ? '+' : '') + item.goalDifference}
+                              {(goalDifference > 0 ? '+' : '') + goalDifference}
                             </span>
                           </td>
                           <td className="py-3 px-3 text-center">
                             <span className="font-mono-data text-sm font-bold text-slate-900 dark:text-foreground">
-                              {isApiTeam ? 0 : item.points}
+                              {points}
                             </span>
                           </td>
                           <td className="py-3 px-3">
                             <div className="flex items-center justify-center gap-1">
-                              {isApiTeam ? (
-                                // Empty form for API teams
-                                <span className="text-xs text-slate-400 dark:text-slate-500">-</span>
-                              ) : (
-                                item.form.map((result, i) => (
+                              {form.length > 0 ? (
+                                form.map((result: string, i: number) => (
                                   <div
                                     key={i}
                                     className={cn(
@@ -432,6 +389,8 @@ export default function LeaguesPage() {
                                     {result}
                                   </div>
                                 ))
+                              ) : (
+                                <span className="text-xs text-slate-400 dark:text-slate-500">-</span>
                               )}
                             </div>
                           </td>
@@ -469,31 +428,11 @@ export default function LeaguesPage() {
               <h2 className="font-display font-bold text-2xl text-foreground">
                 V.League 1 Teams {apiTeams.length > 0 && `(${apiTeams.length})`}
               </h2>
-              <div className="flex items-center gap-3">
-                <select
-                  value={selectedSeason}
-                  onChange={(e) => setSelectedSeason(parseInt(e.target.value))}
-                  className="px-4 py-2 rounded-lg bg-white dark:bg-card border border-slate-200 dark:border-white/10 text-slate-900 dark:text-foreground text-sm font-medium"
-                >
-                  <option value={2025}>2025</option>
-                  <option value={2024}>2024</option>
-                  <option value={2023}>2023</option>
-                  <option value={2022}>2022</option>
-                </select>
-                <button
-                  onClick={handleSyncTeams}
-                  disabled={isLoadingTeams}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-[#FF4444] to-[#FF6666] text-white font-medium text-sm hover:shadow-lg transition-all disabled:opacity-50"
-                >
-                  <RefreshCw className={cn("w-4 h-4", isLoadingTeams && "animate-spin")} />
-                  {isLoadingTeams ? 'Đang đồng bộ...' : 'Đồng bộ đội'}
-                </button>
-              </div>
             </div>
             
-            {isLoadingTeams ? (
+            {isLoading ? (
               <div className="flex items-center justify-center py-12">
-                <RefreshCw className="w-8 h-8 animate-spin text-slate-400 dark:text-slate-500" />
+                <div className="w-8 h-8 border-4 border-[#FF4444] border-t-transparent rounded-full animate-spin"></div>
               </div>
             ) : (apiTeams && apiTeams.length > 0) ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">

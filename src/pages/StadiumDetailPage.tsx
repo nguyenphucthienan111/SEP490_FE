@@ -6,7 +6,7 @@ import { getStadiumById, matches, teams } from '@/data/mockData';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import React from 'react';
-import { Stadium, League } from '@/services/leagueService';
+import { Stadium, League, leagueService } from '@/services/leagueService';
 
 export default function StadiumDetailPage() {
   const { stadiumId } = useParams<{ stadiumId: string }>();
@@ -34,43 +34,53 @@ export default function StadiumDetailPage() {
       setFromTeamId(state.fromTeamId);
     }
 
-    // Load stadium from localStorage (from teams data)
-    const cached = localStorage.getItem('leagues');
-    if (cached && stadiumId) {
-      try {
-        const leagues: League[] = JSON.parse(cached);
-        const teamsWithThisStadium: any[] = [];
-        let foundStadium: Stadium | null = null;
-        
-        // Find stadium and all teams using it
-        for (const league of leagues) {
-          if (league.teams && Array.isArray(league.teams)) {
-            for (const team of league.teams) {
-              if (team.stadium && team.stadium.stadiumId.toString() === stadiumId) {
-                if (!foundStadium) {
-                  foundStadium = team.stadium;
-                }
-                teamsWithThisStadium.push(team);
-                
-                // If we don't have fromTeamId from state, use this team
-                if (!state?.fromTeamId && !fromTeamId) {
-                  setFromTeamId(team.teamId.toString());
-                }
+    loadStadiumData();
+  }, [stadiumId]);
+
+  const loadStadiumData = async () => {
+    if (!stadiumId) return;
+    
+    setIsLoading(true);
+    try {
+      // Fetch all leagues
+      const leagues = await leagueService.getLeagues();
+      const teamsWithThisStadium: any[] = [];
+      let foundStadium: Stadium | null = null;
+      
+      // Find stadium and all teams using it
+      for (const league of leagues) {
+        try {
+          const teams = await leagueService.getTeams(league.leagueId);
+          
+          for (const team of teams) {
+            if (team.stadium && team.stadium.stadiumId.toString() === stadiumId) {
+              if (!foundStadium) {
+                foundStadium = team.stadium;
+              }
+              teamsWithThisStadium.push(team);
+              
+              // If we don't have fromTeamId from state, use this team
+              const state = location.state as { fromTeamId?: string } | undefined;
+              if (!state?.fromTeamId && !fromTeamId) {
+                setFromTeamId(team.teamId.toString());
               }
             }
           }
+        } catch (error) {
+          console.error(`Failed to fetch teams for league ${league.leagueId}:`, error);
         }
-        
-        if (foundStadium) {
-          setApiStadium(foundStadium);
-        }
-        setHomeTeamsFromApi(teamsWithThisStadium);
-      } catch (e) {
-        console.error('Failed to parse cached leagues:', e);
       }
+      
+      if (foundStadium) {
+        setApiStadium(foundStadium);
+      }
+      setHomeTeamsFromApi(teamsWithThisStadium);
+    } catch (error) {
+      console.error('Failed to load stadium data:', error);
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
-  }, [stadiumId]);
+  };
 
   const stadium = apiStadium || mockStadium;
   const stadiumId_display = apiStadium ? apiStadium.stadiumId : mockStadium?.id;
