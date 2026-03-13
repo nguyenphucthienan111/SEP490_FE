@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { CheckCircle, XCircle, Loader2, ArrowLeft, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ export default function VerifyEmailPage() {
   const [message, setMessage] = useState('');
   const [email, setEmail] = useState('');
   const [isResending, setIsResending] = useState(false);
+  const hasVerified = useRef(false);
 
   const token = searchParams.get('token');
 
@@ -21,6 +22,12 @@ export default function VerifyEmailPage() {
         setMessage('Token xác thực không hợp lệ.');
         return;
       }
+
+      // Prevent multiple verification attempts
+      if (hasVerified.current) {
+        return;
+      }
+      hasVerified.current = true;
       
       try {
         await emailVerificationService.verifyEmail(token);
@@ -89,7 +96,7 @@ export default function VerifyEmailPage() {
                 <div className="w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-500/10 flex items-center justify-center mx-auto mb-6">
                   <Loader2 className="w-8 h-8 text-[#00D9FF] animate-spin" />
                 </div>
-                <h2 className="font-serif text-3xl font-bold text-slate-900 dark:text-foreground mb-2">
+                <h2 className="font-display text-3xl font-bold text-slate-900 dark:text-foreground mb-2">
                   Đang Xác Thực...
                 </h2>
                 <p className="text-slate-700 dark:text-[#A8A29E] font-body font-medium">
@@ -103,7 +110,7 @@ export default function VerifyEmailPage() {
                 <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-500/10 flex items-center justify-center mx-auto mb-6">
                   <CheckCircle className="w-8 h-8 text-green-500" />
                 </div>
-                <h2 className="font-serif text-3xl font-bold text-slate-900 dark:text-foreground mb-2">
+                <h2 className="font-display text-3xl font-bold text-slate-900 dark:text-foreground mb-2">
                   Xác Thực Thành Công!
                 </h2>
                 <p className="text-slate-700 dark:text-[#A8A29E] font-body font-medium mb-6">
@@ -120,7 +127,7 @@ export default function VerifyEmailPage() {
                 <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-500/10 flex items-center justify-center mx-auto mb-6">
                   <XCircle className="w-8 h-8 text-red-500" />
                 </div>
-                <h2 className="font-serif text-3xl font-bold text-slate-900 dark:text-foreground mb-2">
+                <h2 className="font-display text-3xl font-bold text-slate-900 dark:text-foreground mb-2">
                   Xác Thực Thất Bại
                 </h2>
                 <p className="text-slate-700 dark:text-[#A8A29E] font-body font-medium mb-6">

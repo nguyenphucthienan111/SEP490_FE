@@ -32,14 +32,14 @@ async function request<T>(
 
   const result = await response.json();
   
-  // For email verification endpoint, if status is 200, consider it success regardless of response body
-  if (endpoint.includes('/verify-email') && response.status === 200) {
-    return result as T;
-  }
-  
   // Check if response has success field and it's false
   if (result && typeof result === 'object' && 'success' in result && result.success === false) {
     throw new Error(result.message || 'Request failed');
+  }
+  
+  // For endpoints that return data: null but success: true, return void/undefined
+  if (result && typeof result === 'object' && 'data' in result && result.data === null && result.success === true) {
+    return undefined as T;
   }
   
   // If response has 'data' property, return it, otherwise return the whole response
