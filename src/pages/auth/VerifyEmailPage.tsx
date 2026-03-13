@@ -3,6 +3,7 @@ import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { CheckCircle, XCircle, Loader2, ArrowLeft, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { emailVerificationService } from "@/services/emailVerificationService";
+import { toast } from "sonner";
 
 export default function VerifyEmailPage() {
   const [searchParams] = useSearchParams();
@@ -50,15 +51,23 @@ export default function VerifyEmailPage() {
   const handleResendVerification = async () => {
     if (!email) {
       setMessage('Vui lòng nhập email của bạn.');
+      toast.error('Vui lòng nhập email của bạn.');
       return;
     }
 
     setIsResending(true);
     try {
       await emailVerificationService.resendVerification({ email });
-      setMessage('Email xác thực mới đã được gửi. Vui lòng kiểm tra hộp thư.');
+      const successMsg = 'Email xác thực mới đã được gửi! Vui lòng kiểm tra hộp thư của bạn.';
+      setMessage(successMsg);
+      toast.success(successMsg);
+      
+      // Clear email field after successful send
+      setEmail('');
     } catch (error: any) {
-      setMessage(error.message || 'Gửi lại email thất bại. Vui lòng thử lại.');
+      const errorMsg = error.message || 'Gửi lại email thất bại. Vui lòng thử lại.';
+      setMessage(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setIsResending(false);
     }
@@ -142,6 +151,16 @@ export default function VerifyEmailPage() {
                       Gửi Lại Email Xác Thực
                     </h3>
                   </div>
+                  
+                  {/* Success/Error message display */}
+                  {message && message.includes('đã được gửi') && (
+                    <div className="mb-4 p-3 bg-green-100 dark:bg-green-500/10 border border-green-500/20 rounded-lg">
+                      <p className="text-sm text-green-700 dark:text-green-400 font-medium">
+                        ✓ {message}
+                      </p>
+                    </div>
+                  )}
+                  
                   <div className="space-y-4">
                     <input
                       type="email"
