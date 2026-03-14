@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, TrendingUp, ChevronDown, ChevronUp, Users, Loader2 } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
-import { getPlayerById, players } from '@/data/mockData';
+import { getPlayerById } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 import { PlayerFromAPI, PlayerStats, leagueService } from '@/services/leagueService';
 import { toast } from 'sonner';
@@ -73,16 +73,16 @@ export default function PlayerDetailPage() {
           const teams = await leagueService.getTeams(league.leagueId);
           
           for (const team of teams) {
-            const players = await leagueService.getPlayers(team.teamId);
-            const player = players.find(p => p.playerId.toString() === playerId);
+            const teamPlayers = await leagueService.getPlayers(team.teamId);
+            const player = teamPlayers.find(p => p.playerId.toString() === playerId);
             
             if (player) {
               foundPlayer = player;
               setApiPlayer(player);
               
-              // Set fromTeamId if not already set
+              // Set fromTeamId only if came from team page
               const state = location.state as { fromTeamId?: string } | undefined;
-              if (!state?.fromTeamId) {
+              if (state?.fromTeamId) {
                 setFromTeamId(player.teamId.toString());
               }
               
