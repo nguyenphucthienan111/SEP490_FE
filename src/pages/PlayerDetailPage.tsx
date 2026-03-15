@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, TrendingUp, TrendingDown, ChevronDown, ChevronUp, Calendar, Clock, Users } from 'lucide-react';
+import { ArrowLeft, TrendingUp, TrendingDown, ChevronDown, ChevronUp, Calendar, Clock, Users, ArrowRight } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { getPlayerById, players } from '@/data/mockData';
 import { cn } from '@/lib/utils';
-import { Player as ApiPlayer } from '@/services/leagueService';
+import { Player as ApiPlayer, PlayerStats, Transfer, leagueService } from '@/services/leagueService';
 import { 
   LineChart, 
   Line, 
@@ -36,6 +36,8 @@ export default function PlayerDetailPage() {
   const { playerId } = useParams<{ playerId: string }>();
   const location = useLocation();
   const [apiPlayer, setApiPlayer] = useState<ApiPlayer | null>(null);
+  const [playerStats, setPlayerStats] = useState<PlayerStats | null>(null);
+  const [transfers, setTransfers] = useState<Transfer[]>([]);
   const [fromTeamId, setFromTeamId] = useState<string | null>(null);
   const player = getPlayerById(playerId || '');
   const [expandedContribution, setExpandedContribution] = useState<string | null>(null);
@@ -61,6 +63,42 @@ export default function PlayerDetailPage() {
         }
       } catch (e) {}
     }
+
+    // Load player stats từ cache hoặc API
+    const loadStats = async () => {
+      let allStats: PlayerStats[] = [];
+      try {
+        const cachedStats = localStorage.getItem('player-stats');
+        if (cachedStats) {
+          allStats = JSON.parse(cachedStats);
+        } else {
+          allStats = await leagueService.getPlayerStats();
+          localStorage.setItem('player-stats', JSON.stringify(allStats));
+        }
+        if (playerId) {
+          const found = allStats.find(s => s.playerId.toString() === playerId);
+          if (found) setPlayerStats(found);
+        }
+      } catch (e) {}
+    };
+    loadStats();
+    // Load transfers
+    const loadTransfers = async () => {
+      try {
+        let allTransfers: Transfer[] = [];
+        const cachedTransfers = localStorage.getItem('transfers');
+        if (cachedTransfers) {
+          allTransfers = JSON.parse(cachedTransfers);
+        } else {
+          allTransfers = await leagueService.getTransfers();
+          localStorage.setItem('transfers', JSON.stringify(allTransfers));
+        }
+        if (playerId) {
+          setTransfers(allTransfers.filter(t => t.playerId.toString() === playerId));
+        }
+      } catch (e) {}
+    };
+    loadTransfers();
   }, [playerId, location.state]);
 
   // Use API player if available, otherwise fallback to mock data
@@ -92,19 +130,8 @@ export default function PlayerDetailPage() {
   const playerHeight = apiPlayer ? apiPlayer.heightCm : player?.height;
   const playerWeight = apiPlayer ? apiPlayer.weightKg : player?.weight;
   
-  // Calculate aggregate stats from API player statistics
-  const stats = apiPlayer?.statistics ?? [];
-  const aggregateStats = apiPlayer ? {
-    matches: stats.reduce((sum, s) => sum + (s.appearances || 0), 0),
-    goals: stats.reduce((sum, s) => sum + (s.goals || 0), 0),
-    assists: stats.reduce((sum, s) => sum + (s.assists || 0), 0),
-    minutesPlayed: stats.reduce((sum, s) => sum + (s.minutes || 0), 0),
-    yellowCards: stats.reduce((sum, s) => sum + (s.yellowCards || 0), 0),
-    redCards: stats.reduce((sum, s) => sum + (s.redCards || 0), 0),
-    avgRating: stats.filter(s => s.rating).length > 0
-      ? stats.reduce((sum, s) => sum + (s.rating || 0), 0) / stats.filter(s => s.rating).length
-      : 0,
-  } : null;
+  // Stats từ player-stats API
+  const stats = playerStats;
 
   // Generate radar data based on player position
   const getRadarData = () => {
@@ -299,7 +326,7 @@ export default function PlayerDetailPage() {
                       fill="none"
                       stroke="url(#ratingGradient)"
                       strokeWidth="10"
-                      strokeDasharray={`${((aggregateStats?.avgRating || player?.rating || 0) / 10) * 283} 283`}
+                      strokeDasharray={`${((stats?.rating || player?.rating || 0) / 10) * 283} 283`}
                       strokeLinecap="round"
                     />
                     <defs>
@@ -311,7 +338,7 @@ export default function PlayerDetailPage() {
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
                     <span className="font-mono-data text-4xl font-bold text-slate-900 dark:text-foreground">
-                      {(aggregateStats?.avgRating || player?.rating || 0).toFixed(1)}
+                      {(stats?.rating || player?.rating || 0).toFixed(1)}
                     </span>
                     <span className="text-xs text-slate-600 dark:text-[#A8A29E] uppercase tracking-wider">Đánh giá</span>
                   </div>
@@ -337,10 +364,34 @@ export default function PlayerDetailPage() {
                 transition={{ duration: 0.5, delay: 0.1 }}
                 className="glass-card rounded-2xl p-6 lg:col-span-2"
               >
-                <h3 className="font-label font-bold text-slate-900 dark:text-foreground uppercase tracking-wider text-sm mb-6">
+                <h3 className="font-label font-bold text-slate-900 dark:text-foreground uppercase tracking-wider text-sm mb-4">
+                  Thống kê thi đấu
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
+                  {[
+                    { label: 'Số trận', value: stats?.appearances ?? 0 },
+                    { label: 'Bàn thắng', value: stats?.goals ?? 0 },
+                    { label: 'Kiến tạo', value: stats?.assists ?? 0 },
+                    { label: 'Phút thi đấu', value: stats?.minutes ?? 0 },
+                    { label: 'Thẻ vàng', value: stats?.yellowCards ?? 0 },
+                    { label: 'Thẻ đỏ', value: stats?.redCards ?? 0 },
+                    { label: 'Sút tổng', value: stats?.shotsTotal ?? '-' },
+                    { label: 'Sút trúng đích', value: stats?.shotsOnTarget ?? '-' },
+                    { label: 'Chuyền chính xác', value: stats?.passesAccuracy != null ? `${stats.passesAccuracy}%` : '-' },
+                    { label: 'Chuyền then chốt', value: stats?.passesKey ?? '-' },
+                    { label: 'Tranh bóng thắng', value: stats?.duelsWonRate != null ? `${stats.duelsWonRate}%` : '-' },
+                    { label: 'Phạm lỗi', value: stats?.foulsCommitted ?? '-' },
+                  ].map((item) => (
+                    <div key={item.label} className="p-3 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10">
+                      <p className="text-xs text-slate-600 dark:text-[#A8A29E] mb-1">{item.label}</p>
+                      <p className="font-mono-data font-bold text-lg text-[#00D9FF]">{item.value}</p>
+                    </div>
+                  ))}
+                </div>
+                <h3 className="font-label font-bold text-slate-900 dark:text-foreground uppercase tracking-wider text-sm mb-4">
                   Thông tin cầu thủ
                 </h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {[
                     { label: 'Tuổi', value: apiPlayer.age ?? '-' },
                     { label: 'Quốc tịch', value: apiPlayer.nationality ?? '-' },
@@ -349,7 +400,7 @@ export default function PlayerDetailPage() {
                     { label: 'Cân nặng', value: apiPlayer.weightKg ? `${apiPlayer.weightKg} kg` : '-' },
                     { label: 'Vị trí', value: apiPlayer.position ?? '-' },
                   ].map((item) => (
-                    <div key={item.label} className="p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10">
+                    <div key={item.label} className="p-3 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10">
                       <p className="text-xs text-slate-600 dark:text-[#A8A29E] mb-1">{item.label}</p>
                       <p className="font-semibold text-slate-900 dark:text-foreground">{item.value}</p>
                     </div>

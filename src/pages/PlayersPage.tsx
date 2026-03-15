@@ -4,7 +4,7 @@ import { Search, Users, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { cn } from '@/lib/utils';
-import { leagueService, Team, Player as PlayerFromAPI } from '@/services/leagueService';
+import { leagueService, Team, Player as PlayerFromAPI, PlayerStats } from '@/services/leagueService';
 import { toast } from 'sonner';
 
 type PositionFilter = 'all' | 'Forward' | 'Attacker' | 'Midfielder' | 'Defender' | 'Goalkeeper';
@@ -45,6 +45,7 @@ function getPositionColor(pos: string | null | undefined) {
 interface PlayerWithTeam extends PlayerFromAPI {
   teamName?: string;
   teamLogo?: string;
+  stats?: PlayerStats;
 }
 
 function PlayerCard({ player, index }: { player: PlayerWithTeam; index: number }) {
@@ -108,19 +109,19 @@ function PlayerCard({ player, index }: { player: PlayerWithTeam; index: number }
             <div className="grid grid-cols-3 gap-2 pt-3 border-t border-slate-200 dark:border-white/5">
               <div className="text-center">
                 <p className="font-mono-data text-sm font-semibold text-[#00D9FF]">
-                  {player.statistics?.[0]?.goals ?? 0}
+                  {player.stats?.goals ?? 0}
                 </p>
                 <p className="text-xs text-slate-600 dark:text-[#A8A29E]">Bàn thắng</p>
               </div>
               <div className="text-center">
                 <p className="font-mono-data text-sm font-semibold text-[#00D9FF]">
-                  {player.statistics?.[0]?.assists ?? 0}
+                  {player.stats?.assists ?? 0}
                 </p>
                 <p className="text-xs text-slate-600 dark:text-[#A8A29E]">Kiến tạo</p>
               </div>
               <div className="text-center">
                 <p className="font-mono-data text-sm font-semibold text-[#00D9FF]">
-                  {player.statistics?.[0]?.appearances ?? 0}
+                  {player.stats?.appearances ?? 0}
                 </p>
                 <p className="text-xs text-slate-600 dark:text-[#A8A29E]">Trận</p>
               </div>
@@ -168,18 +169,32 @@ export default function PlayersPage() {
 
       setApiTeams(teams);
 
-      // 2. Load players from localStorage
+      // 2. Load player-stats
+      let statsMap = new Map<number, PlayerStats>();
+      try {
+        const cachedStats = localStorage.getItem('player-stats');
+        let allStats: PlayerStats[] = [];
+        if (cachedStats) {
+          allStats = JSON.parse(cachedStats);
+        } else {
+          allStats = await leagueService.getPlayerStats();
+          localStorage.setItem('player-stats', JSON.stringify(allStats));
+        }
+        allStats.forEach(s => statsMap.set(s.playerId, s));
+      } catch (e) {}
+
+      // 3. Load players from localStorage
       const cachedPlayers = localStorage.getItem('players');
       let players: PlayerWithTeam[] = [];
 
       if (cachedPlayers) {
         const raw: PlayerFromAPI[] = JSON.parse(cachedPlayers);
-        players = raw.map(p => enrichPlayerWithTeam(p, teams));
+        players = raw.map(p => enrichPlayerWithTeam(p, teams, statsMap));
       } else {
         // Fetch all players from GET endpoint
         try {
           const fetched = await leagueService.getPlayers();
-          players = fetched.map(p => enrichPlayerWithTeam(p, teams));
+          players = fetched.map(p => enrichPlayerWithTeam(p, teams, statsMap));
           if (players.length > 0) {
             localStorage.setItem('players', JSON.stringify(fetched));
           }
@@ -193,29 +208,35 @@ export default function PlayersPage() {
     }
   };
 
-  const enrichPlayerWithTeam = (player: PlayerFromAPI, teams: Team[]): PlayerWithTeam => {
+  const enrichPlayerWithTeam = (player: PlayerFromAPI, teams: Team[], statsMap: Map<number, PlayerStats>): PlayerWithTeam => {
     const team = player.teamId ? teams.find(t => t.teamId === player.teamId) : undefined;
     return {
       ...player,
       teamName: team?.teamName,
       teamLogo: team?.logoUrl,
+      stats: statsMap.get(player.playerId),
     };
   };
 
   const handleSyncPlayers = async () => {
     setIsSyncing(true);
     try {
-      // Ensure teams are loaded first
       let teams = apiTeams;
       if (teams.length === 0) {
-        teams = await leagueService.getTeams();
+        teams = await leagueService.syncTeams(340, 2024);
         if (teams.length > 0) {
           localStorage.setItem('teams', JSON.stringify(teams));
           setApiTeams(teams);
         }
       }
+      let statsMap = new Map<number, PlayerStats>();
+      try {
+        const allStats = await leagueService.getPlayerStats();
+        localStorage.setItem('player-stats', JSON.stringify(allStats));
+        allStats.forEach(s => statsMap.set(s.playerId, s));
+      } catch (e) {}
       const fetched = await leagueService.syncPlayers(340, 2024);
-      const enriched = fetched.map(p => enrichPlayerWithTeam(p, teams));
+      const enriched = fetched.map(p => enrichPlayerWithTeam(p, teams, statsMap));
       localStorage.setItem('players', JSON.stringify(fetched));
       setAllPlayers(enriched);
       toast.success(`Đã tải ${fetched.length} cầu thủ!`);

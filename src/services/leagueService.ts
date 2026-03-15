@@ -95,6 +95,83 @@ export interface Standing {
   apiLastUpdated: string;
 }
 
+export interface PlayerStats {
+  playerStatisticsId: number;
+  playerId: number;
+  teamId: number;
+  leagueId: number;
+  seasonId: number;
+  appearances: number;
+  lineups: number;
+  minutes: number;
+  goals: number;
+  assists: number;
+  yellowCards: number;
+  redCards: number;
+  rating: number | null;
+  substitutionsIn: number | null;
+  substitutionsOut: number | null;
+  shotsTotal: number | null;
+  shotsOnTarget: number | null;
+  passesTotal: number | null;
+  passesKey: number | null;
+  passesAccuracy: number | null;
+  dribblesAttempted: number | null;
+  dribblesSuccess: number | null;
+  dribblesSuccessRate: number | null;
+  duelsWon: number | null;
+  duelsTotal: number | null;
+  duelsWonRate: number | null;
+  tackles: number | null;
+  interceptions: number | null;
+  foulsDrawn: number | null;
+  foulsCommitted: number | null;
+  penaltiesScored: number | null;
+  penaltiesMissed: number | null;
+}
+
+export interface Transfer {
+  transferId: number;
+  playerId: number;
+  fromTeamId: number;
+  toTeamId: number;
+  transferDate: string;
+  transferType: string;
+}
+
+export interface MatchEvent {
+  eventId: number;
+  matchId: number;
+  teamId: number;
+  playerId: number | null;
+  assistPlayerId: number | null;
+  eventType: string;
+  detail: string;
+  eventTime: number;
+  extraTime: number | null;
+  period: string;
+  comments: string | null;
+}
+
+export interface ApiMatch {
+  matchId: number;
+  apiFixtureId: number;
+  leagueId: number;
+  seasonId: number;
+  matchDate: string;
+  kickOffTime: string;
+  status: string;
+  homeTeamId: number;
+  awayTeamId: number;
+  homeGoals: number | null;
+  awayGoals: number | null;
+  venue: string;
+  refereeName: string | null;
+  attendance: number | null;
+  round: string;
+  apiVenueId: number | null;
+}
+
 export const leagueService = {
   async syncLeagues(): Promise<League[]> {
     return await apiClient.post<League[]>('/api/Football/sync-leagues');
@@ -120,6 +197,22 @@ export const leagueService = {
 
   async getStandings(): Promise<Standing[]> {
     return await apiClient.get<Standing[]>('/api/Football/standings');
+  },
+
+  async getPlayerStats(): Promise<PlayerStats[]> {
+    return await apiClient.get<PlayerStats[]>('/api/Football/player-stats');
+  },
+
+  async getMatches(): Promise<ApiMatch[]> {
+    return await apiClient.get<ApiMatch[]>('/api/Football/matches');
+  },
+
+  async getMatchEvents(): Promise<MatchEvent[]> {
+    return await apiClient.get<MatchEvent[]>('/api/Football/match-events');
+  },
+
+  async getTransfers(): Promise<Transfer[]> {
+    return await apiClient.get<Transfer[]>('/api/Football/transfers');
   },
 
   async getStadium(stadiumId: number): Promise<Stadium> {
