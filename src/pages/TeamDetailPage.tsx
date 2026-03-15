@@ -1,18 +1,21 @@
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, MapPin, Users, Trophy, Calendar, TrendingUp, Building2, User, Loader2 } from 'lucide-react';
+import { ArrowLeft, MapPin, Users, Trophy, Calendar, TrendingUp, Building2, User, Loader2, ArrowRight } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { getTeamById, players, matches } from '@/data/mockData';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import React from 'react';
-import { Team, League, Stadium, Player, leagueService } from '@/services/leagueService';
+import { Team, League, Stadium, Player, Transfer, TeamStatistic, leagueService } from '@/services/leagueService';
 import { toast } from 'sonner';
 
 export default function TeamDetailPage() {
   const { teamId } = useParams<{ teamId: string }>();
   const [apiTeam, setApiTeam] = React.useState<Team | null>(null);
   const [apiPlayers, setApiPlayers] = React.useState<Player[]>([]);
+  const [transfers, setTransfers] = React.useState<Transfer[]>([]);
+  const [showAllTransfers, setShowAllTransfers] = React.useState(false);
+  const [teamStat, setTeamStat] = React.useState<TeamStatistic | null>(null);
   const [selectedSeason, setSelectedSeason] = React.useState<number>(2024);
   const [isSyncing, setIsSyncing] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -48,6 +51,49 @@ export default function TeamDetailPage() {
       } catch (e) {}
     }
     
+    // Load transfers for this team
+    if (teamId) {
+      const loadTransfers = async () => {
+        try {
+          // Always fetch fresh from API (transfers data is small)
+          const allTransfers = await leagueService.getTransfers();
+          localStorage.setItem('transfers', JSON.stringify(allTransfers));
+          const tid = Number(teamId);
+          setTransfers(allTransfers.filter(t => t.fromTeamId === tid || t.toTeamId === tid));
+        } catch (e) {
+          // Fallback to cache if API fails
+          try {
+            const cached = localStorage.getItem('transfers');
+            if (cached) {
+              const allTransfers: Transfer[] = JSON.parse(cached);
+              const tid = Number(teamId);
+              setTransfers(allTransfers.filter(t => t.fromTeamId === tid || t.toTeamId === tid));
+            }
+          } catch (e2) {}
+        }
+      };
+      loadTransfers();
+    }
+
+    // Load team statistics
+    if (teamId) {
+      const loadStats = async () => {
+        try {
+          let allStats: TeamStatistic[] = [];
+          const cached = localStorage.getItem('team-statistics');
+          if (cached) {
+            allStats = JSON.parse(cached);
+          } else {
+            allStats = await leagueService.getTeamStatistics();
+            localStorage.setItem('team-statistics', JSON.stringify(allStats));
+          }
+          const found = allStats.find(s => s.teamId === Number(teamId));
+          if (found) setTeamStat(found);
+        } catch (e) {}
+      };
+      loadStats();
+    }
+
     setIsLoading(false);
   }, [teamId]);
 
@@ -261,6 +307,97 @@ export default function TeamDetailPage() {
             </div>
           </motion.div>
 
+          {/* Team Statistics */}
+          {teamStat && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="glass-card rounded-2xl p-6 sm:p-8 mb-8"
+            >
+              <h3 className="font-display font-bold text-xl text-slate-900 dark:text-foreground mb-6">Thống kê mùa giải</h3>
+
+              {/* W/D/L Overview */}
+              <div className="grid grid-cols-3 gap-3 mb-6">
+                {[
+                  { label: 'Thắng', value: teamStat.wins, color: 'text-green-600 dark:text-green-400', bg: 'bg-green-50 dark:bg-green-500/10' },
+                  { label: 'Hòa', value: teamStat.draws, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-500/10' },
+                  { label: 'Thua', value: teamStat.losses, color: 'text-red-600 dark:text-red-400', bg: 'bg-red-50 dark:bg-red-500/10' },
+                ].map(s => (
+                  <div key={s.label} className={`${s.bg} rounded-xl p-4 text-center border border-slate-200 dark:border-white/10`}>
+                    <p className={`font-mono-data text-3xl font-bold ${s.color}`}>{s.value}</p>
+                    <p className="text-xs text-slate-600 dark:text-[#A8A29E] mt-1 font-label uppercase tracking-wider">{s.label}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Goals */}
+              <div className="grid grid-cols-2 gap-3 mb-6">
+                {[
+                  { label: 'Bàn thắng', value: teamStat.goalsFor, sub: `TB ${teamStat.goalsForAvgTotal}/trận` },
+                  { label: 'Bàn thua', value: teamStat.goalsAgainst, sub: `TB ${teamStat.goalsAgainstAvgTotal}/trận` },
+                  { label: 'Sân nhà', value: `${teamStat.homeWins}W ${teamStat.homeDraws}D ${teamStat.homeLosses}L`, sub: `${teamStat.homeGoalsFor} bàn thắng` },
+                  { label: 'Sân khách', value: `${teamStat.awayWins}W ${teamStat.awayDraws}D ${teamStat.awayLosses}L`, sub: `${teamStat.awayGoalsFor} bàn thắng` },
+                ].map(s => (
+                  <div key={s.label} className="p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10">
+                    <p className="text-xs text-slate-500 dark:text-[#A8A29E] mb-1">{s.label}</p>
+                    <p className="font-mono-data font-bold text-xl text-slate-900 dark:text-foreground">{s.value}</p>
+                    <p className="text-xs text-slate-500 dark:text-[#A8A29E] mt-0.5">{s.sub}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Records & Streaks */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+                {[
+                  { label: 'Chuỗi thắng', value: teamStat.biggestStreakWins, color: 'text-green-600 dark:text-green-400' },
+                  { label: 'Chuỗi hòa', value: teamStat.biggestStreakDraws, color: 'text-amber-600 dark:text-amber-400' },
+                  { label: 'Chuỗi thua', value: teamStat.biggestStreakLosses, color: 'text-red-600 dark:text-red-400' },
+                  { label: 'Giữ sạch lưới', value: teamStat.cleanSheets, color: 'text-[#00D9FF]' },
+                ].map(s => (
+                  <div key={s.label} className="p-3 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 text-center">
+                    <p className={`font-mono-data text-2xl font-bold ${s.color}`}>{s.value}</p>
+                    <p className="text-xs text-slate-500 dark:text-[#A8A29E] mt-1">{s.label}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Biggest wins/losses & Penalties */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+                {[
+                  { label: 'Thắng lớn nhất (nhà)', value: teamStat.biggestWinHome },
+                  { label: 'Thắng lớn nhất (khách)', value: teamStat.biggestWinAway },
+                  { label: 'Thua lớn nhất (nhà)', value: teamStat.biggestLossHome },
+                  { label: 'Thua lớn nhất (khách)', value: teamStat.biggestLossAway },
+                ].map(s => (
+                  <div key={s.label} className="p-3 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 text-center">
+                    <p className="font-mono-data text-xl font-bold text-slate-900 dark:text-foreground">{s.value}</p>
+                    <p className="text-xs text-slate-500 dark:text-[#A8A29E] mt-1">{s.label}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Penalties & Form */}
+              <div className="flex flex-wrap items-center gap-4">
+                <div className="p-3 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 flex items-center gap-3">
+                  <span className="text-sm text-slate-600 dark:text-[#A8A29E]">Penalty:</span>
+                  <span className="font-mono-data font-bold text-slate-900 dark:text-foreground">{teamStat.penaltiesScored}/{teamStat.penaltiesTotal}</span>
+                  <span className="text-xs text-green-600 dark:text-green-400 font-semibold">{teamStat.penaltyPercentage}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-slate-500 dark:text-[#A8A29E] mr-2">Phong độ:</span>
+                  {teamStat.form.slice(-5).split('').map((r, i) => (
+                    <div key={i} className={cn("w-6 h-6 rounded flex items-center justify-center text-xs font-bold",
+                      r === 'W' && "bg-green-500 text-white",
+                      r === 'D' && "bg-slate-400 text-white",
+                      r === 'L' && "bg-red-500 text-white"
+                    )}>{r}</div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
+
           {/* Home Stadium */}
           {(team?.homeStadium || apiTeam?.stadium) && (
             <motion.div
@@ -406,6 +543,87 @@ export default function TeamDetailPage() {
               )}
             </motion.div>
           )}
+
+          {/* Transfer History */}
+          {transfers.length > 0 && (() => {
+            let cachedTeams: any[] = [];
+            try { cachedTeams = JSON.parse(localStorage.getItem('teams') || '[]'); } catch (e) {}
+            let cachedPlayers: any[] = [];
+            try { cachedPlayers = JSON.parse(localStorage.getItem('players') || '[]'); } catch (e) {}
+            const getTeamName = (id: number) => cachedTeams.find((t: any) => t.teamId === id)?.teamName ?? `Đội ${id}`;
+            const getTeamLogo = (id: number) => cachedTeams.find((t: any) => t.teamId === id)?.logoUrl ?? null;
+            const getPlayerName = (id: number) => cachedPlayers.find((p: any) => p.playerId === id)?.fullName ?? `Cầu thủ ${id}`;
+            const typeLabel: Record<string, string> = { Free: 'Tự do', Loan: 'Cho mượn', Transfer: 'Chuyển nhượng', 'N/A': 'N/A' };
+            const typeColor: Record<string, string> = {
+              Free: 'bg-green-50 text-green-700 border-green-200 dark:bg-green-500/20 dark:text-green-400 dark:border-green-500/30',
+              Loan: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/20 dark:text-amber-400 dark:border-amber-500/30',
+              Transfer: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/20 dark:text-blue-400 dark:border-blue-500/30',
+              'N/A': 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-white/5 dark:text-[#A8A29E] dark:border-white/10',
+            };
+            const tid = Number(teamId);
+            return (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.25 }}
+                className="glass-card rounded-2xl p-6 sm:p-8 mb-8"
+              >
+                <h3 className="font-display font-bold text-xl text-slate-900 dark:text-foreground mb-6">
+                  Lịch sử chuyển nhượng
+                </h3>
+                <div className="space-y-3">
+                  {(() => {
+                    const sorted = [...transfers].sort((a, b) => new Date(b.transferDate).getTime() - new Date(a.transferDate).getTime());
+                    const visible = showAllTransfers ? sorted : sorted.slice(0, 5);
+                    return (<>
+                      {visible.map(t => {
+                        const isIncoming = t.toTeamId === tid;
+                        return (
+                          <div key={t.transferId} className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10">
+                            <span className={cn("px-2 py-1 rounded-lg text-xs font-bold flex-shrink-0", isIncoming ? "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400" : "bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400")}>
+                              {isIncoming ? '↓ Vào' : '↑ Ra'}
+                            </span>
+                            <Link to={`/players/${t.playerId}`} className="flex-1 min-w-0 hover:opacity-80 transition-opacity">
+                              <span className="text-sm font-semibold text-slate-900 dark:text-foreground truncate block">{getPlayerName(t.playerId)}</span>
+                            </Link>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              <Link to={`/teams/${t.fromTeamId}`} className="flex items-center gap-1 hover:opacity-80 transition-opacity">
+                                <div className="w-6 h-6 rounded overflow-hidden bg-slate-200 dark:bg-white/10 flex items-center justify-center">
+                                  {getTeamLogo(t.fromTeamId) ? <img src={getTeamLogo(t.fromTeamId)} alt="" className="w-full h-full object-contain" /> : <span className="text-xs font-bold">{getTeamName(t.fromTeamId).charAt(0)}</span>}
+                                </div>
+                              </Link>
+                              <ArrowRight className="w-3 h-3 text-slate-400" />
+                              <Link to={`/teams/${t.toTeamId}`} className="flex items-center gap-1 hover:opacity-80 transition-opacity">
+                                <div className="w-6 h-6 rounded overflow-hidden bg-slate-200 dark:bg-white/10 flex items-center justify-center">
+                                  {getTeamLogo(t.toTeamId) ? <img src={getTeamLogo(t.toTeamId)} alt="" className="w-full h-full object-contain" /> : <span className="text-xs font-bold">{getTeamName(t.toTeamId).charAt(0)}</span>}
+                                </div>
+                              </Link>
+                            </div>
+                            <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                              <span className="text-xs text-slate-500 dark:text-[#A8A29E]">
+                                {new Date(t.transferDate).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                              </span>
+                              <span className={cn("px-2 py-0.5 rounded-md text-xs font-semibold border", typeColor[t.transferType] ?? typeColor['N/A'])}>
+                                {typeLabel[t.transferType] ?? t.transferType}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {sorted.length > 5 && (
+                        <button
+                          onClick={() => setShowAllTransfers(v => !v)}
+                          className="w-full py-2 text-sm text-[#00D9FF] hover:underline font-medium"
+                        >
+                          {showAllTransfers ? 'Thu gọn' : `Xem thêm ${sorted.length - 5} giao dịch`}
+                        </button>
+                      )}
+                    </>);
+                  })()}
+                </div>
+              </motion.div>
+            );
+          })()}
 
           {/* Squad - only show for mock data */}
           {!apiTeam && teamPlayers.length > 0 && (

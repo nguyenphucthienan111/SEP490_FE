@@ -172,7 +172,15 @@ export default function MatchesPage() {
     setLoading(false);
   };
 
-  const rounds = ['all', ...Array.from(new Set(matches.map(m => m.round))).sort()];
+  const rounds = ['all', ...Array.from(new Set(matches.map(m => m.round))).sort((a, b) => {
+    // "Final" luôn xuống cuối
+    if (a === 'Final') return 1;
+    if (b === 'Final') return -1;
+    // Lấy số trong tên vòng để sort
+    const numA = parseInt(a.replace(/\D/g, '')) || 0;
+    const numB = parseInt(b.replace(/\D/g, '')) || 0;
+    return numA - numB;
+  })];
 
   const filtered = matches.filter(m => {
     const roundOk = selectedRound === 'all' || m.round === selectedRound;

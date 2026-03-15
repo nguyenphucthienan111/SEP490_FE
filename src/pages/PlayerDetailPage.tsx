@@ -85,18 +85,22 @@ export default function PlayerDetailPage() {
     // Load transfers
     const loadTransfers = async () => {
       try {
-        let allTransfers: Transfer[] = [];
-        const cachedTransfers = localStorage.getItem('transfers');
-        if (cachedTransfers) {
-          allTransfers = JSON.parse(cachedTransfers);
-        } else {
-          allTransfers = await leagueService.getTransfers();
-          localStorage.setItem('transfers', JSON.stringify(allTransfers));
-        }
+        // Always fetch fresh from API
+        const allTransfers = await leagueService.getTransfers();
+        localStorage.setItem('transfers', JSON.stringify(allTransfers));
         if (playerId) {
           setTransfers(allTransfers.filter(t => t.playerId.toString() === playerId));
         }
-      } catch (e) {}
+      } catch (e) {
+        // Fallback to cache
+        try {
+          const cachedTransfers = localStorage.getItem('transfers');
+          if (cachedTransfers && playerId) {
+            const allTransfers: Transfer[] = JSON.parse(cachedTransfers);
+            setTransfers(allTransfers.filter(t => t.playerId.toString() === playerId));
+          }
+        } catch (e2) {}
+      }
     };
     loadTransfers();
   }, [playerId, location.state]);
@@ -595,6 +599,69 @@ export default function PlayerDetailPage() {
               </div>
             </motion.div>
           )}
+
+          {/* Transfer History */}
+          {transfers.length > 0 && (() => {
+            let cachedTeams: any[] = [];
+            try { cachedTeams = JSON.parse(localStorage.getItem('teams') || '[]'); } catch (e) {}
+            const getTeamName = (id: number) => cachedTeams.find((t: any) => t.teamId === id)?.teamName ?? `Đội ${id}`;
+            const getTeamLogo = (id: number) => cachedTeams.find((t: any) => t.teamId === id)?.logoUrl ?? null;
+            const typeLabel: Record<string, string> = { Free: 'Tự do', Loan: 'Cho mượn', Transfer: 'Chuyển nhượng', 'N/A': 'N/A' };
+            const typeColor: Record<string, string> = {
+              Free: 'bg-green-50 text-green-700 border-green-200 dark:bg-green-500/20 dark:text-green-400 dark:border-green-500/30',
+              Loan: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/20 dark:text-amber-400 dark:border-amber-500/30',
+              Transfer: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/20 dark:text-blue-400 dark:border-blue-500/30',
+              'N/A': 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-white/5 dark:text-[#A8A29E] dark:border-white/10',
+            };
+            return (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.45 }}
+                className="glass-card rounded-2xl p-6 mb-8"
+              >
+                <h3 className="font-label font-bold text-slate-900 dark:text-foreground uppercase tracking-wider text-sm mb-4">
+                  Lịch sử chuyển nhượng
+                </h3>
+                <div className="space-y-3">
+                  {[...transfers].sort((a, b) => new Date(b.transferDate).getTime() - new Date(a.transferDate).getTime()).map(t => (
+                    <div key={t.transferId} className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10">
+                      {/* From */}
+                      <Link to={`/teams/${t.fromTeamId}`} className="flex items-center gap-2 flex-1 min-w-0 hover:opacity-80 transition-opacity">
+                        <div className="w-8 h-8 rounded-lg bg-slate-200 dark:bg-white/10 flex items-center justify-center overflow-hidden flex-shrink-0">
+                          {getTeamLogo(t.fromTeamId)
+                            ? <img src={getTeamLogo(t.fromTeamId)} alt="" className="w-full h-full object-contain" />
+                            : <span className="text-xs font-bold text-foreground">{getTeamName(t.fromTeamId).charAt(0)}</span>
+                          }
+                        </div>
+                        <span className="text-sm font-medium text-slate-900 dark:text-foreground truncate">{getTeamName(t.fromTeamId)}</span>
+                      </Link>
+                      <ArrowRight className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                      {/* To */}
+                      <Link to={`/teams/${t.toTeamId}`} className="flex items-center gap-2 flex-1 min-w-0 hover:opacity-80 transition-opacity">
+                        <div className="w-8 h-8 rounded-lg bg-slate-200 dark:bg-white/10 flex items-center justify-center overflow-hidden flex-shrink-0">
+                          {getTeamLogo(t.toTeamId)
+                            ? <img src={getTeamLogo(t.toTeamId)} alt="" className="w-full h-full object-contain" />
+                            : <span className="text-xs font-bold text-foreground">{getTeamName(t.toTeamId).charAt(0)}</span>
+                          }
+                        </div>
+                        <span className="text-sm font-medium text-slate-900 dark:text-foreground truncate">{getTeamName(t.toTeamId)}</span>
+                      </Link>
+                      {/* Date & Type */}
+                      <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                        <span className="text-xs text-slate-500 dark:text-[#A8A29E]">
+                          {new Date(t.transferDate).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                        </span>
+                        <span className={cn("px-2 py-0.5 rounded-md text-xs font-semibold border", typeColor[t.transferType] ?? typeColor['N/A'])}>
+                          {typeLabel[t.transferType] ?? t.transferType}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            );
+          })()}
 
           {/* Compare Button */}
           <motion.div

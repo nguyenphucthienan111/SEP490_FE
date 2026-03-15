@@ -29,6 +29,7 @@ export default function LeaguesPage() {
   const [apiLeagues, setApiLeagues] = React.useState<League[]>([]);
   const [apiTeams, setApiTeams] = React.useState<Team[]>([]);
   const [apiStandings, setApiStandings] = React.useState<Standing[]>([]);
+  const [matchCount, setMatchCount] = React.useState<number>(0);
   const [isLoadingLeagues, setIsLoadingLeagues] = React.useState(false);
   const [isLoadingTeams, setIsLoadingTeams] = React.useState(false);
   const [selectedSeason, setSelectedSeason] = React.useState(2024);
@@ -244,7 +245,7 @@ export default function LeaguesPage() {
                         <div className="flex items-center gap-2 mb-1">
                           <Users className="w-4 h-4 text-slate-600 dark:text-[#A8A29E]" />
                           <span className="font-mono-data text-xl font-bold text-slate-900 dark:text-foreground">
-                            {isApiLeague ? (league.teams?.length || 0) : league.teamCount}
+                            {isApiLeague ? (apiTeams.length || 0) : league.teamCount}
                           </span>
                         </div>
                         <p className="text-xs text-slate-600 dark:text-[#A8A29E]">Đội</p>

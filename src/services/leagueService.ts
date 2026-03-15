@@ -130,6 +130,49 @@ export interface PlayerStats {
   penaltiesMissed: number | null;
 }
 
+export interface TeamStatistic {
+  teamStatId: number;
+  teamId: number;
+  leagueId: number;
+  seasonId: number;
+  played: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  form: string;
+  homePlayed: number;
+  homeWins: number;
+  homeDraws: number;
+  homeLosses: number;
+  awayPlayed: number;
+  awayWins: number;
+  awayDraws: number;
+  awayLosses: number;
+  homeGoalsFor: number;
+  awayGoalsFor: number;
+  homeGoalsAgainst: number;
+  awayGoalsAgainst: number;
+  goalsForAvgTotal: string;
+  goalsAgainstAvgTotal: string;
+  biggestStreakWins: number;
+  biggestStreakDraws: number;
+  biggestStreakLosses: number;
+  biggestWinHome: string;
+  biggestWinAway: string;
+  biggestLossHome: string;
+  biggestLossAway: string;
+  cleanSheets: number;
+  cleanSheetsHome: number;
+  cleanSheetsAway: number;
+  failedToScore: number;
+  penaltiesScored: number;
+  penaltiesMissed: number;
+  penaltiesTotal: number;
+  penaltyPercentage: string;
+}
+
 export interface Transfer {
   transferId: number;
   playerId: number;
@@ -213,6 +256,10 @@ export const leagueService = {
 
   async getTransfers(): Promise<Transfer[]> {
     return await apiClient.get<Transfer[]>('/api/Football/transfers');
+  },
+
+  async getTeamStatistics(): Promise<TeamStatistic[]> {
+    return await apiClient.get<TeamStatistic[]>('/api/Football/team-statistics');
   },
 
   async getStadium(stadiumId: number): Promise<Stadium> {
