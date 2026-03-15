@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Users } from 'lucide-react';
+import { Search, Users, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { cn } from '@/lib/utils';
-import { leagueService, League, Team, Player as PlayerFromAPI } from '@/services/leagueService';
+import { leagueService, Team, Player as PlayerFromAPI } from '@/services/leagueService';
+import { toast } from 'sonner';
 
 type PositionFilter = 'all' | 'Forward' | 'Attacker' | 'Midfielder' | 'Defender' | 'Goalkeeper';
 
@@ -138,6 +139,7 @@ export default function PlayersPage() {
   const [apiTeams, setApiTeams] = useState<Team[]>([]);
   const [allPlayers, setAllPlayers] = useState<PlayerWithTeam[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -154,10 +156,10 @@ export default function PlayersPage() {
         teams = JSON.parse(cachedTeams);
       }
 
-      // If no teams in cache, fetch from API
+      // Nếu không có trong cache, fetch từ POST sync-teams
       if (teams.length === 0) {
         try {
-          teams = await leagueService.getTeams();
+          teams = await leagueService.syncTeams(340, 2024);
           if (teams.length > 0) {
             localStorage.setItem('teams', JSON.stringify(teams));
           }
@@ -200,6 +202,30 @@ export default function PlayersPage() {
     };
   };
 
+  const handleSyncPlayers = async () => {
+    setIsSyncing(true);
+    try {
+      // Ensure teams are loaded first
+      let teams = apiTeams;
+      if (teams.length === 0) {
+        teams = await leagueService.getTeams();
+        if (teams.length > 0) {
+          localStorage.setItem('teams', JSON.stringify(teams));
+          setApiTeams(teams);
+        }
+      }
+      const fetched = await leagueService.syncPlayers(340, 2024);
+      const enriched = fetched.map(p => enrichPlayerWithTeam(p, teams));
+      localStorage.setItem('players', JSON.stringify(fetched));
+      setAllPlayers(enriched);
+      toast.success(`Đã tải ${fetched.length} cầu thủ!`);
+    } catch (e) {
+      toast.error('Không thể đồng bộ cầu thủ');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   const filteredPlayers = allPlayers.filter((player) => {
     const matchesSearch =
       player.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -225,12 +251,24 @@ export default function PlayersPage() {
             transition={{ duration: 0.6 }}
             className="mb-8"
           >
-            <h1 className="font-display font-extrabold text-4xl sm:text-5xl text-foreground mb-3">
-              Cầu thủ
-            </h1>
-            <p className="text-slate-600 dark:text-[#A8A29E] text-lg max-w-2xl">
-              Dữ liệu và thống kê cầu thủ các giải đấu bóng đá Việt Nam.
-            </p>
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div>
+                <h1 className="font-display font-extrabold text-4xl sm:text-5xl text-foreground mb-3">
+                  Cầu thủ
+                </h1>
+                <p className="text-slate-600 dark:text-[#A8A29E] text-lg max-w-2xl">
+                  Dữ liệu và thống kê cầu thủ các giải đấu bóng đá Việt Nam.
+                </p>
+              </div>
+              <button
+                onClick={handleSyncPlayers}
+                disabled={isSyncing}
+                className="flex items-center gap-2 px-6 py-3 bg-[#FF4444] hover:bg-[#FF5555] text-white font-label font-semibold rounded-xl transition-colors disabled:opacity-50"
+              >
+                <RefreshCw className={cn("w-4 h-4", isSyncing && "animate-spin")} />
+                {isSyncing ? 'Đang đồng bộ...' : 'Đồng bộ cầu thủ'}
+              </button>
+            </div>
           </motion.div>
 
           {/* Filters */}

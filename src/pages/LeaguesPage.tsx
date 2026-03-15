@@ -74,9 +74,9 @@ export default function LeaguesPage() {
       }
     } catch (e) {}
 
-    // Fallback: fetch from GET /api/Football/teams
+    // Fallback: sync từ POST /api/Football/sync-teams
     try {
-      const teams = await leagueService.getTeams();
+      const teams = await leagueService.syncTeams(340, 2024);
       if (teams.length > 0) {
         localStorage.setItem('teams', JSON.stringify(teams));
         setApiTeams(teams);
@@ -102,7 +102,7 @@ export default function LeaguesPage() {
   const handleSyncTeams = async () => {
     setIsLoadingTeams(true);
     try {
-      const teams = await leagueService.getTeams();
+      const teams = await leagueService.syncTeams(340, 2024);
       localStorage.setItem('teams', JSON.stringify(teams));
       setApiTeams(teams);
       toast.success(`Đã tải ${teams.length} đội!`);

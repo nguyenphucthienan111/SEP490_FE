@@ -24,6 +24,8 @@ export interface Team {
   stadiumId: number;
   leagueId: number;
   stadium?: Stadium;
+  league?: League;
+  contracts?: any[];
 }
 
 export interface Stadium {

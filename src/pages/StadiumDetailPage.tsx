@@ -6,7 +6,7 @@ import { getStadiumById, matches, teams } from '@/data/mockData';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import React from 'react';
-import { Stadium, League } from '@/services/leagueService';
+import { Stadium, Team, leagueService } from '@/services/leagueService';
 
 export default function StadiumDetailPage() {
   const { stadiumId } = useParams<{ stadiumId: string }>();
@@ -34,42 +34,46 @@ export default function StadiumDetailPage() {
       setFromTeamId(state.fromTeamId);
     }
 
-    // Load stadium from localStorage (from teams data)
-    const cached = localStorage.getItem('leagues');
-    if (cached && stadiumId) {
+    if (!stadiumId) {
+      setIsLoading(false);
+      return;
+    }
+
+    const loadStadium = async () => {
+      // 1. Thử tìm trong teams cache (team.stadium)
       try {
-        const leagues: League[] = JSON.parse(cached);
-        const teamsWithThisStadium: any[] = [];
-        let foundStadium: Stadium | null = null;
-        
-        // Find stadium and all teams using it
-        for (const league of leagues) {
-          if (league.teams && Array.isArray(league.teams)) {
-            for (const team of league.teams) {
-              if (team.stadium && team.stadium.stadiumId.toString() === stadiumId) {
-                if (!foundStadium) {
-                  foundStadium = team.stadium;
-                }
-                teamsWithThisStadium.push(team);
-                
-                // If we don't have fromTeamId from state, use this team
-                if (!state?.fromTeamId && !fromTeamId) {
-                  setFromTeamId(team.teamId.toString());
-                }
-              }
+        const cachedTeams = localStorage.getItem('teams');
+        if (cachedTeams) {
+          const allTeams: Team[] = JSON.parse(cachedTeams);
+          const teamsAtStadium = allTeams.filter(t => t.stadiumId?.toString() === stadiumId);
+          if (teamsAtStadium.length > 0) {
+            setHomeTeamsFromApi(teamsAtStadium);
+            if (!state?.fromTeamId) {
+              setFromTeamId(teamsAtStadium[0].teamId.toString());
             }
           }
+          // Tìm stadium từ team.stadium nếu có
+          const teamWithStadium = allTeams.find(t => t.stadium && t.stadiumId?.toString() === stadiumId);
+          if (teamWithStadium?.stadium) {
+            setApiStadium(teamWithStadium.stadium);
+            setIsLoading(false);
+            return;
+          }
         }
-        
-        if (foundStadium) {
-          setApiStadium(foundStadium);
+      } catch (e) {}
+
+      // 2. Gọi API GET /api/Football/stadiums/{id}
+      try {
+        const stadium = await leagueService.getStadium(parseInt(stadiumId));
+        if (stadium) {
+          setApiStadium(stadium);
         }
-        setHomeTeamsFromApi(teamsWithThisStadium);
-      } catch (e) {
-        console.error('Failed to parse cached leagues:', e);
-      }
-    }
-    setIsLoading(false);
+      } catch (e) {}
+
+      setIsLoading(false);
+    };
+
+    loadStadium();
   }, [stadiumId]);
 
   const stadium = apiStadium || mockStadium;

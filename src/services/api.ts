@@ -9,10 +9,14 @@ async function request<T>(
 ): Promise<T> {
   const token = localStorage.getItem('accessToken');
   
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    ...options.headers,
+  const headers: Record<string, string> = {
+    ...(options.headers as Record<string, string>),
   };
+
+  // Only set Content-Type for requests with a body
+  if (options.body) {
+    headers['Content-Type'] = 'application/json';
+  }
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
