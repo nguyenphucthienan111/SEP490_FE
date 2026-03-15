@@ -38,49 +38,62 @@ export default function LeaguesPage() {
     loadTeamsFromCache();
   }, []);
 
-  const loadLeaguesFromCache = () => {
+  const loadLeaguesFromCache = async () => {
+    // Try localStorage first
     try {
       const cached = localStorage.getItem('leagues');
       if (cached) {
-        const leagues: League[] = JSON.parse(cached);
-        setApiLeagues(leagues);
-        console.log('Loaded leagues from localStorage:', leagues);
-      }
-    } catch (e) {
-      console.error('Failed to parse cached leagues:', e);
-    }
-  };
-
-  const loadTeamsFromCache = () => {
-    try {
-      const cached = localStorage.getItem('leagues');
-      if (cached) {
-        const leagues: League[] = JSON.parse(cached);
-        // Find V.League 1 (apiLeagueId: 340)
-        const vLeague1 = leagues.find(l => l.apiLeagueId === 340);
-        if (vLeague1 && Array.isArray(vLeague1.teams) && vLeague1.teams.length > 0) {
-          setApiTeams(vLeague1.teams);
-          console.log('Loaded teams from localStorage:', vLeague1.teams);
+        const parsed: League[] = JSON.parse(cached);
+        if (parsed.length > 0) {
+          setApiLeagues(parsed);
+          return;
         }
       }
-    } catch (e) {
-      console.error('Failed to parse cached leagues:', e);
-    }
+    } catch (e) {}
+
+    // Fallback: sync from API (POST)
+    try {
+      const data = await leagueService.syncLeagues();
+      if (data.length > 0) {
+        localStorage.setItem('leagues', JSON.stringify(data));
+        setApiLeagues(data);
+      }
+    } catch (e) {}
+  };
+
+  const loadTeamsFromCache = async () => {
+    // Check localStorage for teams directly
+    try {
+      const cached = localStorage.getItem('teams');
+      if (cached) {
+        const teams: Team[] = JSON.parse(cached);
+        if (teams.length > 0) {
+          setApiTeams(teams);
+          return;
+        }
+      }
+    } catch (e) {}
+
+    // Fallback: fetch from GET /api/Football/teams
+    try {
+      const teams = await leagueService.getTeams();
+      if (teams.length > 0) {
+        localStorage.setItem('teams', JSON.stringify(teams));
+        setApiTeams(teams);
+      }
+    } catch (e) {}
   };
 
   const handleSyncLeagues = async () => {
     setIsLoadingLeagues(true);
     try {
-      const leagues = await leagueService.syncLeagues();
-      localStorage.setItem('leagues', JSON.stringify(leagues));
-      setApiLeagues(leagues);
-      toast.success(`Đã đồng bộ ${leagues.length} giải đấu!`);
-      
-      // Auto load teams for V.League 1
+      const data = await leagueService.syncLeagues();
+      localStorage.setItem('leagues', JSON.stringify(data));
+      setApiLeagues(data);
+      toast.success(`Đã tải ${data.length} giải đấu!`);
       loadTeamsFromCache();
     } catch (error) {
-      console.error('Failed to sync leagues:', error);
-      toast.error('Không thể đồng bộ giải đấu');
+      toast.error('Không thể tải giải đấu');
     } finally {
       setIsLoadingLeagues(false);
     }
@@ -89,32 +102,12 @@ export default function LeaguesPage() {
   const handleSyncTeams = async () => {
     setIsLoadingTeams(true);
     try {
-      // V.League 1 has apiLeagueId: 340
-      const teams = await leagueService.syncTeams(340, selectedSeason);
-      console.log('=== SYNC TEAMS DEBUG ===');
-      console.log('Season:', selectedSeason);
-      console.log('Teams response:', teams);
-      console.log('Number of teams:', teams.length);
-      console.log('All teams:', teams);
-      
-      // Update localStorage
-      const cached = localStorage.getItem('leagues');
-      if (cached) {
-        const leagues: League[] = JSON.parse(cached);
-        const updatedLeagues = leagues.map(l => 
-          l.apiLeagueId === 340 
-            ? { ...l, teams: teams || [] }
-            : l
-        );
-        localStorage.setItem('leagues', JSON.stringify(updatedLeagues));
-        console.log('Updated leagues in localStorage');
-      }
-      
-      setApiTeams(teams || []);
-      toast.success(`Đồng bộ thành công ${teams.length} đội cho mùa ${selectedSeason}!`);
+      const teams = await leagueService.getTeams();
+      localStorage.setItem('teams', JSON.stringify(teams));
+      setApiTeams(teams);
+      toast.success(`Đã tải ${teams.length} đội!`);
     } catch (error) {
-      console.error('Failed to sync teams:', error);
-      toast.error('Đồng bộ đội thất bại');
+      toast.error('Không thể tải đội bóng');
     } finally {
       setIsLoadingTeams(false);
     }

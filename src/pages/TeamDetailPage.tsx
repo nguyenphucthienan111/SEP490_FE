@@ -24,84 +24,43 @@ export default function TeamDetailPage() {
     
     setIsLoading(true);
     
-    // Load team from localStorage
-    const cached = localStorage.getItem('leagues');
-    if (cached && teamId) {
+    // Load team from 'teams' cache
+    if (teamId) {
       try {
-        const leagues: League[] = JSON.parse(cached);
-        // Find team in all leagues
-        for (const league of leagues) {
-          if (league.teams && Array.isArray(league.teams)) {
-            const foundTeam = league.teams.find(t => t.teamId.toString() === teamId);
-            if (foundTeam) {
-              setApiTeam(foundTeam);
-              break;
-            }
-          }
+        const cachedTeams = localStorage.getItem('teams');
+        if (cachedTeams) {
+          const teams: Team[] = JSON.parse(cachedTeams);
+          const foundTeam = teams.find(t => t.teamId.toString() === teamId);
+          if (foundTeam) setApiTeam(foundTeam);
         }
-      } catch (e) {
-        console.error('Failed to parse cached leagues:', e);
-      }
+      } catch (e) {}
     }
 
-    // Load players from localStorage
-    const cachedPlayers = localStorage.getItem('players');
-    if (cachedPlayers && teamId) {
+    // Load players from localStorage — filter by player.teamId directly
+    if (teamId) {
       try {
-        const allPlayers: Player[] = JSON.parse(cachedPlayers);
-        // Filter players by teamId from their statistics
-        const teamPlayers = allPlayers.filter(player => 
-          player.statistics.some(stat => stat.teamId.toString() === teamId)
-        );
-        setApiPlayers(teamPlayers);
-      } catch (e) {
-        console.error('Failed to parse cached players:', e);
-      }
+        const cachedPlayers = localStorage.getItem('players');
+        if (cachedPlayers) {
+          const allPlayers: Player[] = JSON.parse(cachedPlayers);
+          const teamPlayers = allPlayers.filter(p => p.teamId?.toString() === teamId);
+          setApiPlayers(teamPlayers);
+        }
+      } catch (e) {}
     }
     
     setIsLoading(false);
   }, [teamId]);
 
   const handleSyncPlayers = async () => {
-    if (!apiTeam) {
-      toast.error('Không tìm thấy thông tin đội bóng');
-      return;
-    }
-
     setIsSyncing(true);
     try {
-      // Get league info to get apiLeagueId
-      const cached = localStorage.getItem('leagues');
-      if (!cached) {
-        toast.error('Không tìm thấy thông tin giải đấu');
-        setIsSyncing(false);
-        return;
-      }
-
-      const leagues: League[] = JSON.parse(cached);
-      const league = leagues.find(l => l.leagueId === apiTeam.leagueId);
-      
-      if (!league) {
-        toast.error('Không tìm thấy thông tin giải đấu');
-        setIsSyncing(false);
-        return;
-      }
-
-      const players = await leagueService.syncPlayers(league.apiLeagueId, selectedSeason);
-      
-      // Store in localStorage
+      const players = await leagueService.getPlayers();
       localStorage.setItem('players', JSON.stringify(players));
-      
-      // Filter players for this team
-      const teamPlayers = players.filter(player => 
-        player.statistics.some(stat => stat.teamId === apiTeam.teamId)
-      );
+      const teamPlayers = players.filter(p => p.teamId?.toString() === teamId);
       setApiPlayers(teamPlayers);
-      
-      toast.success(`Đã đồng bộ ${teamPlayers.length} cầu thủ`);
+      toast.success(`Đã tải ${teamPlayers.length} cầu thủ`);
     } catch (error) {
-      console.error('Failed to sync players:', error);
-      toast.error('Không thể đồng bộ cầu thủ');
+      toast.error('Không thể tải cầu thủ');
     } finally {
       setIsSyncing(false);
     }
@@ -400,58 +359,39 @@ export default function TeamDetailPage() {
 
               {apiPlayers.length > 0 ? (
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {apiPlayers.map((player) => {
-                    // Get stats for this team and season
-                    const stats = player.statistics.find(
-                      s => s.teamId === apiTeam.teamId && s.season === selectedSeason
-                    );
-                    
-                    return (
-                      <Link
-                        key={player.playerId}
-                        to={`/players/${player.playerId}`}
-                        state={{ fromTeamId: teamId }}
-                        className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors group"
-                      >
-                        <div className="w-14 h-14 rounded-xl bg-slate-200 dark:bg-white/5 flex items-center justify-center border border-slate-300 dark:border-white/10 overflow-hidden">
-                          {player.photoUrl ? (
-                            <img src={player.photoUrl} alt={player.fullName} className="w-full h-full object-cover" />
-                          ) : (
-                            <User className="w-8 h-8 text-slate-400 dark:text-[#A8A29E]" />
+                  {apiPlayers.map((player) => (
+                    <Link
+                      key={player.playerId}
+                      to={`/players/${player.playerId}`}
+                      state={{ fromTeamId: teamId }}
+                      className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors group"
+                    >
+                      <div className="w-14 h-14 rounded-xl bg-slate-200 dark:bg-white/5 flex items-center justify-center border border-slate-300 dark:border-white/10 overflow-hidden">
+                        {player.photoUrl ? (
+                          <img src={player.photoUrl} alt={player.fullName} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                        ) : (
+                          <User className="w-8 h-8 text-slate-400 dark:text-[#A8A29E]" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-body font-semibold text-slate-900 dark:text-foreground group-hover:text-[#00D9FF] transition-colors truncate">
+                          {player.fullName}
+                        </h4>
+                        <div className="flex items-center gap-2 mt-1">
+                          {player.position && (
+                            <span className="text-xs text-slate-600 dark:text-[#A8A29E]">
+                              {player.position}
+                            </span>
+                          )}
+                          {player.nationality && (
+                            <span className="text-xs text-slate-500 dark:text-[#A8A29E]">
+                              • {player.nationality}
+                            </span>
                           )}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-body font-semibold text-slate-900 dark:text-foreground group-hover:text-[#00D9FF] transition-colors truncate">
-                            {player.fullName}
-                          </h4>
-                          <div className="flex items-center gap-2 mt-1">
-                            {player.nationality && (
-                              <span className="text-xs text-slate-600 dark:text-[#A8A29E]">
-                                {player.nationality}
-                              </span>
-                            )}
-                            {stats?.rating && (
-                              <>
-                                <span className="text-slate-400 dark:text-[#A8A29E]">•</span>
-                                <span className="font-mono-data text-sm font-bold text-[#00D9FF]">
-                                  {stats.rating.toFixed(1)}
-                                </span>
-                              </>
-                            )}
-                          </div>
-                          {stats && (
-                            <div className="flex items-center gap-2 mt-1 text-xs text-slate-600 dark:text-[#A8A29E]">
-                              <span>{stats.goals}G</span>
-                              <span>•</span>
-                              <span>{stats.assists}A</span>
-                              <span>•</span>
-                              <span>{stats.appearances} trận</span>
-                            </div>
-                          )}
-                        </div>
-                      </Link>
-                    );
-                  })}
+                      </div>
+                    </Link>
+                  ))}
                 </div>
               ) : (
                 <div className="text-center py-8">

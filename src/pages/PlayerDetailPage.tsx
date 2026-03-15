@@ -58,15 +58,8 @@ export default function PlayerDetailPage() {
         const foundPlayer = allPlayers.find(p => p.playerId.toString() === playerId);
         if (foundPlayer) {
           setApiPlayer(foundPlayer);
-          
-          // If no fromTeamId from state, try to get from player's first statistic
-          if (!state?.fromTeamId && foundPlayer.statistics.length > 0) {
-            setFromTeamId(foundPlayer.statistics[0].teamId.toString());
-          }
         }
-      } catch (e) {
-        console.error('Failed to parse cached players:', e);
-      }
+      } catch (e) {}
     }
   }, [playerId, location.state]);
 
@@ -100,15 +93,16 @@ export default function PlayerDetailPage() {
   const playerWeight = apiPlayer ? apiPlayer.weightKg : player?.weight;
   
   // Calculate aggregate stats from API player statistics
+  const stats = apiPlayer?.statistics ?? [];
   const aggregateStats = apiPlayer ? {
-    matches: apiPlayer.statistics.reduce((sum, s) => sum + s.appearances, 0),
-    goals: apiPlayer.statistics.reduce((sum, s) => sum + s.goals, 0),
-    assists: apiPlayer.statistics.reduce((sum, s) => sum + s.assists, 0),
-    minutesPlayed: apiPlayer.statistics.reduce((sum, s) => sum + s.minutes, 0),
-    yellowCards: apiPlayer.statistics.reduce((sum, s) => sum + s.yellowCards, 0),
-    redCards: apiPlayer.statistics.reduce((sum, s) => sum + s.redCards, 0),
-    avgRating: apiPlayer.statistics.filter(s => s.rating).length > 0
-      ? apiPlayer.statistics.reduce((sum, s) => sum + (s.rating || 0), 0) / apiPlayer.statistics.filter(s => s.rating).length
+    matches: stats.reduce((sum, s) => sum + (s.appearances || 0), 0),
+    goals: stats.reduce((sum, s) => sum + (s.goals || 0), 0),
+    assists: stats.reduce((sum, s) => sum + (s.assists || 0), 0),
+    minutesPlayed: stats.reduce((sum, s) => sum + (s.minutes || 0), 0),
+    yellowCards: stats.reduce((sum, s) => sum + (s.yellowCards || 0), 0),
+    redCards: stats.reduce((sum, s) => sum + (s.redCards || 0), 0),
+    avgRating: stats.filter(s => s.rating).length > 0
+      ? stats.reduce((sum, s) => sum + (s.rating || 0), 0) / stats.filter(s => s.rating).length
       : 0,
   } : null;
 
@@ -215,18 +209,19 @@ export default function PlayerDetailPage() {
                   )}
                 </div>
                 <div>
-                  {player && (
+                  {/* Position badge — show for both API and mock players */}
+                  {(player || apiPlayer) && (
                     <div className="flex items-center gap-3 mb-2">
                       <span className={cn(
                         "px-3 py-1 rounded-full text-xs font-label font-semibold uppercase tracking-wider border",
-                        player.position === 'forward' && 'bg-red-50 text-red-700 border-red-200 dark:bg-red-500/20 dark:text-red-400 dark:border-red-500/30',
-                        player.position === 'midfielder' && 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-cyan-500/20 dark:text-cyan-400 dark:border-cyan-500/30',
-                        player.position === 'defender' && 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/20 dark:text-amber-400 dark:border-amber-500/30',
-                        player.position === 'goalkeeper' && 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-500/20 dark:text-purple-400 dark:border-purple-500/30'
+                        (apiPlayer?.position === 'Attacker' || apiPlayer?.position === 'Forward' || player?.position === 'forward') && 'bg-red-50 text-red-700 border-red-200 dark:bg-red-500/20 dark:text-red-400 dark:border-red-500/30',
+                        (apiPlayer?.position === 'Midfielder' || player?.position === 'midfielder') && 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-cyan-500/20 dark:text-cyan-400 dark:border-cyan-500/30',
+                        (apiPlayer?.position === 'Defender' || player?.position === 'defender') && 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/20 dark:text-amber-400 dark:border-amber-500/30',
+                        (apiPlayer?.position === 'Goalkeeper' || player?.position === 'goalkeeper') && 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-500/20 dark:text-purple-400 dark:border-purple-500/30'
                       )}>
-                        {player.position}
+                        {apiPlayer?.position || player?.position}
                       </span>
-                      <span className="text-slate-600 dark:text-[#A8A29E] text-sm">#{player.number}</span>
+                      {player?.number && <span className="text-slate-600 dark:text-[#A8A29E] text-sm">#{player.number}</span>}
                     </div>
                   )}
                   <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-slate-900 dark:text-foreground mb-2">
@@ -234,27 +229,16 @@ export default function PlayerDetailPage() {
                   </h1>
                   
                   {/* Club Name - for API players */}
-                  {apiPlayer && apiPlayer.statistics.length > 0 && (() => {
-                    // Get team name from the most recent season
-                    const latestStat = apiPlayer.statistics[0];
-                    const cached = localStorage.getItem('leagues');
+                  {apiPlayer && (() => {
                     let teamName = null;
-                    if (cached) {
-                      try {
-                        const leagues: any[] = JSON.parse(cached);
-                        for (const league of leagues) {
-                          if (league.teams && Array.isArray(league.teams)) {
-                            const team = league.teams.find((t: any) => t.teamId === latestStat.teamId);
-                            if (team) {
-                              teamName = team.teamName;
-                              break;
-                            }
-                          }
-                        }
-                      } catch (e) {
-                        console.error('Failed to parse leagues:', e);
+                    try {
+                      const cachedTeams = localStorage.getItem('teams');
+                      if (cachedTeams && apiPlayer.teamId) {
+                        const teams: any[] = JSON.parse(cachedTeams);
+                        const team = teams.find(t => t.teamId === apiPlayer.teamId);
+                        if (team) teamName = team.teamName;
                       }
-                    }
+                    } catch (e) {}
                     return teamName ? (
                       <p className="text-lg text-[#00D9FF] font-semibold mb-4">{teamName}</p>
                     ) : null;
@@ -272,11 +256,11 @@ export default function PlayerDetailPage() {
                         {playerNationality || 'null'}
                       </span>
                     </div>
-                    {player?.age && (
+                    {(player?.age || apiPlayer?.age) && (
                       <div>
                         <span className="text-slate-600 dark:text-[#A8A29E]">Tuổi: </span>
                         <span className="text-slate-900 dark:text-foreground font-semibold">
-                          {player.age}
+                          {apiPlayer?.age || player?.age}
                         </span>
                       </div>
                     )}
@@ -345,7 +329,7 @@ export default function PlayerDetailPage() {
 
           {/* Stats Grid */}
           <div className="grid lg:grid-cols-3 gap-8 mb-8">
-            {/* Season Stats - Detailed stats by season for API players */}
+            {/* Stats - for API players show direct info */}
             {apiPlayer ? (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -354,71 +338,22 @@ export default function PlayerDetailPage() {
                 className="glass-card rounded-2xl p-6 lg:col-span-2"
               >
                 <h3 className="font-label font-bold text-slate-900 dark:text-foreground uppercase tracking-wider text-sm mb-6">
-                  Thống kê chi tiết theo mùa giải
+                  Thông tin cầu thủ
                 </h3>
-                <div className="space-y-3 max-h-96 overflow-y-auto">
-                  {apiPlayer.statistics.map((stat, index) => {
-                    return (
-                      <div key={index} className="p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-3">
-                            <span className="font-label font-bold text-lg text-slate-900 dark:text-foreground">
-                              Mùa {stat.season}
-                            </span>
-                          </div>
-                          {stat.rating && (
-                            <span className="font-mono-data text-xl font-bold text-[#00D9FF]">
-                              {stat.rating.toFixed(1)}
-                            </span>
-                          )}
-                        </div>
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 text-sm">
-                          <div>
-                            <span className="text-slate-600 dark:text-[#A8A29E]">Trận đấu</span>
-                            <div className="font-mono-data text-lg font-semibold text-slate-900 dark:text-foreground">
-                              {stat.appearances}
-                            </div>
-                          </div>
-                          <div>
-                            <span className="text-slate-600 dark:text-[#A8A29E]">Đá chính</span>
-                            <div className="font-mono-data text-lg font-semibold text-slate-900 dark:text-foreground">
-                              {stat.lineups}
-                            </div>
-                          </div>
-                          <div>
-                            <span className="text-slate-600 dark:text-[#A8A29E]">Phút</span>
-                            <div className="font-mono-data text-lg font-semibold text-slate-900 dark:text-foreground">
-                              {stat.minutes}
-                            </div>
-                          </div>
-                          <div>
-                            <span className="text-slate-600 dark:text-[#A8A29E]">Bàn thắng</span>
-                            <div className="font-mono-data text-lg font-semibold text-slate-900 dark:text-foreground">
-                              {stat.goals}
-                            </div>
-                          </div>
-                          <div>
-                            <span className="text-slate-600 dark:text-[#A8A29E]">Kiến tạo</span>
-                            <div className="font-mono-data text-lg font-semibold text-slate-900 dark:text-foreground">
-                              {stat.assists}
-                            </div>
-                          </div>
-                          <div>
-                            <span className="text-slate-600 dark:text-[#A8A29E]">Thẻ vàng</span>
-                            <div className="font-mono-data text-lg font-semibold text-slate-900 dark:text-foreground">
-                              {stat.yellowCards}
-                            </div>
-                          </div>
-                          <div>
-                            <span className="text-slate-600 dark:text-[#A8A29E]">Thẻ đỏ</span>
-                            <div className="font-mono-data text-lg font-semibold text-slate-900 dark:text-foreground">
-                              {stat.redCards}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {[
+                    { label: 'Tuổi', value: apiPlayer.age ?? '-' },
+                    { label: 'Quốc tịch', value: apiPlayer.nationality ?? '-' },
+                    { label: 'Nơi sinh', value: apiPlayer.birthPlace ?? '-' },
+                    { label: 'Chiều cao', value: apiPlayer.heightCm ? `${apiPlayer.heightCm} cm` : '-' },
+                    { label: 'Cân nặng', value: apiPlayer.weightKg ? `${apiPlayer.weightKg} kg` : '-' },
+                    { label: 'Vị trí', value: apiPlayer.position ?? '-' },
+                  ].map((item) => (
+                    <div key={item.label} className="p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10">
+                      <p className="text-xs text-slate-600 dark:text-[#A8A29E] mb-1">{item.label}</p>
+                      <p className="font-semibold text-slate-900 dark:text-foreground">{item.value}</p>
+                    </div>
+                  ))}
                 </div>
               </motion.div>
             ) : (

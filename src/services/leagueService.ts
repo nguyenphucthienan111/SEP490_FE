@@ -52,11 +52,22 @@ export interface PlayerStatistic {
 
 export interface Player {
   playerId: number;
+  apiPlayerId: number;
+  firstName: string | null;
+  lastName: string | null;
   fullName: string;
+  dateOfBirth: string | null;
+  age: number | null;
   nationality: string | null;
+  birthPlace: string | null;
+  birthCountry: string | null;
   heightCm: number | null;
   weightKg: number | null;
   photoUrl: string | null;
+  isInjured: boolean;
+  teamId: number | null;
+  position: string | null;
+  number: number | null;
   statistics: PlayerStatistic[];
 }
 
@@ -76,10 +87,18 @@ export const leagueService = {
     return await apiClient.get<League[]>('/api/Football/leagues');
   },
 
+  async getTeams(): Promise<Team[]> {
+    return await apiClient.get<Team[]>('/api/Football/teams');
+  },
+
   async syncTeams(apiLeagueId: number, season: number): Promise<Team[]> {
     return await apiClient.post<Team[]>(
       `/api/Football/sync-teams?apiLeagueId=${apiLeagueId}&season=${season}`
     );
+  },
+
+  async getPlayers(): Promise<Player[]> {
+    return await apiClient.get<Player[]>('/api/Football/players');
   },
 
   async getStadium(stadiumId: number): Promise<Stadium> {
