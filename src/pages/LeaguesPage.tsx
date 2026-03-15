@@ -39,6 +39,11 @@ export default function LeaguesPage() {
     loadLeaguesFromCache();
     loadTeamsFromCache();
     loadStandings();
+    // Count matches from cache
+    try {
+      const cached = localStorage.getItem('matches');
+      if (cached) setMatchCount(JSON.parse(cached).length);
+    } catch (e) {}
   }, []);
 
   const loadLeaguesFromCache = async () => {
@@ -186,10 +191,9 @@ export default function LeaguesPage() {
 
           {/* Leagues Grid */}
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
-            {(apiLeagues.length > 0 ? apiLeagues : leagues).map((league, index) => {
-              const isApiLeague = 'apiLeagueId' in league;
-              const leagueId = isApiLeague ? `api-${league.leagueId}` : league.id;
-              const isSelected = selectedLeague === leagueId || (selectedLeague === 'l1' && isApiLeague && league.apiLeagueId === 340);
+            {apiLeagues.map((league, index) => {
+              const leagueId = `api-${league.leagueId}`;
+              const isSelected = selectedLeague === leagueId || (selectedLeague === 'l1' && league.apiLeagueId === 340);
               
               return (
                 <motion.div
@@ -199,7 +203,7 @@ export default function LeaguesPage() {
                   transition={{ duration: 0.5, delay: index * 0.1 }}
                 >
                   <div 
-                    onClick={() => handleLeagueClick(isApiLeague && league.apiLeagueId === 340 ? 'l1' : leagueId)}
+                    onClick={() => handleLeagueClick(league.apiLeagueId === 340 ? 'l1' : leagueId)}
                     className={cn(
                       "group glass-card rounded-2xl p-8 hover:translate-y-[-4px] hover:shadow-xl transition-all duration-300 cursor-pointer h-full",
                       isSelected 
@@ -214,30 +218,25 @@ export default function LeaguesPage() {
                           ? "bg-gradient-to-br from-[#FF4444] to-[#FF6666] shadow-lg shadow-[#FF4444]/30"
                           : "bg-gradient-to-br from-red-200 dark:from-[#FF4444]/20 to-blue-200 dark:to-[#00D9FF]/20"
                       )}>
-                        {isApiLeague && league.logoUrl ? (
+                        {league.logoUrl ? (
                           <img src={league.logoUrl} alt={league.leagueName} className="w-12 h-12 object-contain" />
                         ) : (
-                          <Trophy className={cn(
-                            "w-8 h-8 transition-colors",
-                            isSelected ? "text-white" : "text-[#FF4444]"
-                          )} />
+                          <Trophy className={cn("w-8 h-8 transition-colors", isSelected ? "text-white" : "text-[#FF4444]")} />
                         )}
                       </div>
                       <span className="px-4 py-1.5 rounded-full bg-blue-100 dark:bg-[#00D9FF]/10 text-[#00D9FF] text-sm font-label font-semibold">
-                        {isApiLeague ? '2024' : league.season}
+                        2024
                       </span>
                     </div>
 
                     <h3 className={cn(
                       "font-display font-bold text-2xl mb-2 transition-colors",
-                      isSelected 
-                        ? "text-[#FF4444]" 
-                        : "text-slate-900 dark:text-foreground group-hover:text-[#FF4444]"
+                      isSelected ? "text-[#FF4444]" : "text-slate-900 dark:text-foreground group-hover:text-[#FF4444]"
                     )}>
-                      {isApiLeague ? league.leagueName : league.name}
+                      {league.leagueName}
                     </h3>
                     <p className="text-slate-600 dark:text-[#A8A29E] mb-6">
-                      {isApiLeague ? (league.country || 'Vietnam') : league.country}
+                      {league.country || 'Vietnam'}
                     </p>
 
                     <div className="grid grid-cols-2 gap-4 pt-6 border-t border-slate-200 dark:border-white/5">
@@ -245,7 +244,7 @@ export default function LeaguesPage() {
                         <div className="flex items-center gap-2 mb-1">
                           <Users className="w-4 h-4 text-slate-600 dark:text-[#A8A29E]" />
                           <span className="font-mono-data text-xl font-bold text-slate-900 dark:text-foreground">
-                            {isApiLeague ? (apiTeams.length || 0) : league.teamCount}
+                            {league.apiLeagueId === 340 ? (apiTeams.length || '-') : '-'}
                           </span>
                         </div>
                         <p className="text-xs text-slate-600 dark:text-[#A8A29E]">Đội</p>
@@ -254,20 +253,20 @@ export default function LeaguesPage() {
                         <div className="flex items-center gap-2 mb-1">
                           <Calendar className="w-4 h-4 text-slate-600 dark:text-[#A8A29E]" />
                           <span className="font-mono-data text-xl font-bold text-slate-900 dark:text-foreground">
-                            {isApiLeague ? '-' : league.matchesPlayed}
+                            {league.apiLeagueId === 340 ? (matchCount || '-') : '-'}
                           </span>
                         </div>
                         <p className="text-xs text-slate-600 dark:text-[#A8A29E]">Trận đấu</p>
                       </div>
                     </div>
 
-                    {isSelected && (isApiLeague && league.apiLeagueId === 340 || leagueId === 'l1') && (
+                    {isSelected && league.apiLeagueId === 340 && (
                       <div className="mt-6 flex items-center justify-center gap-2 px-4 py-2 bg-[#FF4444] text-white rounded-lg font-label font-semibold text-sm">
                         <span>Đang xem bảng xếp hạng</span>
                         <ArrowRight className="w-4 h-4" />
                       </div>
                     )}
-                    {isSelected && !(isApiLeague && league.apiLeagueId === 340 || leagueId === 'l1') && (
+                    {isSelected && league.apiLeagueId !== 340 && (
                       <div className="mt-6 flex items-center justify-center gap-2 px-4 py-2 bg-slate-400 text-white rounded-lg font-label font-semibold text-sm">
                         <span>Chưa có dữ liệu</span>
                       </div>
