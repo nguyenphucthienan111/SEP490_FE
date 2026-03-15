@@ -73,11 +73,26 @@ export interface Player {
   statistics: PlayerStatistic[];
 }
 
-export interface SyncTeamsResponse {
-  success: boolean;
-  message: string;
-  count: number;
-  data: Team[];
+export interface Standing {
+  standingId: number;
+  leagueId: number;
+  seasonId: number;
+  teamId: number;
+  rank: number;
+  played: number;
+  win: number;
+  draw: number;
+  loss: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  goalDifference: number;
+  points: number;
+  form: string;
+  status: string;
+  description: string | null;
+  homeRecord: string;
+  awayRecord: string;
+  apiLastUpdated: string;
 }
 
 export const leagueService = {
@@ -101,6 +116,10 @@ export const leagueService = {
 
   async getPlayers(): Promise<Player[]> {
     return await apiClient.get<Player[]>('/api/Football/players');
+  },
+
+  async getStandings(): Promise<Standing[]> {
+    return await apiClient.get<Standing[]>('/api/Football/standings');
   },
 
   async getStadium(stadiumId: number): Promise<Stadium> {

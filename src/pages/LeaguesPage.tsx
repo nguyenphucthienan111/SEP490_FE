@@ -5,7 +5,7 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { leagues, teams, matches } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 import React from 'react';
-import { leagueService, League, Team } from '@/services/leagueService';
+import { leagueService, League, Team, Standing } from '@/services/leagueService';
 import { toast } from 'sonner';
 
 // Mock standings data
@@ -28,6 +28,7 @@ export default function LeaguesPage() {
   const [selectedLeague, setSelectedLeague] = React.useState<string | null>('l1');
   const [apiLeagues, setApiLeagues] = React.useState<League[]>([]);
   const [apiTeams, setApiTeams] = React.useState<Team[]>([]);
+  const [apiStandings, setApiStandings] = React.useState<Standing[]>([]);
   const [isLoadingLeagues, setIsLoadingLeagues] = React.useState(false);
   const [isLoadingTeams, setIsLoadingTeams] = React.useState(false);
   const [selectedSeason, setSelectedSeason] = React.useState(2024);
@@ -36,6 +37,7 @@ export default function LeaguesPage() {
     // Load leagues and teams from localStorage on mount
     loadLeaguesFromCache();
     loadTeamsFromCache();
+    loadStandings();
   }, []);
 
   const loadLeaguesFromCache = async () => {
@@ -84,6 +86,23 @@ export default function LeaguesPage() {
     } catch (e) {}
   };
 
+  const loadStandings = async () => {
+    try {
+      const cached = localStorage.getItem('standings');
+      if (cached) {
+        setApiStandings(JSON.parse(cached));
+        return;
+      }
+    } catch (e) {}
+    try {
+      const data = await leagueService.getStandings();
+      if (data.length > 0) {
+        localStorage.setItem('standings', JSON.stringify(data));
+        setApiStandings(data);
+      }
+    } catch (e) {}
+  };
+
   const handleSyncLeagues = async () => {
     setIsLoadingLeagues(true);
     try {
@@ -92,6 +111,7 @@ export default function LeaguesPage() {
       setApiLeagues(data);
       toast.success(`Đã tải ${data.length} giải đấu!`);
       loadTeamsFromCache();
+      loadStandings();
     } catch (error) {
       toast.error('Không thể tải giải đấu');
     } finally {
@@ -305,17 +325,29 @@ export default function LeaguesPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {(apiTeams.length > 0 ? [...apiTeams].sort((a, b) => a.teamId - b.teamId) : standings).map((item, index) => {
-                      const isApiTeam = 'teamId' in item;
-                      const position = isApiTeam ? (index + 1) : item.position;
-                      const teamName = isApiTeam ? item.teamName : item.team;
-                      const totalTeams = apiTeams.length > 0 ? apiTeams.length : standings.length;
+                  {/* Standings data: dùng API nếu có, fallback mock */}
+                  {(() => {
+                    // Lọc standings theo seasonId mới nhất (seasonId lớn nhất)
+                    const latestSeasonId = apiStandings.length > 0
+                      ? Math.max(...apiStandings.map(s => s.seasonId))
+                      : null;
+                    const displayStandings = latestSeasonId
+                      ? [...apiStandings.filter(s => s.seasonId === latestSeasonId)].sort((a, b) => a.rank - b.rank)
+                      : standings;
+
+                    return displayStandings.map((item, index) => {
+                      const isApiStanding = 'standingId' in item;
+                      const position = isApiStanding ? item.rank : item.position;
+                      const team = isApiStanding ? apiTeams.find(t => t.teamId === item.teamId) : null;
+                      const teamName = isApiStanding ? (team?.teamName ?? `Team ${item.teamId}`) : item.team;
+                      const totalTeams = displayStandings.length;
                       const isTopThree = position <= 3;
                       const isRelegation = position > (totalTeams - 3);
+                      const formChars = isApiStanding ? (item.form ?? '').split('') : item.form;
 
                       return (
                         <motion.tr
-                          key={isApiTeam ? item.teamId : item.position}
+                          key={isApiStanding ? item.standingId : item.position}
                           initial={{ opacity: 0, x: -20 }}
                           whileInView={{ opacity: 1, x: 0 }}
                           viewport={{ once: true }}
@@ -342,13 +374,13 @@ export default function LeaguesPage() {
                             </div>
                           </td>
                           <td className="py-3 px-3">
-                            <Link 
-                              to={isApiTeam ? `/teams/${item.teamId}` : `/teams/${teams.find(t => t.name === teamName)?.id || ''}`}
+                            <Link
+                              to={isApiStanding ? `/teams/${item.teamId}` : `/teams/${teams.find(t => t.name === teamName)?.id || ''}`}
                               className="flex items-center gap-2 hover:opacity-80 transition-opacity"
                             >
-                              {isApiTeam && item.logoUrl ? (
+                              {team?.logoUrl ? (
                                 <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center border border-slate-300 dark:border-white/10">
-                                  <img src={item.logoUrl} alt={teamName} className="w-7 h-7 object-contain" />
+                                  <img src={team.logoUrl} alt={teamName} className="w-7 h-7 object-contain" />
                                 </div>
                               ) : (
                                 <div className="w-8 h-8 rounded-lg bg-slate-200 dark:bg-white/5 flex items-center justify-center text-xs font-display font-bold text-slate-900 dark:text-foreground border border-slate-300 dark:border-white/10">
@@ -362,75 +394,70 @@ export default function LeaguesPage() {
                           </td>
                           <td className="py-3 px-3 text-center">
                             <span className="font-mono-data text-sm text-slate-700 dark:text-slate-400">
-                              {isApiTeam ? 0 : item.played}
+                              {isApiStanding ? item.played : item.played}
                             </span>
                           </td>
                           <td className="py-3 px-3 text-center">
                             <span className="font-mono-data text-sm text-slate-700 dark:text-slate-400">
-                              {isApiTeam ? 0 : item.won}
+                              {isApiStanding ? item.win : item.won}
                             </span>
                           </td>
                           <td className="py-3 px-3 text-center">
                             <span className="font-mono-data text-sm text-slate-700 dark:text-slate-400">
-                              {isApiTeam ? 0 : item.drawn}
+                              {isApiStanding ? item.draw : item.drawn}
                             </span>
                           </td>
                           <td className="py-3 px-3 text-center">
                             <span className="font-mono-data text-sm text-slate-700 dark:text-slate-400">
-                              {isApiTeam ? 0 : item.lost}
+                              {isApiStanding ? item.loss : item.lost}
                             </span>
                           </td>
                           <td className="py-3 px-3 text-center">
                             <span className="font-mono-data text-sm text-slate-700 dark:text-slate-400">
-                              {isApiTeam ? 0 : item.goalsFor}
+                              {isApiStanding ? item.goalsFor : item.goalsFor}
                             </span>
                           </td>
                           <td className="py-3 px-3 text-center">
                             <span className="font-mono-data text-sm text-slate-700 dark:text-slate-400">
-                              {isApiTeam ? 0 : item.goalsAgainst}
+                              {isApiStanding ? item.goalsAgainst : item.goalsAgainst}
                             </span>
                           </td>
                           <td className="py-3 px-3 text-center">
                             <span className={cn(
                               "font-mono-data text-sm font-semibold",
-                              isApiTeam ? "text-slate-700 dark:text-slate-400" :
-                              item.goalDifference > 0 ? "text-green-600 dark:text-green-400" : 
-                              item.goalDifference < 0 ? "text-red-600 dark:text-red-400" : 
+                              item.goalDifference > 0 ? "text-green-600 dark:text-green-400" :
+                              item.goalDifference < 0 ? "text-red-600 dark:text-red-400" :
                               "text-slate-700 dark:text-slate-400"
                             )}>
-                              {isApiTeam ? 0 : (item.goalDifference > 0 ? '+' : '') + item.goalDifference}
+                              {item.goalDifference > 0 ? '+' : ''}{item.goalDifference}
                             </span>
                           </td>
                           <td className="py-3 px-3 text-center">
                             <span className="font-mono-data text-sm font-bold text-slate-900 dark:text-foreground">
-                              {isApiTeam ? 0 : item.points}
+                              {item.points}
                             </span>
                           </td>
                           <td className="py-3 px-3">
                             <div className="flex items-center justify-center gap-1">
-                              {isApiTeam ? (
-                                // Empty form for API teams
-                                <span className="text-xs text-slate-400 dark:text-slate-500">-</span>
-                              ) : (
-                                item.form.map((result, i) => (
-                                  <div
-                                    key={i}
-                                    className={cn(
-                                      "w-6 h-6 rounded flex items-center justify-center text-xs font-bold",
-                                      result === 'W' && "bg-green-500 text-white",
-                                      result === 'D' && "bg-slate-400 text-white",
-                                      result === 'L' && "bg-red-500 text-white"
-                                    )}
-                                  >
-                                    {result}
-                                  </div>
-                                ))
-                              )}
+                              {formChars.map((result: string, i: number) => (
+                                <div
+                                  key={i}
+                                  className={cn(
+                                    "w-6 h-6 rounded flex items-center justify-center text-xs font-bold",
+                                    result === 'W' && "bg-green-500 text-white",
+                                    result === 'D' && "bg-slate-400 text-white",
+                                    result === 'L' && "bg-red-500 text-white"
+                                  )}
+                                >
+                                  {result}
+                                </div>
+                              ))}
                             </div>
                           </td>
                         </motion.tr>
                       );
-                    })}
+                    });
+                  })()}
                   </tbody>
                 </table>
               </div>
