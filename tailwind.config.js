@@ -18,7 +18,7 @@ module.exports = {
   	},
   	extend: {
   		fontFamily: {
-  			display: ['Syne', 'sans-serif'],
+  			display: ['Be Vietnam Pro', 'sans-serif'],
   			'mono-data': ['JetBrains Mono', 'monospace'],
   			body: ['Manrope', 'sans-serif'],
   			label: ['Space Grotesk', 'sans-serif'],
