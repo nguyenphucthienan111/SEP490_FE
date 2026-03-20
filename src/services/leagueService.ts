@@ -175,7 +175,71 @@ export interface Standing {
   form: string;
 }
 
+export interface SofascoreStandingRow {
+  id: number;
+  position: number;
+  team: {
+    id: number;
+    name: string;
+    logo: string; // built from team.id
+  };
+  matches: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  scoresFor: number;
+  scoresAgainst: number;
+  points: number;
+}
+
+export interface SofascoreTeamMatch {
+  id: number;
+  homeTeam: { id: number; name: string; };
+  awayTeam: { id: number; name: string; };
+  homeScore: { current: number; };
+  awayScore: { current: number; };
+  startTimestamp: number;
+  status: { type: string; };
+}
+
+interface RawSofascoreRow {
+  id: number;
+  position: number;
+  team: { id: number; name: string; };
+  matches: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  scoresFor: number;
+  scoresAgainst: number;
+  points: number;
+}
+
 export const leagueService = {
+  async getTeamLastMatches(teamId: number, page = 0): Promise<SofascoreTeamMatch[]> {
+    const result = await apiClient.get<any>(
+      `/api/Sofascore/team/last-matches?teamId=${teamId}&page=${page}`
+    );
+    const raw = result?.events ?? result?.matches ?? result ?? [];
+    return Array.isArray(raw) ? raw : [];
+  },
+
+  async getSofascoreStandings(tournamentId: number, seasonId: number): Promise<SofascoreStandingRow[]> {
+    const result = await apiClient.get<any>(
+      `/api/Sofascore/standings?tournamentId=${tournamentId}&seasonId=${seasonId}`
+    );
+    // Response: { standings: [{ type: "total", rows: [...] }] }
+    const rawRows: RawSofascoreRow[] = result?.standings?.[0]?.rows ?? [];
+    return rawRows.map((row) => ({
+      ...row,
+      team: {
+        id: row.team.id,
+        name: row.team.name,
+        logo: `https://api.sofascore.app/api/v1/team/${row.team.id}/image`,
+      },
+    }));
+  },
+
   async getLeagues(): Promise<League[]> {
     return await apiClient.get<League[]>('/api/Football/leagues');
   },
