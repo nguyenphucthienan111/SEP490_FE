@@ -60,63 +60,13 @@ export default function PlayerDetailPage() {
 
   const loadPlayerData = async () => {
     if (!playerId) return;
-    
     setIsLoading(true);
     try {
-      // Fetch all leagues to find the player
-      const leagues = await leagueService.getLeagues();
-      
-      let foundPlayer: PlayerFromAPI | null = null;
-      
-      // Try to find player in each league's teams
-      for (const league of leagues) {
-        try {
-          const teams = await leagueService.getTeams(league.leagueId);
-          
-          for (const team of teams) {
-            const teamPlayers = await leagueService.getPlayers(team.teamId);
-            const player = teamPlayers.find(p => 
-              p.playerId.toString() === playerId || 
-              p.apiPlayerId.toString() === playerId
-            );
-            
-            if (player) {
-              foundPlayer = player;
-              setApiPlayer(player);
-              
-              // Set fromTeamId only if came from team page
-              const state = location.state as { fromTeamId?: string } | undefined;
-              if (state?.fromTeamId) {
-                setFromTeamId(player.teamId.toString());
-              }
-              
-              // Fetch seasons for this league
-              const leagueSeasons = await leagueService.getSeasons(league.leagueId);
-              setSeasons(leagueSeasons);
-              
-              // Fetch player stats for all seasons
-              const allStats: PlayerStats[] = [];
-              for (const season of leagueSeasons) {
-                try {
-                  const stats = await leagueService.getPlayerStats(player.playerId, season.seasonId);
-                  allStats.push(...stats);
-                } catch (error) {
-                  console.error(`Failed to fetch stats for season ${season.seasonId}:`, error);
-                }
-              }
-              setPlayerStats(allStats);
-              
-              setIsLoading(false);
-              return; // Exit early when player is found
-            }
-          }
-        } catch (error) {
-          console.error(`Failed to fetch teams for league ${league.leagueId}:`, error);
-        }
-      }
-      
-      // If we get here, player was not found
-      console.warn(`Player with ID ${playerId} not found`);
+      const foundPlayer = await leagueService.getPlayerById(Number(playerId));
+      setApiPlayer(foundPlayer);
+
+      const allStats = await leagueService.getPlayerStatsByPlayerId(Number(playerId));
+      setPlayerStats(allStats);
     } catch (error) {
       console.error('Failed to load player data:', error);
       toast.error('Không thể tải thông tin cầu thủ');

@@ -28,39 +28,12 @@ export default function TeamDetailPage() {
 
   const loadTeamData = async () => {
     if (!teamId) return;
-    
     setIsLoading(true);
     try {
-      // Fetch all leagues
-      const leagues = await leagueService.getLeagues();
-      
-      // Try to find team in each league
-      for (const league of leagues) {
-        try {
-          const teams = await leagueService.getTeams(league.leagueId);
-          const foundTeam = teams.find(t => t.teamId.toString() === teamId);
-          
-          if (foundTeam) {
-            setApiTeam(foundTeam);
-            
-            // Fetch players for this team
-            try {
-              const players = await leagueService.getPlayers(foundTeam.teamId);
-              setApiPlayers(players);
-            } catch (error) {
-              console.error('Failed to fetch players:', error);
-            }
-            
-            return; // Exit early when team is found
-          }
-        } catch (error) {
-          console.error(`Failed to fetch teams for league ${league.leagueId}:`, error);
-          // Continue to next league
-        }
-      }
-      
-      // If we get here, team was not found
-      console.warn(`Team with ID ${teamId} not found in any league`);
+      const foundTeam = await leagueService.getTeamById(Number(teamId));
+      setApiTeam(foundTeam);
+      const players = await leagueService.getPlayers(foundTeam.teamId);
+      setApiPlayers(players);
     } catch (error) {
       console.error('Failed to load team data:', error);
       toast.error('Không thể tải thông tin đội bóng');
@@ -204,7 +177,18 @@ export default function TeamDetailPage() {
 
               {coachName && (
                 <div className="text-center p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10">
-                  <User className="w-8 h-8 text-purple-600 dark:text-purple-400 mx-auto mb-2" />
+                  {apiTeam?.coachApiId ? (
+                    <img
+                      src={`https://api.sofascore.app/api/v1/manager/${apiTeam.coachApiId}/image`}
+                      alt={coachName}
+                      className="w-12 h-12 rounded-full object-cover mx-auto mb-2 border border-slate-200 dark:border-white/10"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                        (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
+                      }}
+                    />
+                  ) : null}
+                  <User className={`w-8 h-8 text-purple-600 dark:text-purple-400 mx-auto mb-2 ${apiTeam?.coachApiId ? 'hidden' : ''}`} />
                   <p className="font-body text-sm font-bold text-slate-900 dark:text-foreground mb-1 truncate" title={coachName}>
                     {coachName}
                   </p>

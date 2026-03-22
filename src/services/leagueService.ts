@@ -16,6 +16,7 @@ export interface Team {
   teamName: string;
   shortName: string | null;
   coachName: string | null;
+  coachApiId: number | null;
   clubId: number;
   apiTeamId: number;
   founded: number | null;
@@ -487,6 +488,10 @@ export const leagueService = {
     return await apiClient.get<League[]>('/api/Football/leagues');
   },
 
+  async getAllTeams(): Promise<Team[]> {
+    return await apiClient.get<Team[]>('/api/Football/teams');
+  },
+
   async getSeasons(leagueId: number): Promise<Season[]> {
     return await apiClient.get<Season[]>(`/api/Football/seasons?leagueId=${leagueId}`);
   },
@@ -495,8 +500,117 @@ export const leagueService = {
     return await apiClient.get<Team[]>(`/api/Football/teams?leagueId=${leagueId}`);
   },
 
-  async getPlayers(teamId: number): Promise<PlayerFromAPI[]> {
-    return await apiClient.get<PlayerFromAPI[]>(`/api/Football/players?teamId=${teamId}`);
+  async getTeamById(teamId: number): Promise<Team> {
+    const raw = await apiClient.get<any>(`/api/Football/teams/${teamId}`);
+    // BE returns PascalCase — normalize to camelCase
+    return {
+      teamId: raw.TeamId ?? raw.teamId,
+      teamName: raw.TeamName ?? raw.teamName,
+      shortName: raw.ShortName ?? raw.shortName ?? null,
+      coachName: raw.CoachName ?? raw.coachName ?? null,
+      coachApiId: raw.CoachApiId ?? raw.coachApiId ?? null,
+      clubId: raw.ClubId ?? raw.clubId,
+      apiTeamId: raw.ApiTeamId ?? raw.apiTeamId,
+      founded: raw.Founded ?? raw.founded ?? null,
+      national: raw.National ?? raw.national ?? false,
+      logoUrl: raw.LogoUrl ?? raw.logoUrl,
+      stadiumId: raw.StadiumId ?? raw.stadiumId,
+      leagueId: raw.LeagueId ?? raw.leagueId,
+      stadium: (raw.Stadium ?? raw.stadium) ? {
+        stadiumId: (raw.Stadium ?? raw.stadium).StadiumId ?? (raw.Stadium ?? raw.stadium).stadiumId,
+        stadiumName: (raw.Stadium ?? raw.stadium).StadiumName ?? (raw.Stadium ?? raw.stadium).stadiumName,
+        city: (raw.Stadium ?? raw.stadium).City ?? (raw.Stadium ?? raw.stadium).city ?? null,
+        capacity: (raw.Stadium ?? raw.stadium).Capacity ?? (raw.Stadium ?? raw.stadium).capacity,
+        surface: (raw.Stadium ?? raw.stadium).Surface ?? (raw.Stadium ?? raw.stadium).surface ?? null,
+        address: (raw.Stadium ?? raw.stadium).Address ?? (raw.Stadium ?? raw.stadium).address ?? null,
+        imageUrl: (raw.Stadium ?? raw.stadium).ImageUrl ?? (raw.Stadium ?? raw.stadium).imageUrl ?? null,
+      } : undefined,
+    };
+  },
+
+  async getPlayerById(playerId: number): Promise<PlayerFromAPI> {
+    const p = await apiClient.get<any>(`/api/Football/players/${playerId}`);
+    return {
+      playerId: p.PlayerId ?? p.playerId,
+      apiPlayerId: p.ApiPlayerId ?? p.apiPlayerId,
+      firstName: p.FirstName ?? p.firstName,
+      lastName: p.LastName ?? p.lastName,
+      fullName: p.FullName ?? p.fullName,
+      dateOfBirth: p.DateOfBirth ?? p.dateOfBirth,
+      age: p.Age ?? p.age,
+      nationality: p.Nationality ?? p.nationality,
+      birthPlace: p.BirthPlace ?? p.birthPlace ?? null,
+      birthCountry: p.BirthCountry ?? p.birthCountry,
+      heightCm: p.HeightCm ?? p.heightCm ?? null,
+      weightKg: p.WeightKg ?? p.weightKg ?? null,
+      photoUrl: p.PhotoUrl ?? p.photoUrl,
+      isInjured: p.IsInjured ?? p.isInjured ?? false,
+      teamId: p.TeamId ?? p.teamId,
+      position: p.Position ?? p.position,
+      number: p.Number ?? p.number ?? null,
+    };
+  },
+
+  async getPlayerStatsByPlayerId(playerId: number): Promise<PlayerStats[]> {
+    const raw = await apiClient.get<any[]>(`/api/Football/player-stats/by-player/${playerId}`);
+    if (!Array.isArray(raw)) return [];
+    return raw.map((x) => ({
+      playerStatisticsId: x.PlayerStatisticsId ?? x.playerStatisticsId,
+      playerId: x.PlayerId ?? x.playerId,
+      teamId: x.TeamId ?? x.teamId,
+      leagueId: x.LeagueId ?? x.leagueId,
+      seasonId: x.SeasonId ?? x.seasonId,
+      appearances: x.Appearances ?? x.appearances,
+      lineups: x.Lineups ?? x.lineups,
+      minutes: x.Minutes ?? x.minutes,
+      goals: x.Goals ?? x.goals,
+      assists: x.Assists ?? x.assists,
+      yellowCards: x.YellowCards ?? x.yellowCards,
+      redCards: x.RedCards ?? x.redCards,
+      rating: x.Rating ?? x.rating ?? null,
+      substitutionsIn: x.SubstitutionsIn ?? x.substitutionsIn ?? null,
+      substitutionsOut: x.SubstitutionsOut ?? x.substitutionsOut ?? null,
+      shotsTotal: x.ShotsTotal ?? x.shotsTotal ?? null,
+      shotsOnTarget: x.ShotsOnTarget ?? x.shotsOnTarget ?? null,
+      passesTotal: x.PassesTotal ?? x.passesTotal ?? null,
+      passesKey: x.PassesKey ?? x.passesKey ?? null,
+      passesAccuracy: x.PassesAccuracy ?? x.passesAccuracy ?? null,
+      dribblesAttempted: x.DribblesAttempted ?? x.dribblesAttempted ?? null,
+      dribblesSuccess: x.DribblesSuccess ?? x.dribblesSuccess ?? null,
+      dribblesSuccessRate: x.DribblesSuccessRate ?? x.dribblesSuccessRate ?? null,
+      duelsWon: x.DuelsWon ?? x.duelsWon ?? null,
+      duelsTotal: x.DuelsTotal ?? x.duelsTotal ?? null,
+      duelsWonRate: x.DuelsWonRate ?? x.duelsWonRate ?? null,
+      tackles: x.Tackles ?? x.tackles ?? null,
+      interceptions: x.Interceptions ?? x.interceptions ?? null,
+      foulsDrawn: x.FoulsDrawn ?? x.foulsDrawn ?? null,
+      foulsCommitted: x.FoulsCommitted ?? x.foulsCommitted ?? null,
+      penaltiesScored: x.PenaltiesScored ?? x.penaltiesScored ?? null,
+      penaltiesMissed: x.PenaltiesMissed ?? x.penaltiesMissed ?? null,
+    }));
+  },
+
+  async getPlayers(teamId: number): Promise<PlayerFromAPI[]> {    const raw = await apiClient.get<any[]>(`/api/Football/players?teamId=${teamId}`);
+    if (!Array.isArray(raw)) return [];
+    return raw.map((p) => ({
+      playerId: p.PlayerId ?? p.playerId,
+      apiPlayerId: p.ApiPlayerId ?? p.apiPlayerId,
+      firstName: p.FirstName ?? p.firstName,
+      lastName: p.LastName ?? p.lastName,
+      fullName: p.FullName ?? p.fullName,
+      dateOfBirth: p.DateOfBirth ?? p.dateOfBirth,
+      age: p.Age ?? p.age,
+      nationality: p.Nationality ?? p.nationality,
+      birthPlace: p.BirthPlace ?? p.birthPlace ?? null,
+      birthCountry: p.BirthCountry ?? p.birthCountry,
+      heightCm: p.HeightCm ?? p.heightCm ?? null,
+      weightKg: p.WeightKg ?? p.weightKg ?? null,
+      photoUrl: p.PhotoUrl ?? p.photoUrl,
+      isInjured: p.IsInjured ?? p.isInjured ?? false,
+      teamId: p.TeamId ?? p.teamId,
+      position: p.Position ?? p.position,
+      number: p.Number ?? p.number ?? null,
+    }));
   },
 
   async getPlayerStats(playerId: number, seasonId: number): Promise<PlayerStats[]> {
