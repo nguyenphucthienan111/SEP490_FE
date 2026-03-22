@@ -58,13 +58,22 @@ export default function LoginPage() {
       }, 2000);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Đăng nhập thất bại. Vui lòng thử lại.";
+      console.error('Login error:', err);
       setError(errorMessage);
       
       // Show resend button if error is about email verification
       if (errorMessage.toLowerCase().includes("email") && 
           (errorMessage.toLowerCase().includes("xác thực") || 
-           errorMessage.toLowerCase().includes("verified"))) {
+           errorMessage.toLowerCase().includes("verified") ||
+           errorMessage.toLowerCase().includes("verify"))) {
         setShowResendButton(true);
+        setNeedsVerification(true);
+      }
+      
+      // Show helpful message for wrong credentials
+      if (errorMessage.toLowerCase().includes("không đúng") || 
+          errorMessage.toLowerCase().includes("incorrect")) {
+        toast.error("Email hoặc mật khẩu không đúng. Vui lòng kiểm tra lại hoặc sử dụng 'Quên mật khẩu'.");
       }
     } finally {
       setIsLoading(false);
@@ -150,6 +159,7 @@ export default function LoginPage() {
             <div className="text-center mb-8">
               <h2 className="font-serif text-3xl font-bold text-slate-900 dark:text-foreground mb-2">Đăng Nhập</h2>
               <p className="text-slate-700 dark:text-[#A8A29E] font-body">Chào mừng bạn quay trở lại!</p>
+              
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -256,7 +266,7 @@ export default function LoginPage() {
 
             <div className="mt-6 text-center">
               <p className="text-slate-700 dark:text-[#A8A29E] font-body">
-                Bạn chưa có tài khoản?{" "}
+                Chưa có tài khoản?{" "}
                 <Link to="/register" className="text-[#00D9FF] hover:underline font-semibold">
                   Đăng ký ngay
                 </Link>
