@@ -1,6 +1,6 @@
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, MapPin, Users, Trophy, Calendar, TrendingUp, User, Loader2 } from 'lucide-react';
+import { ArrowLeft, MapPin, Users, Trophy, Calendar, TrendingUp, User, Loader2, ArrowRight } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { getTeamById, players, matches } from '@/data/mockData';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,9 @@ export default function TeamDetailPage() {
   const [apiTeam, setApiTeam] = React.useState<Team | null>(null);
   const [apiPlayers, setApiPlayers] = React.useState<PlayerFromAPI[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [teamStat] = React.useState<any>(null);
+  const [transfers] = React.useState<any[]>([]);
+  const [showAllTransfers, setShowAllTransfers] = React.useState(false);
   const team = getTeamById(teamId || '');
 
   React.useEffect(() => {

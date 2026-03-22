@@ -344,10 +344,11 @@ export interface SofascoreTeamMatch {
   id: number;
   homeTeam: { id: number; name: string; };
   awayTeam: { id: number; name: string; };
-  homeScore: { current: number; };
-  awayScore: { current: number; };
+  homeScore: { current: number; display?: number; };
+  awayScore: { current: number; display?: number; };
   startTimestamp: number;
   status: { type: string; };
+  roundInfo?: { round: number; name?: string; cupRoundType?: number; };
 }
 
 interface RawSofascoreRow {
@@ -363,7 +364,55 @@ interface RawSofascoreRow {
   points: number;
 }
 
+export interface SofascoreLeague {
+  name: string;
+  uniqueTournamentId: number;
+  currentSeasonId: number;
+  seasonName: string;
+  url: string;
+  logoUrl: string; // built client-side
+}
+
 export const leagueService = {
+  async getVietnameseLeagues(): Promise<SofascoreLeague[]> {
+    const result = await apiClient.get<any>('/api/Sofascore/vietnamese-leagues');
+    const raw: Omit<SofascoreLeague, 'logoUrl'>[] = result?.leagues ?? [];
+    return raw.map((l) => ({
+      ...l,
+      logoUrl: `https://api.sofascore.app/api/v1/unique-tournament/${l.uniqueTournamentId}/image/dark`,
+    }));
+  },
+
+  async getTournamentLastMatches(uniqueTournamentId: number, seasonId: number, page = 0): Promise<SofascoreTeamMatch[]> {
+    const result = await apiClient.get<any>(
+      `/api/Sofascore/tournament/last-matches?uniqueTournamentId=${uniqueTournamentId}&seasonId=${seasonId}&page=${page}`
+    );
+    const raw = result?.events ?? result?.matches ?? result ?? [];
+    return Array.isArray(raw) ? raw : [];
+  },
+
+  async getTournamentNextMatches(uniqueTournamentId: number, seasonId: number, page = 0): Promise<SofascoreTeamMatch[]> {
+    const result = await apiClient.get<any>(
+      `/api/Sofascore/tournament/next-matches?uniqueTournamentId=${uniqueTournamentId}&seasonId=${seasonId}&page=${page}`
+    );
+    const raw = result?.events ?? result?.matches ?? result ?? [];
+    return Array.isArray(raw) ? raw : [];
+  },
+
+  async getTournamentCupTrees(uniqueTournamentId: number, seasonId: number): Promise<any> {
+    return await apiClient.get<any>(
+      `/api/Sofascore/tournament/cuptrees?uniqueTournamentId=${uniqueTournamentId}&seasonId=${seasonId}`
+    );
+  },
+
+  async getTournamentRoundMatches(uniqueTournamentId: number, seasonId: number, round: number): Promise<SofascoreTeamMatch[]> {
+    const result = await apiClient.get<any>(
+      `/api/Sofascore/tournament/round-matches?uniqueTournamentId=${uniqueTournamentId}&seasonId=${seasonId}&round=${round}`
+    );
+    const raw = result?.events ?? result?.matches ?? result ?? [];
+    return Array.isArray(raw) ? raw : [];
+  },
+
   async getTeamLastMatches(teamId: number, page = 0): Promise<SofascoreTeamMatch[]> {
     const result = await apiClient.get<any>(
       `/api/Sofascore/team/last-matches?teamId=${teamId}&page=${page}`
@@ -414,22 +463,6 @@ export const leagueService = {
 
   async getStandings(leagueId: number, seasonId: number): Promise<Standing[]> {
     return await apiClient.get<Standing[]>(`/api/Football/standings?leagueId=${leagueId}&seasonId=${seasonId}`);
-  },
-
-  async getPlayers(): Promise<Player[]> {
-    return await apiClient.get<Player[]>('/api/Football/players');
-  },
-
-  async getStandings(): Promise<Standing[]> {
-    return await apiClient.get<Standing[]>('/api/Football/standings');
-  },
-
-  async getPlayerStats(): Promise<PlayerStats[]> {
-    return await apiClient.get<PlayerStats[]>('/api/Football/player-stats');
-  },
-
-  async getMatches(): Promise<ApiMatch[]> {
-    return await apiClient.get<ApiMatch[]>('/api/Football/matches');
   },
 
   async getMatchEvents(): Promise<MatchEvent[]> {

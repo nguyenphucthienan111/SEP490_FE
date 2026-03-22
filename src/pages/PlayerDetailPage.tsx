@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, TrendingUp, ChevronDown, ChevronUp, Users, Loader2 } from 'lucide-react';
+import { ArrowLeft, TrendingUp, ChevronDown, ChevronUp, Users, Loader2, ArrowRight } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { getPlayerById } from '@/data/mockData';
@@ -41,6 +41,7 @@ export default function PlayerDetailPage() {
   const [seasons, setSeasons] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [fromTeamId, setFromTeamId] = useState<string | null>(null);
+  const [transfers] = useState<any[]>([]);
   const player = getPlayerById(playerId || '');
   const [expandedContribution, setExpandedContribution] = useState<string | null>(null);
 
@@ -355,7 +356,7 @@ export default function PlayerDetailPage() {
                       fill="none"
                       stroke="url(#ratingGradient)"
                       strokeWidth="10"
-                      strokeDasharray={`${((stats?.rating || player?.rating || 0) / 10) * 283} 283`}
+                      strokeDasharray={`${((playerStats[0]?.rating || player?.rating || 0) / 10) * 283} 283`}
                       strokeLinecap="round"
                     />
                     <defs>
@@ -367,7 +368,7 @@ export default function PlayerDetailPage() {
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
                     <span className="font-mono-data text-4xl font-bold text-slate-900 dark:text-foreground">
-                      {(stats?.rating || player?.rating || 0).toFixed(1)}
+                      {(playerStats[0]?.rating || player?.rating || 0).toFixed(1)}
                     </span>
                     <span className="text-xs text-slate-600 dark:text-[#A8A29E] uppercase tracking-wider">Đánh giá</span>
                   </div>

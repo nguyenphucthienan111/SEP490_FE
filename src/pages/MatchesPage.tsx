@@ -1,29 +1,16 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, MapPin, Radio, Loader2 } from 'lucide-react';
+import { Calendar, MapPin, Radio, Loader2, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { matches, leagues } from '@/data/mockData';
-import { Match as MockMatch } from '@/types';
 import { cn } from '@/lib/utils';
 import { Match as ApiMatch, leagueService } from '@/services/leagueService';
 import { toast } from 'sonner';
 
-function MatchCard({ match, index, isApiMatch }: { match: MockMatch | ApiMatch; index: number; isApiMatch: boolean }) {
-  const isLive = isApiMatch ? (match as ApiMatch).status === 'Match Finished - After Penalties' || (match as ApiMatch).status.includes('Halftime') : (match as MockMatch).status === 'live';
-  const isCompleted = isApiMatch ? (match as ApiMatch).status === 'Match Finished' : (match as MockMatch).status === 'completed';
-  const isScheduled = isApiMatch ? (match as ApiMatch).status === 'Not Started' : (match as MockMatch).status === 'scheduled';
-
-  const homeTeamName = isApiMatch ? (match as ApiMatch).homeTeam.teamName : (match as MockMatch).homeTeam.name;
-  const awayTeamName = isApiMatch ? (match as ApiMatch).awayTeam.teamName : (match as MockMatch).awayTeam.name;
-  const homeTeamLogo = isApiMatch ? (match as ApiMatch).homeTeam.logoUrl : null;
-  const awayTeamLogo = isApiMatch ? (match as ApiMatch).awayTeam.logoUrl : null;
-  const homeGoals = isApiMatch ? (match as ApiMatch).homeGoals : (match as MockMatch).homeScore;
-  const awayGoals = isApiMatch ? (match as ApiMatch).awayGoals : (match as MockMatch).awayScore;
-  const matchDate = isApiMatch ? (match as ApiMatch).matchDate : (match as MockMatch).date;
-  const venue = isApiMatch ? (match as ApiMatch).venue : (match as MockMatch).venue;
-  const matchId = isApiMatch ? (match as ApiMatch).matchId : (match as MockMatch).id;
-  const round = isApiMatch ? (match as ApiMatch).round : null;
+function MatchCard({ match, index }: { match: ApiMatch; index: number }) {
+  const isLive = match.status.includes('Halftime') || match.status === 'Match Finished - After Penalties';
+  const isCompleted = match.status === 'Match Finished';
+  const isScheduled = match.status === 'Not Started';
 
   return (
     <motion.div
@@ -31,26 +18,16 @@ function MatchCard({ match, index, isApiMatch }: { match: MockMatch | ApiMatch; 
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: index * 0.05 }}
     >
-      <Link to={`/matches/${matchId}`}>
+      <Link to={`/matches/${match.matchId}`}>
         <div className={cn(
           "group glass-card rounded-2xl p-6 hover:translate-y-[-4px] hover:shadow-xl transition-all duration-300 cursor-pointer border border-transparent",
           isLive ? "border-[#FF4444]/30 hover:border-[#FF4444]/50" : "hover:border-[#00D9FF]/20"
         )}>
-          {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              {!isApiMatch && (
-                <>
-                  <span className="text-xs text-slate-600 dark:text-[#A8A29E] font-label uppercase tracking-wider">
-                    {(match as MockMatch).league}
-                  </span>
-                  <span className="text-xs text-slate-600 dark:text-[#A8A29E]">•</span>
-                  <span className="text-xs text-slate-600 dark:text-[#A8A29E]">{(match as MockMatch).season}</span>
-                </>
-              )}
-              {isApiMatch && round && (
+              {match.round && (
                 <span className="text-xs text-slate-600 dark:text-[#A8A29E] font-label uppercase tracking-wider">
-                  {round}
+                  {match.round}
                 </span>
               )}
             </div>
@@ -61,85 +38,60 @@ function MatchCard({ match, index, isApiMatch }: { match: MockMatch | ApiMatch; 
               </span>
             )}
             {isCompleted && (
-              <span className="px-3 py-1.5 bg-slate-100 dark:bg-white/5 rounded-full text-xs font-label text-slate-600 dark:text-[#A8A29E]">
-                Kết thúc
-              </span>
+              <span className="px-3 py-1.5 bg-slate-100 dark:bg-white/5 rounded-full text-xs font-label text-slate-600 dark:text-[#A8A29E]">Kết thúc</span>
             )}
             {isScheduled && (
-              <span className="px-3 py-1.5 bg-blue-100 dark:bg-[#00D9FF]/10 rounded-full text-xs font-label text-[#00D9FF]">
-                Sắp diễn ra
-              </span>
+              <span className="px-3 py-1.5 bg-blue-100 dark:bg-[#00D9FF]/10 rounded-full text-xs font-label text-[#00D9FF]">Sắp diễn ra</span>
             )}
           </div>
 
-          {/* Teams & Score */}
           <div className="flex items-center justify-between gap-6 mb-6">
-            {/* Home */}
             <div className="flex-1">
               <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-white/5 flex items-center justify-center mb-3 overflow-hidden border border-slate-200 dark:border-white/10">
-                {homeTeamLogo ? (
-                  <img src={homeTeamLogo} alt={homeTeamName} className="w-12 h-12 object-contain" />
+                {match.homeTeam.logoUrl ? (
+                  <img src={match.homeTeam.logoUrl} alt={match.homeTeam.teamName} className="w-12 h-12 object-contain" />
                 ) : (
-                  <span className="font-display font-bold text-xl text-foreground">
-                    {homeTeamName.charAt(0)}
-                  </span>
+                  <span className="font-display font-bold text-xl text-foreground">{match.homeTeam.teamName.charAt(0)}</span>
                 )}
               </div>
-              <h4 className="font-body font-semibold text-foreground text-sm">
-                {homeTeamName}
-              </h4>
+              <h4 className="font-body font-semibold text-foreground text-sm">{match.homeTeam.teamName}</h4>
               <span className="text-xs text-slate-600 dark:text-[#A8A29E]">Home</span>
             </div>
 
-            {/* Score */}
             <div className="flex flex-col items-center">
               {(isLive || isCompleted) ? (
                 <div className="flex items-center gap-4">
-                  <span className="font-mono-data text-4xl font-bold text-foreground">
-                    {homeGoals}
-                  </span>
+                  <span className="font-mono-data text-4xl font-bold text-foreground">{match.homeGoals}</span>
                   <span className="text-slate-600 dark:text-[#A8A29E] text-2xl">-</span>
-                  <span className="font-mono-data text-4xl font-bold text-foreground">
-                    {awayGoals}
-                  </span>
+                  <span className="font-mono-data text-4xl font-bold text-foreground">{match.awayGoals}</span>
                 </div>
               ) : (
                 <div className="text-center">
                   <p className="font-mono-data text-xl text-[#00D9FF] mb-1">
-                    {new Date(matchDate).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                    {new Date(match.matchDate).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
                   </p>
                   <p className="text-xs text-slate-600 dark:text-[#A8A29E]">Kick-off</p>
                 </div>
               )}
             </div>
 
-            {/* Away */}
             <div className="flex-1 text-right">
               <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-white/5 flex items-center justify-center mb-3 ml-auto overflow-hidden border border-slate-200 dark:border-white/10">
-                {awayTeamLogo ? (
-                  <img src={awayTeamLogo} alt={awayTeamName} className="w-12 h-12 object-contain" />
+                {match.awayTeam.logoUrl ? (
+                  <img src={match.awayTeam.logoUrl} alt={match.awayTeam.teamName} className="w-12 h-12 object-contain" />
                 ) : (
-                  <span className="font-display font-bold text-xl text-foreground">
-                    {awayTeamName.charAt(0)}
-                  </span>
+                  <span className="font-display font-bold text-xl text-foreground">{match.awayTeam.teamName.charAt(0)}</span>
                 )}
               </div>
-              <h4 className="font-body font-semibold text-foreground text-sm">
-                {awayTeamName}
-              </h4>
+              <h4 className="font-body font-semibold text-foreground text-sm">{match.awayTeam.teamName}</h4>
               <span className="text-xs text-slate-600 dark:text-[#A8A29E]">Away</span>
             </div>
           </div>
 
-          {/* Footer */}
           <div className="flex items-center justify-center gap-6 pt-4 border-t border-slate-200 dark:border-white/5 text-sm text-slate-600 dark:text-[#A8A29E]">
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4" />
-              <span>{new Date(matchDate).toLocaleDateString('vi-VN', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <MapPin className="w-4 h-4" />
-              <span>{venue}</span>
+              <span>{new Date(match.matchDate).toLocaleDateString('vi-VN', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
             </div>
             {match.venue && (
               <div className="flex items-center gap-2">
@@ -155,62 +107,34 @@ function MatchCard({ match, index, isApiMatch }: { match: MockMatch | ApiMatch; 
 }
 
 export default function MatchesPage() {
-  const [matches, setMatches] = useState<ApiMatch[]>([]);
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedRound, setSelectedRound] = useState<string>('all');
-  const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [apiMatches, setApiMatches] = useState<ApiMatch[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedSeason, setSelectedSeason] = useState<number>(13); // Default to season 13 (2024)
+  const [selectedStatus, setSelectedStatus] = useState<string>('all');
 
-  useEffect(() => {
-    loadMatches();
-  }, [selectedSeason]);
+  useEffect(() => { loadMatches(); }, []);
 
   const loadMatches = async () => {
     setIsLoading(true);
     try {
-      // Fetch matches for V.League 1 (leagueId: 1)
-      const fetchedMatches = await leagueService.getMatches(1, selectedSeason);
+      const fetchedMatches = await leagueService.getMatches(1, 13);
       setApiMatches(fetchedMatches);
     } catch (error) {
-      console.error('Failed to load matches:', error);
       toast.error('Không thể tải danh sách trận đấu');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const displayMatches = apiMatches.length > 0 ? apiMatches : matches;
-  const isApiData = apiMatches.length > 0;
-
-  const filteredMatches = displayMatches.filter((match) => {
-    if (isApiData) {
-      const apiMatch = match as ApiMatch;
-      const matchesStatus = selectedStatus === 'all' || 
-        (selectedStatus === 'completed' && apiMatch.status === 'Match Finished') ||
-        (selectedStatus === 'scheduled' && apiMatch.status === 'Not Started') ||
-        (selectedStatus === 'live' && apiMatch.status.includes('Halftime'));
-      return matchesStatus;
-    } else {
-      const mockMatch = match as MockMatch;
-      const matchesLeague = selectedLeague === 'all' || mockMatch.league === selectedLeague;
-      const matchesStatus = selectedStatus === 'all' || mockMatch.status === selectedStatus;
-      return matchesLeague && matchesStatus;
-    }
+  const filteredMatches = apiMatches.filter((m) => {
+    if (selectedStatus === 'all') return true;
+    if (selectedStatus === 'completed') return m.status === 'Match Finished';
+    if (selectedStatus === 'scheduled') return m.status === 'Not Started';
+    if (selectedStatus === 'live') return m.status.includes('Halftime');
+    return true;
   });
 
-  const liveMatches = filteredMatches.filter(m => 
-    isApiData 
-      ? (m as ApiMatch).status.includes('Halftime') || (m as ApiMatch).status === 'Match Finished - After Penalties'
-      : (m as MockMatch).status === 'live'
-  );
-  const otherMatches = filteredMatches.filter(m => 
-    isApiData 
-      ? !(m as ApiMatch).status.includes('Halftime') && (m as ApiMatch).status !== 'Match Finished - After Penalties'
-      : (m as MockMatch).status !== 'live'
-  );
+  const liveMatches = filteredMatches.filter(m => m.status.includes('Halftime') || m.status === 'Match Finished - After Penalties');
+  const otherMatches = filteredMatches.filter(m => !m.status.includes('Halftime') && m.status !== 'Match Finished - After Penalties');
 
   return (
     <MainLayout>
@@ -232,11 +156,11 @@ export default function MatchesPage() {
               </p>
             </div>
             <button
-              onClick={handleRefresh}
-              disabled={loading}
+              onClick={loadMatches}
+              disabled={isLoading}
               className="flex items-center gap-2 px-5 py-2.5 bg-[#00D9FF] hover:bg-[#00E8FF] text-slate-900 font-label font-semibold rounded-xl transition-colors disabled:opacity-50"
             >
-              <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
+              <RefreshCw className={cn("w-4 h-4", isLoading && "animate-spin")} />
               Làm mới
             </button>
           </motion.div>
@@ -300,7 +224,7 @@ export default function MatchesPage() {
               </div>
               <div className="grid md:grid-cols-2 gap-6">
                 {liveMatches.map((match, index) => (
-                  <MatchCard key={isApiData ? (match as ApiMatch).matchId : (match as MockMatch).id} match={match} index={index} isApiMatch={isApiData} />
+                  <MatchCard key={match.matchId} match={match} index={index} />
                 ))}
               </div>
             </motion.div>
@@ -315,7 +239,7 @@ export default function MatchesPage() {
                   </h2>
                   <div className="grid md:grid-cols-2 gap-6">
                     {otherMatches.map((m, i) => (
-                      <MatchCard key={m.matchId} match={m} teams={teams} index={i} />
+                      <MatchCard key={m.matchId} match={m} index={i} />
                     ))}
                   </div>
                 </>
@@ -323,7 +247,7 @@ export default function MatchesPage() {
 
           <div className="grid md:grid-cols-2 gap-6">
             {otherMatches.map((match, index) => (
-              <MatchCard key={isApiData ? (match as ApiMatch).matchId : (match as MockMatch).id} match={match} index={index} isApiMatch={isApiData} />
+              <MatchCard key={match.matchId} match={match} index={index} />
             ))}
           </div>
           </>

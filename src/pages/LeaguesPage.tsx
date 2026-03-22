@@ -1,20 +1,21 @@
 import { motion } from 'framer-motion';
 import { Trophy, Calendar, Users, TrendingUp, TrendingDown } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { leagues, teams } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 import React from 'react';
-import { leagueService, League, Team, SofascoreStandingRow } from '@/services/leagueService';
+import { leagueService, Team, SofascoreStandingRow, SofascoreLeague } from '@/services/leagueService';
 import { FormCell } from '@/components/standings/FormCell';
 import { toast } from 'sonner';
 
-const VIETNAM_LEAGUES = [
-  { name: 'V-League 1', tournamentId: 626, seasonId: 78589, season: '25/26' },
-  { name: 'V-League 2', tournamentId: 771, seasonId: 80926, season: '25/26' },
+// Only V-League 1 & 2 have standings (Cup is knockout)
+const STANDINGS_LEAGUES = [
+  { name: 'V-League 1', tournamentId: 626, seasonId: 78589 },
+  { name: 'V-League 2', tournamentId: 771, seasonId: 80926 },
 ];
 
 export default function LeaguesPage() {
-  const [apiLeagues, setApiLeagues] = React.useState<League[]>([]);
+  const [sofascoreLeagues, setSofascoreLeagues] = React.useState<SofascoreLeague[]>([]);
   const [apiTeams, setApiTeams] = React.useState<Team[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
 
@@ -24,7 +25,7 @@ export default function LeaguesPage() {
   const [standingsLoading, setStandingsLoading] = React.useState(false);
   const [standingsError, setStandingsError] = React.useState<string | null>(null);
 
-  const activeLeague = VIETNAM_LEAGUES[activeStandingsIndex];
+  const activeLeague = STANDINGS_LEAGUES[activeStandingsIndex];
 
   React.useEffect(() => {
     loadData();
@@ -33,7 +34,7 @@ export default function LeaguesPage() {
   // Load standings when tab changes
   React.useEffect(() => {
     const { tournamentId, seasonId } = activeLeague;
-    if (standingsData[tournamentId]) return; // already cached
+    if (standingsData[tournamentId]) return;
     setStandingsLoading(true);
     setStandingsError(null);
     leagueService
@@ -48,15 +49,30 @@ export default function LeaguesPage() {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const leagues = await leagueService.getLeagues();
-      setApiLeagues(leagues);
-      const vLeague1 = leagues.find(l => l.leagueId === 1);
-      if (vLeague1) {
-        const teams = await leagueService.getTeams(vLeague1.leagueId);
+      const leagues = await leagueService.getVietnameseLeagues();
+      setSofascoreLeagues(leagues);
+
+      // Pre-load standings for V-League 1 & 2 to show team counts on cards
+      const standingsResults = await Promise.allSettled(
+        STANDINGS_LEAGUES.map((l) => leagueService.getSofascoreStandings(l.tournamentId, l.seasonId))
+      );
+      const newStandings: Record<number, SofascoreStandingRow[]> = {};
+      standingsResults.forEach((result, i) => {
+        if (result.status === 'fulfilled') {
+          newStandings[STANDINGS_LEAGUES[i].tournamentId] = result.value;
+        }
+      });
+      setStandingsData(newStandings);
+
+      // Load V-League 1 teams from our API (leagueId=1)
+      try {
+        const teams = await leagueService.getTeams(1);
         setApiTeams(teams);
+      } catch {
+        // teams section will show empty state
       }
     } catch (error) {
-      console.error('Failed to load data:', error);
+      console.error('Failed to load leagues:', error);
       toast.error('Không thể tải dữ liệu');
     } finally {
       setIsLoading(false);
@@ -74,64 +90,62 @@ export default function LeaguesPage() {
             transition={{ duration: 0.6 }}
             className="mb-12"
           >
-            <div>
-              <h1 className="font-display font-extrabold text-4xl sm:text-5xl text-slate-900 dark:text-foreground mb-3">
-                Giải đấu Việt Nam
-              </h1>
-              <p className="text-slate-600 dark:text-[#A8A29E] text-lg max-w-2xl">
-                Thông tin đầy đủ về các giải đấu bóng đá Việt Nam
-              </p>
-            </div>
+            <h1 className="font-display font-extrabold text-4xl sm:text-5xl text-slate-900 dark:text-foreground mb-3">
+              Giải đấu Việt Nam
+            </h1>
+            <p className="text-slate-600 dark:text-[#A8A29E] text-lg max-w-2xl">
+              Thông tin đầy đủ về các giải đấu bóng đá Việt Nam
+            </p>
           </motion.div>
 
           {/* Leagues Grid */}
           {isLoading ? (
             <div className="flex items-center justify-center py-12 mb-16">
               <div className="text-center">
-                <div className="w-12 h-12 border-4 border-[#00D9FF] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <div className="w-12 h-12 border-4 border-[#00D9FF] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
                 <p className="text-slate-600 dark:text-[#A8A29E]">Đang tải dữ liệu...</p>
               </div>
             </div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
-              {(apiLeagues.length > 0 ? apiLeagues : leagues).map((league, index) => {
-              const isApiLeague = 'leagueId' in league;
-              const leagueId = isApiLeague ? `api-${league.leagueId}` : league.id;
-              
-              return (
+              {sofascoreLeagues.map((league, index) => (
                 <motion.div
-                  key={leagueId}
+                  key={league.uniqueTournamentId}
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
                 >
-                  <div className="group glass-card rounded-2xl p-8 hover:translate-y-[-4px] hover:shadow-xl transition-all duration-300 h-full border border-transparent hover:border-[#FF4444]/20">
+                  <Link
+                    to={`/leagues/${league.uniqueTournamentId}`}
+                    className="block group glass-card rounded-2xl p-8 hover:translate-y-[-4px] hover:shadow-xl transition-all duration-300 h-full border border-transparent hover:border-[#FF4444]/20"
+                  >
                     <div className="flex items-start justify-between mb-6">
-                      <div className="w-16 h-16 rounded-2xl flex items-center justify-center transition-all overflow-hidden bg-gradient-to-br from-red-200 dark:from-[#FF4444]/20 to-blue-200 dark:to-[#00D9FF]/20">
-                        {isApiLeague && league.logoUrl ? (
-                          <img src={league.logoUrl} alt={league.leagueName} className="w-12 h-12 object-contain" />
-                        ) : (
-                          <Trophy className="w-8 h-8 text-[#FF4444]" />
-                        )}
+                      <div className="w-16 h-16 rounded-2xl flex items-center justify-center overflow-hidden bg-gradient-to-br from-red-200 dark:from-[#FF4444]/20 to-blue-200 dark:to-[#00D9FF]/20">
+                        <img
+                          src={league.logoUrl}
+                          alt={league.name}
+                          className="w-12 h-12 object-contain"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = 'none';
+                          }}
+                        />
                       </div>
                       <span className="px-4 py-1.5 rounded-full bg-blue-100 dark:bg-[#00D9FF]/10 text-[#00D9FF] text-sm font-label font-semibold">
-                        {isApiLeague ? '25/26' : league.season}
+                        {league.seasonName}
                       </span>
                     </div>
 
                     <h3 className="font-display font-bold text-2xl mb-2 text-slate-900 dark:text-foreground group-hover:text-[#FF4444] transition-colors">
-                      {isApiLeague ? league.leagueName : league.name}
+                      {league.name}
                     </h3>
-                    <p className="text-slate-600 dark:text-[#A8A29E] mb-6">
-                      {league.country || 'Vietnam'}
-                    </p>
+                    <p className="text-slate-600 dark:text-[#A8A29E] mb-6">Vietnam</p>
 
                     <div className="grid grid-cols-2 gap-4 pt-6 border-t border-slate-200 dark:border-white/5">
                       <div>
                         <div className="flex items-center gap-2 mb-1">
                           <Users className="w-4 h-4 text-slate-600 dark:text-[#A8A29E]" />
                           <span className="font-mono-data text-xl font-bold text-slate-900 dark:text-foreground">
-                            {league.apiLeagueId === 340 ? (apiTeams.length || '-') : '-'}
+                            {standingsData[league.uniqueTournamentId]?.length || '-'}
                           </span>
                         </div>
                         <p className="text-xs text-slate-600 dark:text-[#A8A29E]">Đội</p>
@@ -140,16 +154,21 @@ export default function LeaguesPage() {
                         <div className="flex items-center gap-2 mb-1">
                           <Calendar className="w-4 h-4 text-slate-600 dark:text-[#A8A29E]" />
                           <span className="font-mono-data text-xl font-bold text-slate-900 dark:text-foreground">
-                            {league.apiLeagueId === 340 ? (matchCount || '-') : '-'}
+                            {(() => {
+                              const rows = standingsData[league.uniqueTournamentId];
+                              if (!rows || rows.length === 0) return '-';
+                              // total matches = sum of all matches played / 2 (each match counted twice)
+                              const total = rows.reduce((sum, r) => sum + r.matches, 0) / 2;
+                              return Math.round(total);
+                            })()}
                           </span>
                         </div>
                         <p className="text-xs text-slate-600 dark:text-[#A8A29E]">Trận đấu</p>
                       </div>
                     </div>
-                  </div>
+                  </Link>
                 </motion.div>
-              );
-            })}
+              ))}
             </div>
           )}
 
@@ -182,7 +201,7 @@ export default function LeaguesPage() {
 
               {/* League Tabs */}
               <div className="flex gap-1 mb-6 border-b border-slate-200 dark:border-white/10">
-                {VIETNAM_LEAGUES.map((league, index) => (
+                {STANDINGS_LEAGUES.map((league, index) => (
                   <button
                     key={league.tournamentId}
                     onClick={() => setActiveStandingsIndex(index)}
@@ -328,87 +347,6 @@ export default function LeaguesPage() {
                 </motion.div>
               )}
             </div>
-          </motion.div>
-
-          {/* Teams Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="font-display font-bold text-2xl text-foreground">
-                V.League 1 Teams {apiTeams.length > 0 && `(${apiTeams.length})`}
-              </h2>
-            </div>
-            
-            {isLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="w-8 h-8 border-4 border-[#FF4444] border-t-transparent rounded-full animate-spin"></div>
-              </div>
-            ) : (apiTeams && apiTeams.length > 0) ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                {apiTeams.map((team, index) => (
-                  <motion.div
-                    key={team.teamId}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    whileInView={{ opacity: 1, scale: 1 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.3, delay: index * 0.05 }}
-                  >
-                    <Link to={`/teams/${team.teamId}`}>
-                      <div className="glass-card rounded-xl p-4 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors cursor-pointer">
-                        <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-white/5 flex items-center justify-center mb-3 overflow-hidden">
-                          {team.logoUrl ? (
-                            <img src={team.logoUrl} alt={team.teamName} className="w-10 h-10 object-contain" />
-                          ) : (
-                            <span className="font-display font-bold text-lg text-foreground">
-                              {team.teamName.charAt(0)}
-                            </span>
-                          )}
-                        </div>
-                        <h4 className="font-body font-medium text-sm text-foreground truncate" title={team.teamName}>
-                          {team.teamName}
-                        </h4>
-                        <p className="text-xs text-slate-600 dark:text-[#A8A29E]">
-                          V.League 1
-                        </p>
-                        {team.founded && (
-                          <p className="text-xs text-slate-500 dark:text-[#A8A29E] mt-1">
-                            Thành lập: {team.founded}
-                          </p>
-                        )}
-                      </div>
-                    </Link>
-                  </motion.div>
-                ))}
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                {teams && teams.map((team, index) => (
-                  <motion.div
-                    key={team.id}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    whileInView={{ opacity: 1, scale: 1 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.3, delay: index * 0.05 }}
-                  >
-                    <div className="glass-card rounded-xl p-4 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors cursor-pointer">
-                      <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-white/5 flex items-center justify-center mb-3">
-                        <span className="font-display font-bold text-lg text-foreground">
-                          {team.name.charAt(0)}
-                        </span>
-                      </div>
-                      <h4 className="font-body font-medium text-sm text-foreground truncate">
-                        {team.name}
-                      </h4>
-                      <p className="text-xs text-slate-600 dark:text-[#A8A29E]">{team.league}</p>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            )}
           </motion.div>
         </div>
       </div>
