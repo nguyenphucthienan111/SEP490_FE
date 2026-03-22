@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { cn } from '@/lib/utils';
 import React from 'react';
-import { leagueService, Team, SofascoreStandingRow, SofascoreLeague } from '@/services/leagueService';
+import { leagueService, SofascoreStandingRow, SofascoreLeague } from '@/services/leagueService';
 import { FormCell } from '@/components/standings/FormCell';
 import { toast } from 'sonner';
 
@@ -16,7 +16,6 @@ const STANDINGS_LEAGUES = [
 
 export default function LeaguesPage() {
   const [sofascoreLeagues, setSofascoreLeagues] = React.useState<SofascoreLeague[]>([]);
-  const [apiTeams, setApiTeams] = React.useState<Team[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
 
   // Standings state
@@ -64,15 +63,7 @@ export default function LeaguesPage() {
       });
       setStandingsData(newStandings);
 
-      // Load V-League 1 teams from our API (leagueId=1)
-      try {
-        const teams = await leagueService.getTeams(1);
-        setApiTeams(teams);
-      } catch {
-        // teams section will show empty state
-      }
-    } catch (error) {
-      console.error('Failed to load leagues:', error);
+    } catch {
       toast.error('Không thể tải dữ liệu');
     } finally {
       setIsLoading(false);

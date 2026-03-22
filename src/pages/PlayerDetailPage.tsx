@@ -75,7 +75,10 @@ export default function PlayerDetailPage() {
           
           for (const team of teams) {
             const teamPlayers = await leagueService.getPlayers(team.teamId);
-            const player = teamPlayers.find(p => p.playerId.toString() === playerId);
+            const player = teamPlayers.find(p => 
+              p.playerId.toString() === playerId || 
+              p.apiPlayerId.toString() === playerId
+            );
             
             if (player) {
               foundPlayer = player;
