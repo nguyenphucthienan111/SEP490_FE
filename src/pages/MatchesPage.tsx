@@ -1,29 +1,29 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, MapPin, Radio, Filter, RefreshCw } from 'lucide-react';
+import { Calendar, MapPin, Radio, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { matches, leagues } from '@/data/mockData';
+import { Match as MockMatch } from '@/types';
 import { cn } from '@/lib/utils';
-import { leagueService, ApiMatch, Team } from '@/services/leagueService';
+import { Match as ApiMatch, leagueService } from '@/services/leagueService';
+import { toast } from 'sonner';
 
-function getMatchStatus(status: string): 'live' | 'completed' | 'scheduled' {
-  const s = status.toLowerCase();
-  if (s.includes('live') || s.includes('progress') || s.includes('halftime')) return 'live';
-  if (s.includes('finished') || s.includes('completed') || s.includes('ft')) return 'completed';
-  return 'scheduled';
-}
+function MatchCard({ match, index, isApiMatch }: { match: MockMatch | ApiMatch; index: number; isApiMatch: boolean }) {
+  const isLive = isApiMatch ? (match as ApiMatch).status === 'Match Finished - After Penalties' || (match as ApiMatch).status.includes('Halftime') : (match as MockMatch).status === 'live';
+  const isCompleted = isApiMatch ? (match as ApiMatch).status === 'Match Finished' : (match as MockMatch).status === 'completed';
+  const isScheduled = isApiMatch ? (match as ApiMatch).status === 'Not Started' : (match as MockMatch).status === 'scheduled';
 
-function MatchCard({ match, teams, index }: { match: ApiMatch; teams: Team[]; index: number }) {
-  const status = getMatchStatus(match.status);
-  const isLive = status === 'live';
-  const isCompleted = status === 'completed';
-  const homeTeam = teams.find(t => t.teamId === match.homeTeamId);
-  const awayTeam = teams.find(t => t.teamId === match.awayTeamId);
-  const homeName = homeTeam?.teamName ?? `Đội ${match.homeTeamId}`;
-  const awayName = awayTeam?.teamName ?? `Đội ${match.awayTeamId}`;
-
-  const matchDate = new Date(match.matchDate);
-  const dateStr = matchDate.toLocaleDateString('vi-VN', { weekday: 'short', day: 'numeric', month: 'short' });
+  const homeTeamName = isApiMatch ? (match as ApiMatch).homeTeam.teamName : (match as MockMatch).homeTeam.name;
+  const awayTeamName = isApiMatch ? (match as ApiMatch).awayTeam.teamName : (match as MockMatch).awayTeam.name;
+  const homeTeamLogo = isApiMatch ? (match as ApiMatch).homeTeam.logoUrl : null;
+  const awayTeamLogo = isApiMatch ? (match as ApiMatch).awayTeam.logoUrl : null;
+  const homeGoals = isApiMatch ? (match as ApiMatch).homeGoals : (match as MockMatch).homeScore;
+  const awayGoals = isApiMatch ? (match as ApiMatch).awayGoals : (match as MockMatch).awayScore;
+  const matchDate = isApiMatch ? (match as ApiMatch).matchDate : (match as MockMatch).date;
+  const venue = isApiMatch ? (match as ApiMatch).venue : (match as MockMatch).venue;
+  const matchId = isApiMatch ? (match as ApiMatch).matchId : (match as MockMatch).id;
+  const round = isApiMatch ? (match as ApiMatch).round : null;
 
   return (
     <motion.div
@@ -31,17 +31,28 @@ function MatchCard({ match, teams, index }: { match: ApiMatch; teams: Team[]; in
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: index * 0.05 }}
     >
-      <Link to={`/matches/${match.matchId}`}>
+      <Link to={`/matches/${matchId}`}>
         <div className={cn(
           "group glass-card rounded-2xl p-6 hover:translate-y-[-4px] hover:shadow-xl transition-all duration-300 cursor-pointer border border-transparent",
           isLive ? "border-[#FF4444]/30 hover:border-[#FF4444]/50" : "hover:border-[#00D9FF]/20"
         )}>
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-600 dark:text-[#A8A29E] font-label uppercase tracking-wider">
-                {match.round}
-              </span>
+            <div className="flex items-center gap-3">
+              {!isApiMatch && (
+                <>
+                  <span className="text-xs text-slate-600 dark:text-[#A8A29E] font-label uppercase tracking-wider">
+                    {(match as MockMatch).league}
+                  </span>
+                  <span className="text-xs text-slate-600 dark:text-[#A8A29E]">•</span>
+                  <span className="text-xs text-slate-600 dark:text-[#A8A29E]">{(match as MockMatch).season}</span>
+                </>
+              )}
+              {isApiMatch && round && (
+                <span className="text-xs text-slate-600 dark:text-[#A8A29E] font-label uppercase tracking-wider">
+                  {round}
+                </span>
+              )}
             </div>
             {isLive && (
               <span className="flex items-center gap-1.5 px-3 py-1.5 bg-[#FF4444]/20 rounded-full">
@@ -54,7 +65,7 @@ function MatchCard({ match, teams, index }: { match: ApiMatch; teams: Team[]; in
                 Kết thúc
               </span>
             )}
-            {status === 'scheduled' && (
+            {isScheduled && (
               <span className="px-3 py-1.5 bg-blue-100 dark:bg-[#00D9FF]/10 rounded-full text-xs font-label text-[#00D9FF]">
                 Sắp diễn ra
               </span>
@@ -65,44 +76,58 @@ function MatchCard({ match, teams, index }: { match: ApiMatch; teams: Team[]; in
           <div className="flex items-center justify-between gap-6 mb-6">
             {/* Home */}
             <div className="flex-1">
-              <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-white/5 flex items-center justify-center mb-3 overflow-hidden">
-                {homeTeam?.logoUrl ? (
-                  <img src={homeTeam.logoUrl} alt={homeName} className="w-12 h-12 object-contain" />
+              <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-white/5 flex items-center justify-center mb-3 overflow-hidden border border-slate-200 dark:border-white/10">
+                {homeTeamLogo ? (
+                  <img src={homeTeamLogo} alt={homeTeamName} className="w-12 h-12 object-contain" />
                 ) : (
-                  <span className="font-display font-bold text-xl text-foreground">{homeName.charAt(0)}</span>
+                  <span className="font-display font-bold text-xl text-foreground">
+                    {homeTeamName.charAt(0)}
+                  </span>
                 )}
               </div>
-              <h4 className="font-body font-semibold text-foreground text-sm">{homeName}</h4>
-              <span className="text-xs text-slate-600 dark:text-[#A8A29E]">Chủ nhà</span>
+              <h4 className="font-body font-semibold text-foreground text-sm">
+                {homeTeamName}
+              </h4>
+              <span className="text-xs text-slate-600 dark:text-[#A8A29E]">Home</span>
             </div>
 
             {/* Score */}
             <div className="flex flex-col items-center">
               {(isLive || isCompleted) ? (
                 <div className="flex items-center gap-4">
-                  <span className="font-mono-data text-4xl font-bold text-foreground">{match.homeGoals ?? 0}</span>
+                  <span className="font-mono-data text-4xl font-bold text-foreground">
+                    {homeGoals}
+                  </span>
                   <span className="text-slate-600 dark:text-[#A8A29E] text-2xl">-</span>
-                  <span className="font-mono-data text-4xl font-bold text-foreground">{match.awayGoals ?? 0}</span>
+                  <span className="font-mono-data text-4xl font-bold text-foreground">
+                    {awayGoals}
+                  </span>
                 </div>
               ) : (
                 <div className="text-center">
-                  <p className="font-mono-data text-xl text-[#00D9FF] mb-1">{match.kickOffTime}</p>
-                  <p className="text-xs text-slate-600 dark:text-[#A8A29E]">Giờ đá</p>
+                  <p className="font-mono-data text-xl text-[#00D9FF] mb-1">
+                    {new Date(matchDate).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                  <p className="text-xs text-slate-600 dark:text-[#A8A29E]">Kick-off</p>
                 </div>
               )}
             </div>
 
             {/* Away */}
             <div className="flex-1 text-right">
-              <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-white/5 flex items-center justify-center mb-3 ml-auto overflow-hidden">
-                {awayTeam?.logoUrl ? (
-                  <img src={awayTeam.logoUrl} alt={awayName} className="w-12 h-12 object-contain" />
+              <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-white/5 flex items-center justify-center mb-3 ml-auto overflow-hidden border border-slate-200 dark:border-white/10">
+                {awayTeamLogo ? (
+                  <img src={awayTeamLogo} alt={awayTeamName} className="w-12 h-12 object-contain" />
                 ) : (
-                  <span className="font-display font-bold text-xl text-foreground">{awayName.charAt(0)}</span>
+                  <span className="font-display font-bold text-xl text-foreground">
+                    {awayTeamName.charAt(0)}
+                  </span>
                 )}
               </div>
-              <h4 className="font-body font-semibold text-foreground text-sm">{awayName}</h4>
-              <span className="text-xs text-slate-600 dark:text-[#A8A29E]">Khách</span>
+              <h4 className="font-body font-semibold text-foreground text-sm">
+                {awayTeamName}
+              </h4>
+              <span className="text-xs text-slate-600 dark:text-[#A8A29E]">Away</span>
             </div>
           </div>
 
@@ -110,7 +135,11 @@ function MatchCard({ match, teams, index }: { match: ApiMatch; teams: Team[]; in
           <div className="flex items-center justify-center gap-6 pt-4 border-t border-slate-200 dark:border-white/5 text-sm text-slate-600 dark:text-[#A8A29E]">
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4" />
-              <span>{dateStr}</span>
+              <span>{new Date(matchDate).toLocaleDateString('vi-VN', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <MapPin className="w-4 h-4" />
+              <span>{venue}</span>
             </div>
             {match.venue && (
               <div className="flex items-center gap-2">
@@ -131,65 +160,57 @@ export default function MatchesPage() {
   const [loading, setLoading] = useState(true);
   const [selectedRound, setSelectedRound] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [apiMatches, setApiMatches] = useState<ApiMatch[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedSeason, setSelectedSeason] = useState<number>(13); // Default to season 13 (2024)
 
   useEffect(() => {
-    loadData();
-  }, []);
+    loadMatches();
+  }, [selectedSeason]);
 
-  const loadData = async () => {
-    setLoading(true);
-    // Load teams
+  const loadMatches = async () => {
+    setIsLoading(true);
     try {
-      const cached = localStorage.getItem('teams');
-      if (cached) setTeams(JSON.parse(cached));
-    } catch (e) {}
-
-    // Load matches
-    try {
-      const cached = localStorage.getItem('matches');
-      if (cached) {
-        setMatches(JSON.parse(cached));
-        setLoading(false);
-        return;
-      }
-    } catch (e) {}
-
-    try {
-      const data = await leagueService.getMatches();
-      localStorage.setItem('matches', JSON.stringify(data));
-      setMatches(data);
-    } catch (e) {}
-    setLoading(false);
+      // Fetch matches for V.League 1 (leagueId: 1)
+      const fetchedMatches = await leagueService.getMatches(1, selectedSeason);
+      setApiMatches(fetchedMatches);
+    } catch (error) {
+      console.error('Failed to load matches:', error);
+      toast.error('Không thể tải danh sách trận đấu');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleRefresh = async () => {
-    setLoading(true);
-    try {
-      const data = await leagueService.getMatches();
-      localStorage.setItem('matches', JSON.stringify(data));
-      setMatches(data);
-    } catch (e) {}
-    setLoading(false);
-  };
+  const displayMatches = apiMatches.length > 0 ? apiMatches : matches;
+  const isApiData = apiMatches.length > 0;
 
-  const rounds = ['all', ...Array.from(new Set(matches.map(m => m.round))).sort((a, b) => {
-    // "Final" luôn xuống cuối
-    if (a === 'Final') return 1;
-    if (b === 'Final') return -1;
-    // Lấy số trong tên vòng để sort
-    const numA = parseInt(a.replace(/\D/g, '')) || 0;
-    const numB = parseInt(b.replace(/\D/g, '')) || 0;
-    return numA - numB;
-  })];
-
-  const filtered = matches.filter(m => {
-    const roundOk = selectedRound === 'all' || m.round === selectedRound;
-    const statusOk = selectedStatus === 'all' || getMatchStatus(m.status) === selectedStatus;
-    return roundOk && statusOk;
+  const filteredMatches = displayMatches.filter((match) => {
+    if (isApiData) {
+      const apiMatch = match as ApiMatch;
+      const matchesStatus = selectedStatus === 'all' || 
+        (selectedStatus === 'completed' && apiMatch.status === 'Match Finished') ||
+        (selectedStatus === 'scheduled' && apiMatch.status === 'Not Started') ||
+        (selectedStatus === 'live' && apiMatch.status.includes('Halftime'));
+      return matchesStatus;
+    } else {
+      const mockMatch = match as MockMatch;
+      const matchesLeague = selectedLeague === 'all' || mockMatch.league === selectedLeague;
+      const matchesStatus = selectedStatus === 'all' || mockMatch.status === selectedStatus;
+      return matchesLeague && matchesStatus;
+    }
   });
 
-  const liveMatches = filtered.filter(m => getMatchStatus(m.status) === 'live');
-  const otherMatches = filtered.filter(m => getMatchStatus(m.status) !== 'live');
+  const liveMatches = filteredMatches.filter(m => 
+    isApiData 
+      ? (m as ApiMatch).status.includes('Halftime') || (m as ApiMatch).status === 'Match Finished - After Penalties'
+      : (m as MockMatch).status === 'live'
+  );
+  const otherMatches = filteredMatches.filter(m => 
+    isApiData 
+      ? !(m as ApiMatch).status.includes('Halftime') && (m as ApiMatch).status !== 'Match Finished - After Penalties'
+      : (m as MockMatch).status !== 'live'
+  );
 
   return (
     <MainLayout>
@@ -227,24 +248,9 @@ export default function MatchesPage() {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="glass-card rounded-2xl p-4 sm:p-6 mb-8"
           >
-            <div className="flex flex-col sm:flex-row gap-4 flex-wrap">
-              {/* Round filter */}
-              <div className="flex items-center gap-2 flex-wrap">
-                <Filter className="w-4 h-4 text-slate-500 dark:text-[#A8A29E]" />
-                <select
-                  value={selectedRound}
-                  onChange={e => setSelectedRound(e.target.value)}
-                  className="px-3 py-2 rounded-lg bg-white dark:bg-card border border-slate-200 dark:border-white/10 text-slate-900 dark:text-foreground text-sm"
-                >
-                  <option value="all">Tất cả vòng</option>
-                  {rounds.filter(r => r !== 'all').map(r => (
-                    <option key={r} value={r}>{r}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Status filter */}
-              <div className="flex gap-2 sm:ml-auto flex-wrap">
+            <div className="flex flex-col sm:flex-row gap-4">
+              {/* Status Filter */}
+              <div className="flex gap-2">
                 {[
                   { value: 'all', label: 'Tất cả' },
                   { value: 'live', label: 'Trực tiếp' },
@@ -268,31 +274,37 @@ export default function MatchesPage() {
             </div>
           </motion.div>
 
-          {loading ? (
+          {isLoading ? (
             <div className="flex items-center justify-center py-20">
-              <RefreshCw className="w-8 h-8 animate-spin text-slate-400 dark:text-slate-500" />
+              <div className="text-center">
+                <Loader2 className="w-16 h-16 text-[#00D9FF] animate-spin mx-auto mb-4" />
+                <p className="text-slate-600 dark:text-[#A8A29E]">Đang tải trận đấu...</p>
+              </div>
             </div>
           ) : (
             <>
-              {/* Live */}
-              {liveMatches.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.2 }}
-                  className="mb-12"
-                >
-                  <div className="flex items-center gap-2 mb-6">
-                    <Radio className="w-5 h-5 text-[#FF4444] animate-pulse" />
-                    <h2 className="font-display font-bold text-xl text-foreground">Đang diễn ra</h2>
-                  </div>
-                  <div className="grid md:grid-cols-2 gap-6">
-                    {liveMatches.map((m, i) => (
-                      <MatchCard key={m.matchId} match={m} teams={teams} index={i} />
-                    ))}
-                  </div>
-                </motion.div>
-              )}
+
+          {/* Live Matches */}
+          {liveMatches.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="mb-12"
+            >
+              <div className="flex items-center gap-2 mb-6">
+                <Radio className="w-5 h-5 text-[#FF4444] animate-pulse" />
+                <h2 className="font-display font-bold text-xl text-foreground">
+                  Live Now
+                </h2>
+              </div>
+              <div className="grid md:grid-cols-2 gap-6">
+                {liveMatches.map((match, index) => (
+                  <MatchCard key={isApiData ? (match as ApiMatch).matchId : (match as MockMatch).id} match={match} index={index} isApiMatch={isApiData} />
+                ))}
+              </div>
+            </motion.div>
+          )}
 
               {/* Others */}
               {otherMatches.length > 0 && (
@@ -309,21 +321,31 @@ export default function MatchesPage() {
                 </>
               )}
 
-              {/* Empty */}
-              {filtered.length === 0 && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="text-center py-20"
-                >
-                  <div className="w-20 h-20 rounded-2xl bg-slate-100 dark:bg-white/5 flex items-center justify-center mx-auto mb-6">
-                    <Calendar className="w-8 h-8 text-slate-600 dark:text-[#A8A29E]" />
-                  </div>
-                  <h3 className="font-display font-bold text-xl text-foreground mb-2">Không có trận đấu</h3>
-                  <p className="text-slate-600 dark:text-[#A8A29E]">Thử thay đổi bộ lọc.</p>
-                </motion.div>
-              )}
-            </>
+          <div className="grid md:grid-cols-2 gap-6">
+            {otherMatches.map((match, index) => (
+              <MatchCard key={isApiData ? (match as ApiMatch).matchId : (match as MockMatch).id} match={match} index={index} isApiMatch={isApiData} />
+            ))}
+          </div>
+          </>
+          )}
+
+          {/* Empty State */}
+          {!isLoading && filteredMatches.length === 0 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center py-20"
+            >
+              <div className="w-20 h-20 rounded-2xl bg-slate-100 dark:bg-white/5 flex items-center justify-center mx-auto mb-6">
+                <Calendar className="w-8 h-8 text-slate-600 dark:text-[#A8A29E]" />
+              </div>
+              <h3 className="font-display font-bold text-xl text-foreground mb-2">
+                No Matches Found
+              </h3>
+              <p className="text-slate-600 dark:text-[#A8A29E]">
+                Try adjusting your filters.
+              </p>
+            </motion.div>
           )}
         </div>
       </div>

@@ -6,7 +6,7 @@ import { getStadiumById, matches, teams } from '@/data/mockData';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import React from 'react';
-import { Stadium, Team, leagueService } from '@/services/leagueService';
+import { Stadium, League, leagueService } from '@/services/leagueService';
 
 export default function StadiumDetailPage() {
   const { stadiumId } = useParams<{ stadiumId: string }>();
@@ -34,47 +34,53 @@ export default function StadiumDetailPage() {
       setFromTeamId(state.fromTeamId);
     }
 
-    if (!stadiumId) {
-      setIsLoading(false);
-      return;
-    }
+    loadStadiumData();
+  }, [stadiumId]);
 
-    const loadStadium = async () => {
-      // 1. Thử tìm trong teams cache (team.stadium)
-      try {
-        const cachedTeams = localStorage.getItem('teams');
-        if (cachedTeams) {
-          const allTeams: Team[] = JSON.parse(cachedTeams);
-          const teamsAtStadium = allTeams.filter(t => t.stadiumId?.toString() === stadiumId);
-          if (teamsAtStadium.length > 0) {
-            setHomeTeamsFromApi(teamsAtStadium);
-            if (!state?.fromTeamId) {
-              setFromTeamId(teamsAtStadium[0].teamId.toString());
+  const loadStadiumData = async () => {
+    if (!stadiumId) return;
+    
+    setIsLoading(true);
+    try {
+      // Fetch all leagues
+      const leagues = await leagueService.getLeagues();
+      const teamsWithThisStadium: any[] = [];
+      let foundStadium: Stadium | null = null;
+      
+      // Find stadium and all teams using it
+      for (const league of leagues) {
+        try {
+          const teams = await leagueService.getTeams(league.leagueId);
+          
+          for (const team of teams) {
+            if (team.stadium && team.stadium.stadiumId.toString() === stadiumId) {
+              if (!foundStadium) {
+                foundStadium = team.stadium;
+              }
+              teamsWithThisStadium.push(team);
+              
+              // If we don't have fromTeamId from state, use this team
+              const state = location.state as { fromTeamId?: string } | undefined;
+              if (!state?.fromTeamId && !fromTeamId) {
+                setFromTeamId(team.teamId.toString());
+              }
             }
           }
-          // Tìm stadium từ team.stadium nếu có
-          const teamWithStadium = allTeams.find(t => t.stadium && t.stadiumId?.toString() === stadiumId);
-          if (teamWithStadium?.stadium) {
-            setApiStadium(teamWithStadium.stadium);
-            setIsLoading(false);
-            return;
-          }
+        } catch (error) {
+          console.error(`Failed to fetch teams for league ${league.leagueId}:`, error);
         }
-      } catch (e) {}
-
-      // 2. Gọi API GET /api/Football/stadiums/{id}
-      try {
-        const stadium = await leagueService.getStadium(parseInt(stadiumId));
-        if (stadium) {
-          setApiStadium(stadium);
-        }
-      } catch (e) {}
-
+      }
+      
+      if (foundStadium) {
+        setApiStadium(foundStadium);
+      }
+      setHomeTeamsFromApi(teamsWithThisStadium);
+    } catch (error) {
+      console.error('Failed to load stadium data:', error);
+    } finally {
       setIsLoading(false);
-    };
-
-    loadStadium();
-  }, [stadiumId]);
+    }
+  };
 
   const stadium = apiStadium || mockStadium;
   const stadiumId_display = apiStadium ? apiStadium.stadiumId : mockStadium?.id;

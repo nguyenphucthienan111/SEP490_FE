@@ -1,23 +1,18 @@
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, MapPin, Users, Trophy, Calendar, TrendingUp, Building2, User, Loader2, ArrowRight } from 'lucide-react';
+import { ArrowLeft, MapPin, Users, Trophy, Calendar, TrendingUp, User, Loader2 } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { getTeamById, players, matches } from '@/data/mockData';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import React from 'react';
-import { Team, League, Stadium, Player, Transfer, TeamStatistic, leagueService } from '@/services/leagueService';
+import { Team, PlayerFromAPI, leagueService } from '@/services/leagueService';
 import { toast } from 'sonner';
 
 export default function TeamDetailPage() {
   const { teamId } = useParams<{ teamId: string }>();
   const [apiTeam, setApiTeam] = React.useState<Team | null>(null);
-  const [apiPlayers, setApiPlayers] = React.useState<Player[]>([]);
-  const [transfers, setTransfers] = React.useState<Transfer[]>([]);
-  const [showAllTransfers, setShowAllTransfers] = React.useState(false);
-  const [teamStat, setTeamStat] = React.useState<TeamStatistic | null>(null);
-  const [selectedSeason, setSelectedSeason] = React.useState<number>(2024);
-  const [isSyncing, setIsSyncing] = React.useState(false);
+  const [apiPlayers, setApiPlayers] = React.useState<PlayerFromAPI[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const team = getTeamById(teamId || '');
 
@@ -25,90 +20,49 @@ export default function TeamDetailPage() {
     // Scroll to top when page loads
     window.scrollTo(0, 0);
     
-    setIsLoading(true);
-    
-    // Load team from 'teams' cache
-    if (teamId) {
-      try {
-        const cachedTeams = localStorage.getItem('teams');
-        if (cachedTeams) {
-          const teams: Team[] = JSON.parse(cachedTeams);
-          const foundTeam = teams.find(t => t.teamId.toString() === teamId);
-          if (foundTeam) setApiTeam(foundTeam);
-        }
-      } catch (e) {}
-    }
-
-    // Load players from localStorage — filter by player.teamId directly
-    if (teamId) {
-      try {
-        const cachedPlayers = localStorage.getItem('players');
-        if (cachedPlayers) {
-          const allPlayers: Player[] = JSON.parse(cachedPlayers);
-          const teamPlayers = allPlayers.filter(p => p.teamId?.toString() === teamId);
-          setApiPlayers(teamPlayers);
-        }
-      } catch (e) {}
-    }
-    
-    // Load transfers for this team
-    if (teamId) {
-      const loadTransfers = async () => {
-        try {
-          // Always fetch fresh from API (transfers data is small)
-          const allTransfers = await leagueService.getTransfers();
-          localStorage.setItem('transfers', JSON.stringify(allTransfers));
-          const tid = Number(teamId);
-          setTransfers(allTransfers.filter(t => t.fromTeamId === tid || t.toTeamId === tid));
-        } catch (e) {
-          // Fallback to cache if API fails
-          try {
-            const cached = localStorage.getItem('transfers');
-            if (cached) {
-              const allTransfers: Transfer[] = JSON.parse(cached);
-              const tid = Number(teamId);
-              setTransfers(allTransfers.filter(t => t.fromTeamId === tid || t.toTeamId === tid));
-            }
-          } catch (e2) {}
-        }
-      };
-      loadTransfers();
-    }
-
-    // Load team statistics
-    if (teamId) {
-      const loadStats = async () => {
-        try {
-          let allStats: TeamStatistic[] = [];
-          const cached = localStorage.getItem('team-statistics');
-          if (cached) {
-            allStats = JSON.parse(cached);
-          } else {
-            allStats = await leagueService.getTeamStatistics();
-            localStorage.setItem('team-statistics', JSON.stringify(allStats));
-          }
-          const found = allStats.find(s => s.teamId === Number(teamId));
-          if (found) setTeamStat(found);
-        } catch (e) {}
-      };
-      loadStats();
-    }
-
-    setIsLoading(false);
+    loadTeamData();
   }, [teamId]);
 
-  const handleSyncPlayers = async () => {
-    setIsSyncing(true);
+  const loadTeamData = async () => {
+    if (!teamId) return;
+    
+    setIsLoading(true);
     try {
-      const players = await leagueService.getPlayers();
-      localStorage.setItem('players', JSON.stringify(players));
-      const teamPlayers = players.filter(p => p.teamId?.toString() === teamId);
-      setApiPlayers(teamPlayers);
-      toast.success(`Đã tải ${teamPlayers.length} cầu thủ`);
+      // Fetch all leagues
+      const leagues = await leagueService.getLeagues();
+      
+      // Try to find team in each league
+      for (const league of leagues) {
+        try {
+          const teams = await leagueService.getTeams(league.leagueId);
+          const foundTeam = teams.find(t => t.teamId.toString() === teamId);
+          
+          if (foundTeam) {
+            setApiTeam(foundTeam);
+            
+            // Fetch players for this team
+            try {
+              const players = await leagueService.getPlayers(foundTeam.teamId);
+              setApiPlayers(players);
+            } catch (error) {
+              console.error('Failed to fetch players:', error);
+            }
+            
+            return; // Exit early when team is found
+          }
+        } catch (error) {
+          console.error(`Failed to fetch teams for league ${league.leagueId}:`, error);
+          // Continue to next league
+        }
+      }
+      
+      // If we get here, team was not found
+      console.warn(`Team with ID ${teamId} not found in any league`);
     } catch (error) {
-      toast.error('Không thể tải cầu thủ');
+      console.error('Failed to load team data:', error);
+      toast.error('Không thể tải thông tin đội bóng');
     } finally {
-      setIsSyncing(false);
+      setIsLoading(false);
     }
   };
 
@@ -462,82 +416,63 @@ export default function TeamDetailPage() {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="glass-card rounded-2xl p-6 sm:p-8 mb-8"
             >
-              <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
+              <div className="flex items-center justify-between mb-6">
                 <h3 className="font-display font-bold text-xl text-slate-900 dark:text-foreground">
                   Đội hình ({apiPlayers.length})
                 </h3>
-                <div className="flex items-center gap-3">
-                  <select
-                    value={selectedSeason}
-                    onChange={(e) => setSelectedSeason(Number(e.target.value))}
-                    className="px-4 py-2 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-300 dark:border-white/10 text-slate-900 dark:text-foreground font-label text-sm"
-                  >
-                    <option value={2022}>2022</option>
-                    <option value={2023}>2023</option>
-                    <option value={2024}>2024</option>
-                    <option value={2025}>2025</option>
-                  </select>
-                  <Button
-                    onClick={handleSyncPlayers}
-                    disabled={isSyncing}
-                    className="bg-[#00D9FF] hover:bg-[#00E8FF] text-slate-900 font-label font-semibold"
-                  >
-                    {isSyncing ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Đang đồng bộ...
-                      </>
-                    ) : (
-                      'Đồng bộ cầu thủ'
-                    )}
-                  </Button>
-                </div>
               </div>
 
               {apiPlayers.length > 0 ? (
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {apiPlayers.map((player) => (
-                    <Link
-                      key={player.playerId}
-                      to={`/players/${player.playerId}`}
-                      state={{ fromTeamId: teamId }}
-                      className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors group"
-                    >
-                      <div className="w-14 h-14 rounded-xl bg-slate-200 dark:bg-white/5 flex items-center justify-center border border-slate-300 dark:border-white/10 overflow-hidden">
-                        {player.photoUrl ? (
-                          <img src={player.photoUrl} alt={player.fullName} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
-                        ) : (
-                          <User className="w-8 h-8 text-slate-400 dark:text-[#A8A29E]" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-body font-semibold text-slate-900 dark:text-foreground group-hover:text-[#00D9FF] transition-colors truncate">
-                          {player.fullName}
-                        </h4>
-                        <div className="flex items-center gap-2 mt-1">
-                          {player.position && (
-                            <span className="text-xs text-slate-600 dark:text-[#A8A29E]">
-                              {player.position}
-                            </span>
-                          )}
-                          {player.nationality && (
-                            <span className="text-xs text-slate-500 dark:text-[#A8A29E]">
-                              • {player.nationality}
-                            </span>
+                  {apiPlayers.map((player) => {
+                    return (
+                      <Link
+                        key={player.playerId}
+                        to={`/players/${player.playerId}`}
+                        state={{ fromTeamId: teamId }}
+                        className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors group"
+                      >
+                        <div className="w-14 h-14 rounded-xl bg-slate-200 dark:bg-white/5 flex items-center justify-center border border-slate-300 dark:border-white/10 overflow-hidden">
+                          {player.photoUrl ? (
+                            <img src={player.photoUrl} alt={player.fullName} className="w-full h-full object-cover" />
+                          ) : (
+                            <User className="w-8 h-8 text-slate-400 dark:text-[#A8A29E]" />
                           )}
                         </div>
-                      </div>
-                    </Link>
-                  ))}
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-body font-semibold text-slate-900 dark:text-foreground group-hover:text-[#00D9FF] transition-colors truncate">
+                            {player.fullName}
+                          </h4>
+                          <div className="flex items-center gap-2 mt-1">
+                            {player.nationality && (
+                              <span className="text-xs text-slate-600 dark:text-[#A8A29E]">
+                                {player.nationality}
+                              </span>
+                            )}
+                            {player.position && (
+                              <>
+                                <span className="text-slate-400 dark:text-[#A8A29E]">•</span>
+                                <span className="text-xs text-slate-600 dark:text-[#A8A29E]">
+                                  {player.position}
+                                </span>
+                              </>
+                            )}
+                          </div>
+                          {player.age && (
+                            <div className="flex items-center gap-2 mt-1 text-xs text-slate-600 dark:text-[#A8A29E]">
+                              <span>{player.age} tuổi</span>
+                            </div>
+                          )}
+                        </div>
+                      </Link>
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="text-center py-8">
                   <Users className="w-16 h-16 text-slate-400 dark:text-[#A8A29E] mx-auto mb-3" />
-                  <p className="text-slate-600 dark:text-[#A8A29E] mb-4">
+                  <p className="text-slate-600 dark:text-[#A8A29E]">
                     Chưa có thông tin cầu thủ
-                  </p>
-                  <p className="text-sm text-slate-500 dark:text-[#A8A29E]">
-                    Nhấn "Đồng bộ cầu thủ" để tải dữ liệu
                   </p>
                 </div>
               )}
