@@ -493,7 +493,16 @@ export const leagueService = {
   },
 
   async getSeasons(leagueId: number): Promise<Season[]> {
-    return await apiClient.get<Season[]>(`/api/Football/seasons?leagueId=${leagueId}`);
+    const raw = await apiClient.get<any[]>(`/api/Football/seasons?leagueId=${leagueId}`);
+    if (!Array.isArray(raw)) return [];
+    return raw.map((x) => ({
+      seasonId: x.SeasonId ?? x.seasonId,
+      leagueId: x.LeagueId ?? x.leagueId,
+      year: x.Year ?? x.year,
+      startDate: x.StartDate ?? x.startDate,
+      endDate: x.EndDate ?? x.endDate,
+      current: x.IsCurrent ?? x.IsCurrentSeason ?? x.current ?? false,
+    }));
   },
 
   async getTeams(leagueId: number): Promise<Team[]> {

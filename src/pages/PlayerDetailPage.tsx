@@ -67,6 +67,14 @@ export default function PlayerDetailPage() {
 
       const allStats = await leagueService.getPlayerStatsByPlayerId(Number(playerId));
       setPlayerStats(allStats);
+
+      // Fetch seasons to map seasonId → year for display
+      if (allStats.length > 0 && allStats[0].leagueId) {
+        try {
+          const leagueSeasons = await leagueService.getSeasons(allStats[0].leagueId);
+          setSeasons(leagueSeasons);
+        } catch { /* ignore */ }
+      }
     } catch (error) {
       console.error('Failed to load player data:', error);
       toast.error('Không thể tải thông tin cầu thủ');
