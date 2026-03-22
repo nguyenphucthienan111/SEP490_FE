@@ -3,7 +3,7 @@ import { Trophy, ArrowLeft } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import React from 'react';
-import { leagueService, SofascoreLeague } from '@/services/leagueService';
+import { leagueService, SofascoreLeague, SofascoreTeamMatch } from '@/services/leagueService';
 import {
   Select,
   SelectContent,
@@ -115,8 +115,8 @@ export default function LeagueDetailPage() {
         leagueService.getTournamentLastMatches(tournamentId, seasonId, 1),
       ]);
       const allMatches = [
-        ...(page0.status === 'fulfilled' ? page0.value : []),
-        ...(page1.status === 'fulfilled' ? page1.value : []),
+        ...(page0.status === 'fulfilled' ? (page0.value as unknown as SofascoreTeamMatch[]) : []),
+        ...(page1.status === 'fulfilled' ? (page1.value as unknown as SofascoreTeamMatch[]) : []),
       ];
       const teamMap = new Map<number, TeamCard>();
       allMatches.forEach((m) => {
