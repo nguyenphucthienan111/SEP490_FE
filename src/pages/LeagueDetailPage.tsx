@@ -110,26 +110,34 @@ export default function LeagueDetailPage() {
         position: r.position,
       })));
     } else {
-      const [page0, page1] = await Promise.allSettled([
-        leagueService.getTournamentLastMatches(tournamentId, seasonId, 0),
-        leagueService.getTournamentLastMatches(tournamentId, seasonId, 1),
-      ]);
-      const allMatches = [
-        ...(page0.status === 'fulfilled' ? (page0.value as unknown as SofascoreTeamMatch[]) : []),
-        ...(page1.status === 'fulfilled' ? (page1.value as unknown as SofascoreTeamMatch[]) : []),
-      ];
+      // For cup tournaments: fetch last + next matches to collect all teams
       const teamMap = new Map<number, TeamCard>();
-      allMatches.forEach((m) => {
-        [m.homeTeam, m.awayTeam].forEach((t) => {
-          if (!teamMap.has(t.id)) {
-            teamMap.set(t.id, {
-              id: t.id,
-              name: t.name,
-              logo: `https://api.sofascore.app/api/v1/team/${t.id}/image`,
-            });
-          }
+      const addTeams = (matches: SofascoreTeamMatch[]) => {
+        matches.forEach((m) => {
+          [m.homeTeam, m.awayTeam].forEach((t) => {
+            if (!teamMap.has(t.id)) teamMap.set(t.id, { id: t.id, name: t.name, logo: `https://api.sofascore.app/api/v1/team/${t.id}/image` });
+          });
         });
-      });
+      };
+
+      for (let page = 0; page <= 5; page++) {
+        try {
+          const res = await leagueService.getTournamentLastMatches(tournamentId, seasonId, page);
+          const arr = res.events ?? [];
+          if (arr.length === 0) break;
+          addTeams(arr);
+          if (!res.hasNextPage) break;
+        } catch { break; }
+      }
+      for (let page = 0; page <= 5; page++) {
+        try {
+          const res = await leagueService.getTournamentNextMatches(tournamentId, seasonId, page);
+          const arr = res.events ?? [];
+          if (arr.length === 0) break;
+          addTeams(arr);
+          if (!res.hasNextPage) break;
+        } catch { break; }
+      }
       setTeams(Array.from(teamMap.values()).sort((a, b) => a.name.localeCompare(b.name)));
     }
   }
