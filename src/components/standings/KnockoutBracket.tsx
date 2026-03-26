@@ -131,7 +131,13 @@ export function KnockoutBracket({ tournamentId, seasonId }: Props) {
       leagueService.getTournamentNextMatches(tournamentId, seasonId, 0),
     ]).then(([cupTreesResult, ...matchResults]) => {
       const allMatches: SofascoreTeamMatch[] = [];
-      matchResults.forEach((r) => { if (r.status === "fulfilled") allMatches.push(...(r.value as SofascoreTeamMatch[])); });
+      matchResults.forEach((r) => {
+        if (r.status === "fulfilled") {
+          const val = r.value as any;
+          const arr: SofascoreTeamMatch[] = Array.isArray(val) ? val : (val?.events ?? []);
+          allMatches.push(...arr);
+        }
+      });
       if (cupTreesResult.status === "fulfilled" && cupTreesResult.value) {
         const parsed = parseCupTrees(cupTreesResult.value, allMatches);
         if (parsed.length > 0) { setColumns(parsed); return; }
