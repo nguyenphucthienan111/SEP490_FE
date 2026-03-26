@@ -505,36 +505,12 @@ export const leagueService = {
     }));
   },
 
-  async getTeams(leagueId: number): Promise<Team[]> {
-    return await apiClient.get<Team[]>(`/api/Football/teams?leagueId=${leagueId}`);
+  async getTeams(): Promise<Team[]> {
+    return await apiClient.get<Team[]>('/api/Football/teams');
   },
 
   async getTeamById(teamId: number): Promise<Team> {
-    const raw = await apiClient.get<any>(`/api/Football/teams/${teamId}`);
-    // BE returns PascalCase — normalize to camelCase
-    return {
-      teamId: raw.TeamId ?? raw.teamId,
-      teamName: raw.TeamName ?? raw.teamName,
-      shortName: raw.ShortName ?? raw.shortName ?? null,
-      coachName: raw.CoachName ?? raw.coachName ?? null,
-      coachApiId: raw.CoachApiId ?? raw.coachApiId ?? null,
-      clubId: raw.ClubId ?? raw.clubId,
-      apiTeamId: raw.ApiTeamId ?? raw.apiTeamId,
-      founded: raw.Founded ?? raw.founded ?? null,
-      national: raw.National ?? raw.national ?? false,
-      logoUrl: raw.LogoUrl ?? raw.logoUrl,
-      stadiumId: raw.StadiumId ?? raw.stadiumId,
-      leagueId: raw.LeagueId ?? raw.leagueId,
-      stadium: (raw.Stadium ?? raw.stadium) ? {
-        stadiumId: (raw.Stadium ?? raw.stadium).StadiumId ?? (raw.Stadium ?? raw.stadium).stadiumId,
-        stadiumName: (raw.Stadium ?? raw.stadium).StadiumName ?? (raw.Stadium ?? raw.stadium).stadiumName,
-        city: (raw.Stadium ?? raw.stadium).City ?? (raw.Stadium ?? raw.stadium).city ?? null,
-        capacity: (raw.Stadium ?? raw.stadium).Capacity ?? (raw.Stadium ?? raw.stadium).capacity,
-        surface: (raw.Stadium ?? raw.stadium).Surface ?? (raw.Stadium ?? raw.stadium).surface ?? null,
-        address: (raw.Stadium ?? raw.stadium).Address ?? (raw.Stadium ?? raw.stadium).address ?? null,
-        imageUrl: (raw.Stadium ?? raw.stadium).ImageUrl ?? (raw.Stadium ?? raw.stadium).imageUrl ?? null,
-      } : undefined,
-    };
+    return await apiClient.get<Team>(`/api/Football/teams/${teamId}`);
   },
 
   async getPlayerById(playerId: number): Promise<PlayerFromAPI> {
@@ -599,7 +575,8 @@ export const leagueService = {
     }));
   },
 
-  async getPlayers(teamId: number): Promise<PlayerFromAPI[]> {    const raw = await apiClient.get<any[]>(`/api/Football/players?teamId=${teamId}`);
+  async getPlayers(teamId: number): Promise<PlayerFromAPI[]> {
+    const raw = await apiClient.get<any[]>(`/api/Football/players?teamId=${teamId}`);
     if (!Array.isArray(raw)) return [];
     return raw.map((p) => ({
       playerId: p.PlayerId ?? p.playerId,

@@ -39,44 +39,52 @@ export default function StadiumDetailPage() {
 
   const loadStadiumData = async () => {
     if (!stadiumId) return;
-    
     setIsLoading(true);
     try {
-      // Fetch all leagues
-      const leagues = await leagueService.getLeagues();
-      const teamsWithThisStadium: any[] = [];
-      let foundStadium: Stadium | null = null;
-      
-      // Find stadium and all teams using it
-      for (const league of leagues) {
-        try {
-          const teams = await leagueService.getTeams(league.leagueId);
-          
-          for (const team of teams) {
-            if (team.stadium && team.stadium.stadiumId.toString() === stadiumId) {
-              if (!foundStadium) {
-                foundStadium = team.stadium;
-              }
-              teamsWithThisStadium.push(team);
-              
-              // If we don't have fromTeamId from state, use this team
-              const state = location.state as { fromTeamId?: string } | undefined;
-              if (!state?.fromTeamId && !fromTeamId) {
-                setFromTeamId(team.teamId.toString());
-              }
-            }
-          }
-        } catch (error) {
-          console.error(`Failed to fetch teams for league ${league.leagueId}:`, error);
+      // Load all teams, find ones with this stadiumId
+      let allTeams: any[] = [];
+      try {
+        const cached = localStorage.getItem('teams');
+        if (cached) {
+          allTeams = JSON.parse(cached);
+        } else {
+          allTeams = await leagueService.getTeams();
+          localStorage.setItem('teams', JSON.stringify(allTeams));
         }
+      } catch (e) {
+        allTeams = await leagueService.getTeams();
       }
-      
-      if (foundStadium) {
-        setApiStadium(foundStadium);
+
+      const teamsWithStadium = allTeams.filter(
+        (t: any) => t.stadiumId?.toString() === stadiumId
+      );
+
+      if (teamsWithStadium.length > 0) {
+        // Fetch one team with stadium detail to get full stadium info
+        try {
+          const teamDetail = await leagueService.getTeamById(teamsWithStadium[0].teamId);
+          if (teamDetail.stadium) setApiStadium(teamDetail.stadium);
+        } catch (e) {
+          // Fallback: try direct stadium endpoint
+          try {
+            const s = await leagueService.getStadium(Number(stadiumId));
+            setApiStadium(s);
+          } catch (e2) {}
+        }
+        setHomeTeamsFromApi(teamsWithStadium);
+        const state = location.state as { fromTeamId?: string } | undefined;
+        if (!state?.fromTeamId) {
+          setFromTeamId(teamsWithStadium[0].teamId.toString());
+        }
+      } else {
+        // No team found, try direct stadium endpoint
+        try {
+          const s = await leagueService.getStadium(Number(stadiumId));
+          setApiStadium(s);
+        } catch (e) {}
       }
-      setHomeTeamsFromApi(teamsWithThisStadium);
     } catch (error) {
-      console.error('Failed to load stadium data:', error);
+      // silent
     } finally {
       setIsLoading(false);
     }

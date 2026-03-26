@@ -360,9 +360,18 @@ export default function TeamDetailPage() {
                     <MapPin className="w-8 h-8 text-[#00D9FF]" />
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-display font-bold text-lg text-slate-900 dark:text-foreground">
+                    <h4 className="font-display font-bold text-lg text-slate-900 dark:text-foreground mb-1">
                       {apiTeam.stadium.stadiumName}
                     </h4>
+                    <div className="flex flex-wrap gap-3 text-sm text-slate-600 dark:text-[#A8A29E]">
+                      {apiTeam.stadium.city && <span>{apiTeam.stadium.city}</span>}
+                      {apiTeam.stadium.capacity && (
+                        <>
+                          <span>•</span>
+                          <span>Sức chứa: {apiTeam.stadium.capacity.toLocaleString('vi-VN')}</span>
+                        </>
+                      )}
+                    </div>
                   </div>
                   <ArrowLeft className="w-5 h-5 text-[#00D9FF] rotate-180 flex-shrink-0" />
                 </Link>

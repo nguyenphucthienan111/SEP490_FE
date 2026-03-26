@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { cn } from '@/lib/utils';
 import React from 'react';
-import { leagueService, SofascoreStandingRow, SofascoreLeague } from '@/services/leagueService';
+import { leagueService, SofascoreStandingRow, SofascoreLeague, Team } from '@/services/leagueService';
 import { FormCell } from '@/components/standings/FormCell';
 import { toast } from 'sonner';
 
@@ -16,6 +16,8 @@ const STANDINGS_LEAGUES = [
 
 export default function LeaguesPage() {
   const [sofascoreLeagues, setSofascoreLeagues] = React.useState<SofascoreLeague[]>([]);
+  const [dbTeams, setDbTeams] = React.useState<Team[]>([]);
+  const dbTeamsRef = React.useRef<Team[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
 
   // Standings state
@@ -45,11 +47,28 @@ export default function LeaguesPage() {
 
   const currentRows = standingsData[activeLeague.tournamentId] ?? [];
 
+  // Map Sofascore team ID → DB teamId
+  const getDbTeamId = (sofascoreId: number): number | undefined =>
+    (dbTeamsRef.current.length ? dbTeamsRef.current : dbTeams).find(t => t.apiTeamId === sofascoreId)?.teamId;
+
   const loadData = async () => {
     setIsLoading(true);
     try {
       const leagues = await leagueService.getVietnameseLeagues();
       setSofascoreLeagues(leagues);
+
+      // Load DB teams for ID mapping — always fresh
+      try {
+        const data = await leagueService.getTeams();
+        localStorage.setItem('teams', JSON.stringify(data));
+        dbTeamsRef.current = data;
+        setDbTeams(data);
+      } catch (e) {
+        try {
+          const cached = localStorage.getItem('teams');
+          if (cached) setDbTeams(JSON.parse(cached));
+        } catch { }
+      }
 
       // Pre-load standings for V-League 1 & 2 to show team counts on cards
       const standingsResults = await Promise.allSettled(
@@ -283,17 +302,27 @@ export default function LeaguesPage() {
                               </td>
                               <td className="py-3 px-3">
                                 <div className="flex items-center gap-2">
-                                  {row.team.logo ? (
-                                    <img src={row.team.logo} alt={row.team.name} className="w-7 h-7 object-contain rounded"
-                                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                                  ) : (
-                                    <div className="w-7 h-7 rounded bg-slate-200 dark:bg-white/10 flex items-center justify-center text-xs font-bold">
-                                      {row.team.name.charAt(0)}
-                                    </div>
-                                  )}
-                                  <span className="font-body font-semibold text-sm text-slate-900 dark:text-foreground">
-                                    {row.team.name}
-                                  </span>
+                                  {(() => {
+                                    const dbId = getDbTeamId(row.team.id);
+                                    const inner = (
+                                      <>
+                                        {row.team.logo ? (
+                                          <img src={row.team.logo} alt={row.team.name} className="w-7 h-7 object-contain rounded"
+                                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                        ) : (
+                                          <div className="w-7 h-7 rounded bg-slate-200 dark:bg-white/10 flex items-center justify-center text-xs font-bold">
+                                            {row.team.name.charAt(0)}
+                                          </div>
+                                        )}
+                                        <span className="font-body font-semibold text-sm text-slate-900 dark:text-foreground hover:text-[#00D9FF] transition-colors">
+                                          {row.team.name}
+                                        </span>
+                                      </>
+                                    );
+                                    return dbId
+                                      ? <Link to={`/teams/${dbId}`} className="flex items-center gap-2">{inner}</Link>
+                                      : <div className="flex items-center gap-2">{inner}</div>;
+                                  })()}
                                 </div>
                               </td>
                               {[row.matches, row.wins, row.draws, row.losses, row.scoresFor, row.scoresAgainst].map((val, i) => (
