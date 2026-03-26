@@ -587,6 +587,10 @@ export const leagueService = {
     return await apiClient.get<PlayerFromAPI[]>(`/api/Football/players?teamId=${teamId}`);
   },
 
+  async getAllPlayers(): Promise<PlayerFromAPI[]> {
+    return await apiClient.get<PlayerFromAPI[]>('/api/Football/players');
+  },
+
   async getPlayerStats(playerId: number, seasonId: number): Promise<PlayerStats[]> {
     return await apiClient.get<PlayerStats[]>(`/api/Football/player-stats?playerId=${playerId}&seasonId=${seasonId}`);
   },
