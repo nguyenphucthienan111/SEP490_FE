@@ -468,6 +468,14 @@ export const leagueService = {
     return Array.isArray(raw) ? raw : [];
   },
 
+  async getTeamNextMatches(teamId: number, page = 0): Promise<SofascoreTeamMatch[]> {
+    const result = await apiClient.get<any>(
+      `/api/Sofascore/team/next-matches?teamId=${teamId}&page=${page}`
+    );
+    const raw = result?.events ?? result?.matches ?? result ?? [];
+    return Array.isArray(raw) ? raw : [];
+  },
+
   async getSofascoreStandings(tournamentId: number, seasonId: number): Promise<SofascoreStandingRow[]> {
     const result = await apiClient.get<any>(
       `/api/Sofascore/standings?tournamentId=${tournamentId}&seasonId=${seasonId}`
@@ -576,27 +584,7 @@ export const leagueService = {
   },
 
   async getPlayers(teamId: number): Promise<PlayerFromAPI[]> {
-    const raw = await apiClient.get<any[]>(`/api/Football/players?teamId=${teamId}`);
-    if (!Array.isArray(raw)) return [];
-    return raw.map((p) => ({
-      playerId: p.PlayerId ?? p.playerId,
-      apiPlayerId: p.ApiPlayerId ?? p.apiPlayerId,
-      firstName: p.FirstName ?? p.firstName,
-      lastName: p.LastName ?? p.lastName,
-      fullName: p.FullName ?? p.fullName,
-      dateOfBirth: p.DateOfBirth ?? p.dateOfBirth,
-      age: p.Age ?? p.age,
-      nationality: p.Nationality ?? p.nationality,
-      birthPlace: p.BirthPlace ?? p.birthPlace ?? null,
-      birthCountry: p.BirthCountry ?? p.birthCountry,
-      heightCm: p.HeightCm ?? p.heightCm ?? null,
-      weightKg: p.WeightKg ?? p.weightKg ?? null,
-      photoUrl: p.PhotoUrl ?? p.photoUrl,
-      isInjured: p.IsInjured ?? p.isInjured ?? false,
-      teamId: p.TeamId ?? p.teamId,
-      position: p.Position ?? p.position,
-      number: p.Number ?? p.number ?? null,
-    }));
+    return await apiClient.get<PlayerFromAPI[]>(`/api/Football/players?teamId=${teamId}`);
   },
 
   async getPlayerStats(playerId: number, seasonId: number): Promise<PlayerStats[]> {
