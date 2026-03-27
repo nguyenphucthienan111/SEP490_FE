@@ -346,9 +346,10 @@ export interface SofascoreStandingRow {
   id: number;
   position: number;
   team: {
-    id: number;
+    id: number;       // Sofascore apiTeamId — used for logos and FormCell
+    dbTeamId?: number; // internal DB teamId — used for navigation
     name: string;
-    logo: string; // built from team.id
+    logo: string;
   };
   matches: number;
   wins: number;
@@ -357,6 +358,7 @@ export interface SofascoreStandingRow {
   scoresFor: number;
   scoresAgainst: number;
   points: number;
+  form?: string;
 }
 
 export interface LineupPlayer {
@@ -478,6 +480,22 @@ export const leagueService = {
     return Array.isArray(raw) ? raw : [];
   },
 
+  async getTeamLastMatchesFromDb(apiTeamId: number, count = 5): Promise<SofascoreTeamMatch[]> {
+    const data = await apiClient.get<any[]>(
+      `/api/SofascoreHybrid/team-last-matches-db?apiTeamId=${apiTeamId}&count=${count}`
+    );
+    if (!Array.isArray(data)) return [];
+    return data.map((x) => ({
+      id: x.apiFixtureId ?? x.matchId,
+      homeTeam: { id: x.homeTeam?.apiTeamId ?? 0, name: x.homeTeam?.teamName ?? '' },
+      awayTeam: { id: x.awayTeam?.apiTeamId ?? 0, name: x.awayTeam?.teamName ?? '' },
+      homeScore: { current: x.homeGoals ?? 0 },
+      awayScore: { current: x.awayGoals ?? 0 },
+      startTimestamp: x.matchDate ? Math.floor(new Date(x.matchDate).getTime() / 1000) : 0,
+      status: { type: x.status ?? 'finished' },
+    }));
+  },
+
   async getTeamLastMatches(teamId: number, page = 0): Promise<SofascoreTeamMatch[]> {
     const result = await apiClient.get<any>(
       `/api/Sofascore/team/last-matches?teamId=${teamId}&page=${page}`
@@ -492,6 +510,38 @@ export const leagueService = {
     );
     const raw = result?.events ?? result?.matches ?? result ?? [];
     return Array.isArray(raw) ? raw : [];
+  },
+
+  async getHybridStandings(tournamentId: number, seasonId: number): Promise<SofascoreStandingRow[]> {
+    const data = await apiClient.get<any[]>(
+      `/api/SofascoreHybrid/standings?tournamentId=${tournamentId}&seasonId=${seasonId}`
+    );
+    if (!Array.isArray(data) || data.length === 0) return [];
+    return data
+      .sort((a, b) => (a.rank ?? a.Rank ?? 99) - (b.rank ?? b.Rank ?? 99))
+      .map((x) => {
+        // Controller returns ApiTeamId (serialized as apiTeamId in camelCase)
+        const apiTeamId = x.apiTeamId ?? x.ApiTeamId ?? 0;
+        const dbTeamId = x.teamId ?? x.TeamId ?? 0;
+        return {
+          id: x.standingId ?? x.StandingId,
+          position: x.rank ?? x.Rank ?? 0,
+          team: {
+            id: apiTeamId,
+            dbTeamId,
+            name: x.teamName ?? x.TeamName ?? '',
+            logo: x.teamLogo ?? x.TeamLogo ?? (apiTeamId > 0 ? `https://api.sofascore.app/api/v1/team/${apiTeamId}/image` : ''),
+          },
+          matches: x.played ?? x.Played ?? 0,
+          wins: x.win ?? x.Win ?? 0,
+          draws: x.draw ?? x.Draw ?? 0,
+          losses: x.loss ?? x.Loss ?? 0,
+          scoresFor: x.goalsFor ?? x.GoalsFor ?? 0,
+          scoresAgainst: x.goalsAgainst ?? x.GoalsAgainst ?? 0,
+          points: x.points ?? x.Points ?? 0,
+          form: x.form ?? x.Form ?? '',
+        };
+      });
   },
 
   async getSofascoreStandings(tournamentId: number, seasonId: number): Promise<SofascoreStandingRow[]> {

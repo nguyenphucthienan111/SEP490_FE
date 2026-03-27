@@ -29,8 +29,11 @@ export function StandingsTable({ league }: StandingsTableProps) {
     setLoading(true);
     setError(null);
     leagueService
-      .getSofascoreStandings(league.tournamentId, league.seasonId)
-      .then(setRows)
+      .getHybridStandings(league.tournamentId, league.seasonId)
+      .then((rows) => {
+        if (rows.length > 0) { setRows(rows); return; }
+        return leagueService.getSofascoreStandings(league.tournamentId, league.seasonId).then(setRows);
+      })
       .catch(() => setError('Không thể tải bảng xếp hạng'))
       .finally(() => setLoading(false));
   }, [league.tournamentId, league.seasonId]);

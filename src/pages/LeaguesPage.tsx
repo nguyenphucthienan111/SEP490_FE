@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { cn } from '@/lib/utils';
 import React from 'react';
-import { leagueService, SofascoreStandingRow, SofascoreLeague, Team } from '@/services/leagueService';
+import { leagueService, SofascoreStandingRow, League, Team } from '@/services/leagueService';
 import { FormCell } from '@/components/standings/FormCell';
 import { toast } from 'sonner';
 
@@ -15,7 +15,7 @@ const STANDINGS_LEAGUES = [
 ];
 
 export default function LeaguesPage() {
-  const [sofascoreLeagues, setSofascoreLeagues] = React.useState<SofascoreLeague[]>([]);
+  const [dbLeagues, setDbLeagues] = React.useState<League[]>([]);
   const [dbTeams, setDbTeams] = React.useState<Team[]>([]);
   const dbTeamsRef = React.useRef<Team[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -32,18 +32,34 @@ export default function LeaguesPage() {
     loadData();
   }, []);
 
-  // Load standings when tab changes
+  // Load standings for active tab (if not already loaded)
   React.useEffect(() => {
-    const { tournamentId, seasonId } = activeLeague;
-    if (standingsData[tournamentId]) return;
+    const { tournamentId } = activeLeague;
+    if (!standingsData[tournamentId]) return; // already handled by loadAllStandings
+    // just switch tab — data already there
+  }, [activeStandingsIndex]);
+
+  const loadAllStandings = async () => {
     setStandingsLoading(true);
     setStandingsError(null);
-    leagueService
-      .getSofascoreStandings(tournamentId, seasonId)
-      .then((rows) => setStandingsData((prev) => ({ ...prev, [tournamentId]: rows })))
-      .catch(() => setStandingsError('Không thể tải bảng xếp hạng'))
-      .finally(() => setStandingsLoading(false));
-  }, [activeStandingsIndex]);
+    try {
+      const results = await Promise.all(
+        STANDINGS_LEAGUES.map(({ tournamentId, seasonId }) =>
+          leagueService.getHybridStandings(tournamentId, seasonId)
+            .then(rows => rows.length > 0 ? rows : leagueService.getSofascoreStandings(tournamentId, seasonId))
+            .then(rows => ({ tournamentId, rows }))
+            .catch(() => ({ tournamentId, rows: [] as typeof results[0]['rows'] }))
+        )
+      );
+      const map: Record<number, typeof results[0]['rows']> = {};
+      results.forEach(({ tournamentId, rows }) => { map[tournamentId] = rows; });
+      setStandingsData(map);
+    } catch {
+      setStandingsError('Không thể tải bảng xếp hạng');
+    } finally {
+      setStandingsLoading(false);
+    }
+  };
 
   const currentRows = standingsData[activeLeague.tournamentId] ?? [];
 
@@ -54,12 +70,13 @@ export default function LeaguesPage() {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const leagues = await leagueService.getVietnameseLeagues();
-      setSofascoreLeagues(leagues);
+      // Use DB leagues — fast, no Sofascore scraping
+      const leagues = await leagueService.getLeagues();
+      setDbLeagues(leagues);
 
       // Load DB teams for ID mapping — always fresh
       try {
-        const data = await leagueService.getTeams();
+        const data = await leagueService.getAllTeams();
         localStorage.setItem('teams', JSON.stringify(data));
         dbTeamsRef.current = data;
         setDbTeams(data);
@@ -70,17 +87,8 @@ export default function LeaguesPage() {
         } catch { }
       }
 
-      // Pre-load standings for V-League 1 & 2 to show team counts on cards
-      const standingsResults = await Promise.allSettled(
-        STANDINGS_LEAGUES.map((l) => leagueService.getSofascoreStandings(l.tournamentId, l.seasonId))
-      );
-      const newStandings: Record<number, SofascoreStandingRow[]> = {};
-      standingsResults.forEach((result, i) => {
-        if (result.status === 'fulfilled') {
-          newStandings[STANDINGS_LEAGUES[i].tournamentId] = result.value;
-        }
-      });
-      setStandingsData(newStandings);
+      // Pre-load standings for all leagues in parallel
+      loadAllStandings();
 
     } catch {
       toast.error('Không thể tải dữ liệu');
@@ -118,67 +126,91 @@ export default function LeaguesPage() {
             </div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
-              {sofascoreLeagues.map((league, index) => (
+              {dbLeagues.map((league, index) => {
+                const tournamentId = league.apiLeagueId;
+                const logoUrl = league.logoUrl || `https://api.sofascore.app/api/v1/unique-tournament/${tournamentId}/image/dark`;
+                // Season label from STANDINGS_LEAGUES config
+                const seasonCfg = STANDINGS_LEAGUES.find(l => l.tournamentId === tournamentId);
+                return (
                 <motion.div
-                  key={league.uniqueTournamentId}
+                  key={league.leagueId}
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
                 >
                   <Link
-                    to={`/leagues/${league.uniqueTournamentId}`}
+                    to={`/leagues/${tournamentId}`}
                     className="block group glass-card rounded-2xl p-8 hover:translate-y-[-4px] hover:shadow-xl transition-all duration-300 h-full border border-transparent hover:border-[#FF4444]/20"
                   >
                     <div className="flex items-start justify-between mb-6">
                       <div className="w-16 h-16 rounded-2xl flex items-center justify-center overflow-hidden bg-gradient-to-br from-red-200 dark:from-[#FF4444]/20 to-blue-200 dark:to-[#00D9FF]/20">
                         <img
-                          src={league.logoUrl}
-                          alt={league.name}
+                          src={logoUrl}
+                          alt={league.leagueName}
                           className="w-12 h-12 object-contain"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = 'none';
-                          }}
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                         />
                       </div>
                       <span className="px-4 py-1.5 rounded-full bg-blue-100 dark:bg-[#00D9FF]/10 text-[#00D9FF] text-sm font-label font-semibold">
-                        {league.seasonName}
+                        {seasonCfg ? '25/26' : '25/26'}
                       </span>
                     </div>
 
                     <h3 className="font-display font-bold text-2xl mb-2 text-slate-900 dark:text-foreground group-hover:text-[#FF4444] transition-colors">
-                      {league.name}
+                      {league.leagueName}
                     </h3>
                     <p className="text-slate-600 dark:text-[#A8A29E] mb-6">Vietnam</p>
 
                     <div className="grid grid-cols-2 gap-4 pt-6 border-t border-slate-200 dark:border-white/5">
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <Users className="w-4 h-4 text-slate-600 dark:text-[#A8A29E]" />
-                          <span className="font-mono-data text-xl font-bold text-slate-900 dark:text-foreground">
-                            {standingsData[league.uniqueTournamentId]?.length || '-'}
-                          </span>
+                      {tournamentId !== 3087 ? (
+                        <>
+                          <div>
+                            <div className="flex items-center gap-2 mb-1">
+                              <Users className="w-4 h-4 text-slate-600 dark:text-[#A8A29E]" />
+                              <span className="font-mono-data text-xl font-bold text-slate-900 dark:text-foreground">
+                                {standingsData[tournamentId]?.length ||
+                                  dbTeams.filter(t => t.leagueId === league.leagueId).length || '-'}
+                              </span>
+                            </div>
+                            <p className="text-xs text-slate-600 dark:text-[#A8A29E]">Đội</p>
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2 mb-1">
+                              <Calendar className="w-4 h-4 text-slate-600 dark:text-[#A8A29E]" />
+                              <span className="font-mono-data text-xl font-bold text-slate-900 dark:text-foreground">
+                                {(() => {
+                                  const rows = standingsData[tournamentId];
+                                  if (rows && rows.length > 0) {
+                                    const total = rows.reduce((sum, r) => sum + r.matches, 0) / 2;
+                                    return Math.round(total);
+                                  }
+                                  return '-';
+                                })()}
+                              </span>
+                            </div>
+                            <p className="text-xs text-slate-600 dark:text-[#A8A29E]">Trận đấu</p>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="col-span-2 flex flex-col gap-3">
+                          <div className="flex flex-wrap gap-2">
+                            <span className="px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 text-xs font-semibold">
+                              🏆 Knockout
+                            </span>
+                            <span className="px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-400 text-xs font-semibold">
+                              Vòng loại trực tiếp
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-500 dark:text-[#A8A29E] leading-relaxed">
+                            Cúp Quốc gia Việt Nam — giải đấu cúp theo thể thức loại trực tiếp dành cho các CLB chuyên nghiệp.
+                          </p>
                         </div>
-                        <p className="text-xs text-slate-600 dark:text-[#A8A29E]">Đội</p>
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <Calendar className="w-4 h-4 text-slate-600 dark:text-[#A8A29E]" />
-                          <span className="font-mono-data text-xl font-bold text-slate-900 dark:text-foreground">
-                            {(() => {
-                              const rows = standingsData[league.uniqueTournamentId];
-                              if (!rows || rows.length === 0) return '-';
-                              // total matches = sum of all matches played / 2 (each match counted twice)
-                              const total = rows.reduce((sum, r) => sum + r.matches, 0) / 2;
-                              return Math.round(total);
-                            })()}
-                          </span>
-                        </div>
-                        <p className="text-xs text-slate-600 dark:text-[#A8A29E]">Trận đấu</p>
-                      </div>
+                      )}
                     </div>
                   </Link>
                 </motion.div>
-              ))}
+                );
+              })}
             </div>
           )}
 
@@ -303,7 +335,7 @@ export default function LeaguesPage() {
                               <td className="py-3 px-3">
                                 <div className="flex items-center gap-2">
                                   {(() => {
-                                    const dbId = getDbTeamId(row.team.id);
+                                    const dbId = row.team.dbTeamId || getDbTeamId(row.team.id);
                                     const inner = (
                                       <>
                                         {row.team.logo ? (
@@ -344,7 +376,9 @@ export default function LeaguesPage() {
                                 </span>
                               </td>
                               <td className="py-3 px-3">
-                                <FormCell teamId={row.team.id} teamName={row.team.name} />
+                                {row.team.id > 0
+                                  ? <FormCell teamId={row.team.id} teamName={row.team.name} />
+                                  : <span className="text-xs text-slate-400">-</span>}
                               </td>
                             </motion.tr>
                           );

@@ -34,12 +34,12 @@ export function FormCell({ teamId }: FormCellProps) {
   const [tooltip, setTooltip] = React.useState<TooltipData | null>(null);
 
   React.useEffect(() => {
-    leagueService.getTeamLastMatches(teamId).then((data) => {
+    leagueService.getTeamLastMatchesFromDb(teamId).then((data) => {
       const finished = data
-        .filter((m) => m.status?.type === 'finished')
-        .sort((a, b) => b.startTimestamp - a.startTimestamp)
-        .slice(0, 5)
-        .reverse();
+        .filter((m) => m.status?.type === 'finished' || m.status?.type === 'ended'
+          || m.status?.type === 'afterextratime' || m.status?.type === 'afterpenalties')
+        .sort((a, b) => a.startTimestamp - b.startTimestamp)
+        .slice(-5);
       setMatches(finished);
     }).catch(() => setMatches([]));
   }, [teamId]);
@@ -68,7 +68,7 @@ export function FormCell({ teamId }: FormCellProps) {
         return (
           <a
             key={match.id}
-            href={`https://www.sofascore.com/football/match/${match.id}`}
+            href={`/matches/${match.id}`}
             target="_blank"
             rel="noopener noreferrer"
             onMouseEnter={(e) => {
@@ -119,7 +119,7 @@ function TooltipPopup({ tooltip }: { tooltip: TooltipData }) {
       >
         <p className="font-semibold leading-snug">{label}</p>
         <p className="text-slate-400 mt-0.5">{date}</p>
-        <p className="text-slate-500 text-[10px] mt-1">↗ Click để xem chi tiết</p>
+        <p className="text-slate-500 text-[10px] mt-1">↗ Click để xem chi tiết trận đấu</p>
       </div>
     </div>
   );
