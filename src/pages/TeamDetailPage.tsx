@@ -346,7 +346,7 @@ export default function TeamDetailPage() {
                   <div className="flex items-center justify-between mb-4">
                     <p className="text-sm text-slate-500 dark:text-[#A8A29E]">{filteredPlayers.length} / {players.length} cầu thủ</p>
                     <select value={posFilter} onChange={e => setPosFilter(e.target.value)}
-                      className="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-foreground text-sm">
+                      className="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-slate-100 text-sm">
                       <option value="all">Tất cả vị trí</option>
                       <option value="Goalkeeper">Thủ môn</option>
                       <option value="Defender">Hậu vệ</option>
@@ -433,7 +433,7 @@ export default function TeamDetailPage() {
                 <div>
                   <div className="flex justify-end mb-4">
                     <select value={matchFilter} onChange={e => { setMatchFilter(e.target.value); setShowRecent(5); }}
-                      className="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-foreground text-sm">
+                      className="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-slate-100 text-sm">
                       <option value="all">Tất cả giải</option>
                       <option value="V-League 1">V-League 1</option>
                       <option value="V-League 2">V-League 2</option>

@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Radio, Loader2, Users, Swords, LayoutGrid, X, Ruler, Flag, Calendar } from 'lucide-react';
+import { ArrowLeft, Radio, Loader2, Users, Swords, LayoutGrid, X, Ruler, Flag, Calendar, BarChart2 } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { cn } from '@/lib/utils';
-import { leagueService, SofascoreTeamMatch, MatchLineups, LineupPlayer } from '@/services/leagueService';
+import { leagueService, SofascoreTeamMatch, MatchLineups, LineupPlayer, MatchStat } from '@/services/leagueService';
 import { toast } from 'sonner';
 
 function teamLogo(id: number) {
@@ -375,8 +375,108 @@ function LineupTab({ lineups, homeTeamName, awayTeamName, homeTeamId, awayTeamId
   );
 }
 
+// ─── Stats tab ────────────────────────────────────────────────────────────────
+function StatBar({ label, home, away, isPercent = false }: {
+  label: string;
+  home: number | null;
+  away: number | null;
+  isPercent?: boolean;
+}) {
+  if (home === null && away === null) return null;
+  const h = home ?? 0;
+  const a = away ?? 0;
+  const total = h + a;
+  const homePct = total > 0 ? (h / total) * 100 : 50;
+  const awayPct = 100 - homePct;
+
+  return (
+    <div className="mb-5">
+      <div className="flex justify-between items-center mb-1.5">
+        <span className="font-mono-data text-sm font-bold text-foreground">{isPercent ? `${h}%` : h}</span>
+        <span className="text-xs font-label text-slate-500 dark:text-[#A8A29E] text-center flex-1 px-2">{label}</span>
+        <span className="font-mono-data text-sm font-bold text-foreground">{isPercent ? `${a}%` : a}</span>
+      </div>
+      <div className="flex h-2 rounded-full overflow-hidden gap-0.5">
+        <div
+          className="rounded-l-full transition-all duration-700"
+          style={{ width: `${isPercent ? h : homePct}%`, background: 'linear-gradient(90deg, #00D9FF, #0099BB)' }}
+        />
+        <div
+          className="rounded-r-full transition-all duration-700"
+          style={{ width: `${isPercent ? a : awayPct}%`, background: 'linear-gradient(90deg, #FF6B35, #FF4444)' }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function StatsTab({ home, away, homeTeamName, awayTeamName, homeTeamId, awayTeamId }: {
+  home: MatchStat | null;
+  away: MatchStat | null;
+  homeTeamName: string;
+  awayTeamName: string;
+  homeTeamId: number;
+  awayTeamId: number;
+}) {
+  if (!home && !away) {
+    return (
+      <div className="text-center py-12 text-slate-500 dark:text-[#A8A29E]">
+        <BarChart2 className="w-10 h-10 mx-auto mb-3 opacity-40" />
+        <p>Chưa có thống kê trận đấu.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {/* Team headers */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-2">
+          <img src={teamLogo(homeTeamId)} alt={homeTeamName} className="w-7 h-7 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+          <span className="font-body font-semibold text-sm text-[#00D9FF]">{homeTeamName}</span>
+        </div>
+        <span className="text-xs font-label text-slate-400 uppercase tracking-wider">Thống kê</span>
+        <div className="flex items-center gap-2">
+          <span className="font-body font-semibold text-sm text-[#FF4444]">{awayTeamName}</span>
+          <img src={teamLogo(awayTeamId)} alt={awayTeamName} className="w-7 h-7 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+        </div>
+      </div>
+
+      {/* Stats */}
+      <StatBar label="Kiểm soát bóng" home={home?.possession ?? null} away={away?.possession ?? null} isPercent />
+      <StatBar label="Cú sút" home={home?.shots ?? null} away={away?.shots ?? null} />
+      <StatBar label="Sút trúng đích" home={home?.shotsOnTarget ?? null} away={away?.shotsOnTarget ?? null} />
+      <StatBar label="Sút trong vòng cấm" home={home?.shotsInsideBox ?? null} away={away?.shotsInsideBox ?? null} />
+      <StatBar label="Sút ngoài vòng cấm" home={home?.shotsOutsideBox ?? null} away={away?.shotsOutsideBox ?? null} />
+      <StatBar label="Sút bị chặn" home={home?.shotsBlocked ?? null} away={away?.shotsBlocked ?? null} />
+      <StatBar label="Cứu thua" home={home?.saves ?? null} away={away?.saves ?? null} />
+      <StatBar label="Phạt góc" home={home?.corners ?? null} away={away?.corners ?? null} />
+      <StatBar label="Phạm lỗi" home={home?.fouls ?? null} away={away?.fouls ?? null} />
+      <StatBar label="Thẻ vàng" home={home?.yellowCards ?? null} away={away?.yellowCards ?? null} />
+      <StatBar label="Thẻ đỏ" home={home?.redCards ?? null} away={away?.redCards ?? null} />
+
+      {/* xG */}
+      {(home?.expectedGoals != null || away?.expectedGoals != null) && (
+        <div className="mt-6 pt-5 border-t border-slate-200 dark:border-white/10">
+          <p className="text-xs font-label text-slate-500 dark:text-[#A8A29E] uppercase tracking-wider text-center mb-4">Expected Goals (xG)</p>
+          <div className="flex items-center justify-around">
+            <div className="text-center">
+              <p className="font-mono-data text-3xl font-bold text-[#00D9FF]">{home?.expectedGoals?.toFixed(2) ?? '—'}</p>
+              <p className="text-xs text-slate-500 dark:text-[#A8A29E] mt-1">{homeTeamName}</p>
+            </div>
+            <div className="text-center">
+              <p className="font-mono-data text-3xl font-bold text-[#FF4444]">{away?.expectedGoals?.toFixed(2) ?? '—'}</p>
+              <p className="text-xs text-slate-500 dark:text-[#A8A29E] mt-1">{awayTeamName}</p>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
-type TabId = 'info' | 'lineup';
+type TabId = 'info' | 'lineup' | 'stats';
 
 export default function MatchDetailPage() {
   const { matchId } = useParams<{ matchId: string }>();
@@ -385,13 +485,39 @@ export default function MatchDetailPage() {
   const [match, setMatch] = useState<SofascoreTeamMatch | null>(null);
   const [lineups, setLineups] = useState<MatchLineups | null>(null);
   const [incidents, setIncidents] = useState<any[] | null>(null);
+  const [matchStats, setMatchStats] = useState<{ home: MatchStat | null; away: MatchStat | null }>({ home: null, away: null });
   const [loading, setLoading] = useState(true);
   const [lineupLoading, setLineupLoading] = useState(false);
   const [incidentsLoading, setIncidentsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<TabId>('info');
+  const [activeTab, setActiveTab] = useState<TabId>('stats');
 
   useEffect(() => {
     window.scrollTo(0, 0);
+
+    // Preload stats + teams in background immediately (warm up cache)
+    const CACHE_TTL = 30 * 60 * 1000;
+    const now = Date.now();
+
+    function getCachedData(key: string) {
+      try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (now - parsed.ts > CACHE_TTL) { localStorage.removeItem(key); return null; }
+        return parsed.data;
+      } catch { return null; }
+    }
+    function setCacheData(key: string, data: unknown) {
+      try { localStorage.setItem(key, JSON.stringify({ data, ts: now })); } catch { /* quota */ }
+    }
+
+    if (!getCachedData('match-statistics')) {
+      leagueService.getMatchStatistics().then(d => setCacheData('match-statistics', d)).catch(() => {});
+    }
+    if (!getCachedData('teams')) {
+      leagueService.getAllTeams().then(d => setCacheData('teams', d)).catch(() => {});
+    }
+
     const load = async () => {
       setLoading(true);
       try {
@@ -400,9 +526,9 @@ export default function MatchDetailPage() {
         if (cached) {
           const all: SofascoreTeamMatch[] = JSON.parse(cached);
           const found = all.find(m => m.id === eventId);
-          if (found) { setMatch(found); setLoading(false); return; }
+          if (found) { setMatch(found); setLoading(false); loadMatchStats(found.homeTeam.id, found.awayTeam.id); return; }
         }
-        // 2. Not found — fetch all leagues to find the match
+        // 2. Not found — fetch all leagues in parallel
         const LEAGUES = [
           { tournamentId: 626, seasonId: 78589 },
           { tournamentId: 771, seasonId: 80926 },
@@ -420,29 +546,82 @@ export default function MatchDetailPage() {
           }
           return all;
         };
-        const allMatches: SofascoreTeamMatch[] = [];
-        for (const league of LEAGUES) {
-          const [last, next] = await Promise.all([
+
+        // Fetch all leagues in parallel instead of sequential
+        const leagueResults = await Promise.all(
+          LEAGUES.map(league => Promise.all([
             fetchAll(p => leagueService.getTournamentLastMatches(league.tournamentId, league.seasonId, p)),
             fetchAll(p => leagueService.getTournamentNextMatches(league.tournamentId, league.seasonId, p)),
-          ]);
-          allMatches.push(...last, ...next);
-          const found = allMatches.find(m => m.id === eventId);
-          if (found) {
-            // Cache for future use
-            try { sessionStorage.setItem('sofascore-matches', JSON.stringify(allMatches)); } catch { /* ignore */ }
-            setMatch(found);
-            setLoading(false);
-            return;
-          }
-        }
-        // Cache even if not found
+          ]))
+        );
+        const allMatches: SofascoreTeamMatch[] = leagueResults.flatMap(([last, next]) => [...last, ...next]);
+
         try { sessionStorage.setItem('sofascore-matches', JSON.stringify(allMatches)); } catch { /* ignore */ }
+
+        const found = allMatches.find(m => m.id === eventId);
+        if (found) {
+          setMatch(found);
+          loadMatchStats(found.homeTeam.id, found.awayTeam.id);
+        }
       } catch { /* ignore */ }
       setLoading(false);
     };
     load();
   }, [eventId]);
+
+  const loadMatchStats = async (homeSofaId: number, awaySofaId: number) => {
+    try {
+      const CACHE_TTL = 30 * 60 * 1000;
+      const now = Date.now();
+
+      function getCachedData(key: string) {
+        try {
+          const raw = localStorage.getItem(key);
+          if (!raw) return null;
+          const parsed = JSON.parse(raw);
+          if (now - parsed.ts > CACHE_TTL) { localStorage.removeItem(key); return null; }
+          return parsed.data;
+        } catch { return null; }
+      }
+      function setCacheData(key: string, data: unknown) {
+        try { localStorage.setItem(key, JSON.stringify({ data, ts: now })); } catch { /* quota */ }
+      }
+
+      const [allStats, dbTeams] = await Promise.all([
+        (async () => {
+          const cached = getCachedData('match-statistics');
+          if (cached) return cached as MatchStat[];
+          const data = await leagueService.getMatchStatistics();
+          setCacheData('match-statistics', data);
+          return data;
+        })(),
+        (async () => {
+          const cached = getCachedData('teams');
+          if (cached) return cached as any[];
+          const data = await leagueService.getAllTeams();
+          setCacheData('teams', data);
+          return data;
+        })(),
+      ]);
+
+      const homeDbTeam = dbTeams.find((t: any) => t.apiTeamId === homeSofaId);
+      const awayDbTeam = dbTeams.find((t: any) => t.apiTeamId === awaySofaId);
+      if (!homeDbTeam || !awayDbTeam) return;
+
+      const homeStats = allStats.filter((s: MatchStat) => s.teamId === homeDbTeam.teamId && s.possession !== null);
+      const awayStats = allStats.filter((s: MatchStat) => s.teamId === awayDbTeam.teamId && s.possession !== null);
+
+      const homeMatchIds = new Set(homeStats.map((s: MatchStat) => s.matchId));
+      const awayMatchIds = new Set(awayStats.map((s: MatchStat) => s.matchId));
+      const commonMatchId = [...homeMatchIds].find(id => awayMatchIds.has(id));
+
+      if (commonMatchId) {
+        const home = homeStats.find((s: MatchStat) => s.matchId === commonMatchId) ?? null;
+        const away = awayStats.find((s: MatchStat) => s.matchId === commonMatchId) ?? null;
+        setMatchStats({ home, away });
+      }
+    } catch (e) {}
+  };
 
   const loadLineups = async () => {
     if (lineups) return;
@@ -492,8 +671,10 @@ export default function MatchDetailPage() {
   const date = match ? new Date(match.startTimestamp * 1000) : null;
 
   const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
+    { id: 'stats', label: 'Thống kê', icon: <BarChart2 className="w-4 h-4" /> },
     { id: 'info', label: 'Thông tin', icon: <Swords className="w-4 h-4" /> },
     { id: 'lineup', label: 'Đội hình', icon: <Users className="w-4 h-4" /> },
+    
   ];
 
   if (loading) {
@@ -797,6 +978,17 @@ export default function MatchDetailPage() {
                   <p>Chưa có thông tin đội hình.</p>
                 </div>
               )
+            )}
+
+            {activeTab === 'stats' && (
+              <StatsTab
+                home={(isFinished || isLive) ? matchStats.home : null}
+                away={(isFinished || isLive) ? matchStats.away : null}
+                homeTeamName={match?.homeTeam.name ?? 'Chủ nhà'}
+                awayTeamName={match?.awayTeam.name ?? 'Khách'}
+                homeTeamId={match?.homeTeam.id ?? 0}
+                awayTeamId={match?.awayTeam.id ?? 0}
+              />
             )}
           </motion.div>
         </div>

@@ -183,6 +183,24 @@ export interface Transfer {
   transferType: string;
 }
 
+export interface MatchStat {
+  statId: number;
+  matchId: number;
+  teamId: number;
+  possession: number | null;
+  shots: number | null;
+  shotsOnTarget: number | null;
+  corners: number | null;
+  fouls: number | null;
+  yellowCards: number | null;
+  redCards: number | null;
+  shotsBlocked: number | null;
+  shotsInsideBox: number | null;
+  shotsOutsideBox: number | null;
+  saves: number | null;
+  expectedGoals: number | null;
+}
+
 export interface MatchEvent {
   eventId: number;
   matchId: number;
@@ -605,6 +623,10 @@ export const leagueService = {
 
   async getMatchEvents(): Promise<MatchEvent[]> {
     return await apiClient.get<MatchEvent[]>('/api/Football/match-events');
+  },
+
+  async getMatchStatistics(): Promise<MatchStat[]> {
+    return await apiClient.get<MatchStat[]>('/api/SofascoreHybrid/match-statistics');
   },
 
   async getTransfers(): Promise<Transfer[]> {
