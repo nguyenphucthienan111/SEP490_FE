@@ -455,22 +455,7 @@ function StatsTab({ home, away, homeTeamName, awayTeamName, homeTeamId, awayTeam
       <StatBar label="Thẻ vàng" home={home?.yellowCards ?? null} away={away?.yellowCards ?? null} />
       <StatBar label="Thẻ đỏ" home={home?.redCards ?? null} away={away?.redCards ?? null} />
 
-      {/* xG */}
-      {(home?.expectedGoals != null || away?.expectedGoals != null) && (
-        <div className="mt-6 pt-5 border-t border-slate-200 dark:border-white/10">
-          <p className="text-xs font-label text-slate-500 dark:text-[#A8A29E] uppercase tracking-wider text-center mb-4">Expected Goals (xG)</p>
-          <div className="flex items-center justify-around">
-            <div className="text-center">
-              <p className="font-mono-data text-3xl font-bold text-[#00D9FF]">{home?.expectedGoals?.toFixed(2) ?? '—'}</p>
-              <p className="text-xs text-slate-500 dark:text-[#A8A29E] mt-1">{homeTeamName}</p>
-            </div>
-            <div className="text-center">
-              <p className="font-mono-data text-3xl font-bold text-[#FF4444]">{away?.expectedGoals?.toFixed(2) ?? '—'}</p>
-              <p className="text-xs text-slate-500 dark:text-[#A8A29E] mt-1">{awayTeamName}</p>
-            </div>
-          </div>
-        </div>
-      )}
+
     </div>
   );
 }
