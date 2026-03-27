@@ -26,7 +26,7 @@ const POSITION_LABEL: Record<string, string> = {
   Attacker:   'TĐ',
 };
 
-function MatchRow({ match, sofaId }: { match: SofascoreTeamMatch; sofaId: number }) {
+function MatchRow({ match, sofaId, dbTeams }: { match: SofascoreTeamMatch; sofaId: number; dbTeams: Team[] }) {
   const isHome = match.homeTeam.id === sofaId;
   const opp = isHome ? match.awayTeam : match.homeTeam;
   const finished = match.status.type === 'finished';
@@ -38,6 +38,19 @@ function MatchRow({ match, sofaId }: { match: SofascoreTeamMatch; sofaId: number
   const date = new Date(match.startTimestamp * 1000);
   const tournament = (match as any).tournament?.uniqueTournament?.name ?? '';
   const round = (match.roundInfo as any)?.name ?? `Vòng ${match.roundInfo?.round ?? ''}`;
+  const oppDbTeamId = dbTeams.find(t => t.apiTeamId === opp.id)?.teamId;
+
+  const oppInner = (
+    <>
+      <img src={`https://api.sofascore.app/api/v1/team/${opp.id}/image`} alt={opp.name}
+        className="w-8 h-8 object-contain flex-shrink-0"
+        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+      <div className="flex-1 min-w-0">
+        <p className="font-semibold text-sm text-slate-900 dark:text-foreground truncate group-hover:text-[#00D9FF] transition-colors">{opp.name}</p>
+        <p className="text-xs text-slate-400 dark:text-[#A8A29E] truncate">{isHome ? 'Sân nhà' : 'Sân khách'} · {tournament} · {round}</p>
+      </div>
+    </>
+  );
 
   return (
     <div className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 transition-colors group">
@@ -58,16 +71,16 @@ function MatchRow({ match, sofaId }: { match: SofascoreTeamMatch; sofaId: number
         </div>
       )}
 
-      {/* Opponent logo */}
-      <img src={`https://api.sofascore.app/api/v1/team/${opp.id}/image`} alt={opp.name}
-        className="w-8 h-8 object-contain flex-shrink-0"
-        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-
-      {/* Info */}
-      <div className="flex-1 min-w-0">
-        <p className="font-semibold text-sm text-slate-900 dark:text-foreground truncate group-hover:text-[#00D9FF] transition-colors">{opp.name}</p>
-        <p className="text-xs text-slate-400 dark:text-[#A8A29E] truncate">{isHome ? 'Sân nhà' : 'Sân khách'} · {tournament} · {round}</p>
-      </div>
+      {/* Opponent logo + name — clickable if DB team exists */}
+      {oppDbTeamId ? (
+        <a href={`/teams/${oppDbTeamId}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 flex-1 min-w-0">
+          {oppInner}
+        </a>
+      ) : (
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          {oppInner}
+        </div>
+      )}
 
       {/* Score / Time */}
       <div className="flex-shrink-0 text-right">
@@ -106,6 +119,9 @@ export default function TeamDetailPage() {
   const [matchFilter, setMatchFilter] = React.useState('all');
   const [showRecent, setShowRecent] = React.useState(5);
   const [showUpcoming, setShowUpcoming] = React.useState(5);
+  const [dbTeams, setDbTeams] = React.useState<Team[]>(() => {
+    try { return JSON.parse(localStorage.getItem('teams') || '[]'); } catch { return []; }
+  });
 
   React.useEffect(() => { window.scrollTo(0, 0); loadData(); }, [teamId]);
 
@@ -320,7 +336,7 @@ export default function TeamDetailPage() {
                         <button onClick={() => setActiveTab('Kết quả')} className="text-xs text-[#00D9FF] hover:underline font-medium">Xem tất cả →</button>
                       </div>
                       <div className="divide-y divide-slate-100 dark:divide-white/5">
-                        {recentMatches.slice(0, 5).map(m => <MatchRow key={m.id} match={m} sofaId={apiTeam.apiTeamId} />)}
+                        {recentMatches.slice(0, 5).map(m => <MatchRow key={m.id} match={m} sofaId={apiTeam.apiTeamId} dbTeams={dbTeams} />)}
                       </div>
                     </div>
                   )}
@@ -333,7 +349,7 @@ export default function TeamDetailPage() {
                         <button onClick={() => setActiveTab('Lịch thi đấu')} className="text-xs text-[#00D9FF] hover:underline font-medium">Xem tất cả →</button>
                       </div>
                       <div className="divide-y divide-slate-100 dark:divide-white/5">
-                        {upcomingMatches.slice(0, 3).map(m => <MatchRow key={m.id} match={m} sofaId={apiTeam.apiTeamId} />)}
+                        {upcomingMatches.slice(0, 3).map(m => <MatchRow key={m.id} match={m} sofaId={apiTeam.apiTeamId} dbTeams={dbTeams} />)}
                       </div>
                     </div>
                   )}
@@ -410,7 +426,7 @@ export default function TeamDetailPage() {
                   ) : (
                     <div className="glass-card rounded-2xl overflow-hidden">
                       <div className="divide-y divide-slate-100 dark:divide-white/5">
-                        {upcomingMatches.slice(0, showUpcoming).map(m => <MatchRow key={m.id} match={m} sofaId={apiTeam.apiTeamId} />)}
+                        {upcomingMatches.slice(0, showUpcoming).map(m => <MatchRow key={m.id} match={m} sofaId={apiTeam.apiTeamId} dbTeams={dbTeams} />)}
                       </div>
                       {upcomingMatches.length > showUpcoming ? (
                         <button onClick={() => setShowUpcoming(v => v + 5)}
@@ -445,7 +461,7 @@ export default function TeamDetailPage() {
                   ) : (
                     <div className="glass-card rounded-2xl overflow-hidden">
                       <div className="divide-y divide-slate-100 dark:divide-white/5">
-                        {filteredRecent.slice(0, showRecent).map(m => <MatchRow key={m.id} match={m} sofaId={apiTeam.apiTeamId} />)}
+                        {filteredRecent.slice(0, showRecent).map(m => <MatchRow key={m.id} match={m} sofaId={apiTeam.apiTeamId} dbTeams={dbTeams} />)}
                       </div>
                       {filteredRecent.length > showRecent ? (
                         <button onClick={() => setShowRecent(v => v + 5)}
