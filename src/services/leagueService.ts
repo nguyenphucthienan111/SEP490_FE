@@ -194,10 +194,16 @@ export interface MatchStat {
   fouls: number | null;
   yellowCards: number | null;
   redCards: number | null;
+  offsides: number | null;
   shotsBlocked: number | null;
   shotsInsideBox: number | null;
   shotsOutsideBox: number | null;
+  passesAccuracy: number | null;
+  passesKey: number | null;
+  tacklesWon: number | null;
   saves: number | null;
+  interceptions: number | null;
+  clearances: number | null;
   expectedGoals: number | null;
 }
 
@@ -478,6 +484,13 @@ export const leagueService = {
     );
     const raw = result?.events ?? result?.matches ?? result ?? [];
     return Array.isArray(raw) ? raw : [];
+  },
+
+  async getAllMatchesFromDb(tournamentId: number, seasonId: number): Promise<any[]> {
+    const data = await apiClient.get<any[]>(
+      `/api/SofascoreHybrid/matches-with-teams?tournamentId=${tournamentId}&seasonId=${seasonId}`
+    );
+    return Array.isArray(data) ? data : [];
   },
 
   async getTeamLastMatchesFromDb(apiTeamId: number, count = 5): Promise<SofascoreTeamMatch[]> {

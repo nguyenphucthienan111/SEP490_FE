@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+  import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Radio, Loader2, Users, Swords, LayoutGrid, X, Ruler, Flag, Calendar, BarChart2 } from 'lucide-react';
@@ -410,7 +410,7 @@ function StatBar({ label, home, away, isPercent = false }: {
   );
 }
 
-function StatsTab({ home, away, homeTeamName, awayTeamName, homeTeamId, awayTeamId }: {
+function OverviewTab({ home, away, homeTeamName, awayTeamName, homeTeamId, awayTeamId }: {
   home: MatchStat | null;
   away: MatchStat | null;
   homeTeamName: string;
@@ -460,8 +460,78 @@ function StatsTab({ home, away, homeTeamName, awayTeamName, homeTeamId, awayTeam
   );
 }
 
+// ─── Full Stats tab ───────────────────────────────────────────────────────────
+function FullStatsTab({ home, away, homeTeamName, awayTeamName, homeTeamId, awayTeamId }: {
+  home: MatchStat | null;
+  away: MatchStat | null;
+  homeTeamName: string;
+  awayTeamName: string;
+  homeTeamId: number;
+  awayTeamId: number;
+}) {
+  if (!home && !away) {
+    return (
+      <div className="text-center py-12 text-slate-500 dark:text-[#A8A29E]">
+        <BarChart2 className="w-10 h-10 mx-auto mb-3 opacity-40" />
+        <p>Chưa có thống kê trận đấu.</p>
+      </div>
+    );
+  }
+
+  const Section = ({ title }: { title: string }) => (
+    <div className="text-xs font-label font-bold text-slate-400 dark:text-[#A8A29E] uppercase tracking-widest mb-3 mt-6 first:mt-0">
+      {title}
+    </div>
+  );
+
+  return (
+    <div>
+      {/* Team headers */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-2">
+          <img src={teamLogo(homeTeamId)} alt={homeTeamName} className="w-7 h-7 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+          <span className="font-body font-semibold text-sm text-[#00D9FF]">{homeTeamName}</span>
+        </div>
+        <span className="text-xs font-label text-slate-400 uppercase tracking-wider">Thống kê</span>
+        <div className="flex items-center gap-2">
+          <span className="font-body font-semibold text-sm text-[#FF4444]">{awayTeamName}</span>
+          <img src={teamLogo(awayTeamId)} alt={awayTeamName} className="w-7 h-7 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+        </div>
+      </div>
+
+      <Section title="Tổng quan" />
+      <StatBar label="Kiểm soát bóng" home={home?.possession ?? null} away={away?.possession ?? null} isPercent />
+      <StatBar label="Cú sút" home={home?.shots ?? null} away={away?.shots ?? null} />
+      <StatBar label="Sút trúng đích" home={home?.shotsOnTarget ?? null} away={away?.shotsOnTarget ?? null} />
+      <StatBar label="Cứu thua" home={home?.saves ?? null} away={away?.saves ?? null} />
+      <StatBar label="Phạt góc" home={home?.corners ?? null} away={away?.corners ?? null} />
+      <StatBar label="Việt vị" home={home?.offsides ?? null} away={away?.offsides ?? null} />
+      <StatBar label="xG (Bàn thắng kỳ vọng)" home={home?.expectedGoals ? Number(home.expectedGoals) : null} away={away?.expectedGoals ? Number(away.expectedGoals) : null} />
+
+      <Section title="Tấn công" />
+      <StatBar label="Sút trong vòng cấm" home={home?.shotsInsideBox ?? null} away={away?.shotsInsideBox ?? null} />
+      <StatBar label="Sút ngoài vòng cấm" home={home?.shotsOutsideBox ?? null} away={away?.shotsOutsideBox ?? null} />
+      <StatBar label="Sút bị chặn" home={home?.shotsBlocked ?? null} away={away?.shotsBlocked ?? null} />
+
+      <Section title="Chuyền bóng" />
+      <StatBar label="Chuyền chính xác" home={home?.passesAccuracy ?? null} away={away?.passesAccuracy ?? null} />
+      <StatBar label="Chuyền then chốt" home={home?.passesKey ?? null} away={away?.passesKey ?? null} />
+
+      <Section title="Phòng thủ" />
+      <StatBar label="Tắc bóng" home={home?.tacklesWon ?? null} away={away?.tacklesWon ?? null} />
+      <StatBar label="Cắt bóng" home={home?.interceptions ?? null} away={away?.interceptions ?? null} />
+      <StatBar label="Phá bóng" home={home?.clearances ?? null} away={away?.clearances ?? null} />
+
+      <Section title="Kỷ luật" />
+      <StatBar label="Phạm lỗi" home={home?.fouls ?? null} away={away?.fouls ?? null} />
+      <StatBar label="Thẻ vàng" home={home?.yellowCards ?? null} away={away?.yellowCards ?? null} />
+      <StatBar label="Thẻ đỏ" home={home?.redCards ?? null} away={away?.redCards ?? null} />
+    </div>
+  );
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
-type TabId = 'info' | 'lineup' | 'stats';
+type TabId = 'overview' | 'info' | 'lineup';
 
 export default function MatchDetailPage() {
   const { matchId } = useParams<{ matchId: string }>();
@@ -474,7 +544,7 @@ export default function MatchDetailPage() {
   const [loading, setLoading] = useState(true);
   const [lineupLoading, setLineupLoading] = useState(false);
   const [incidentsLoading, setIncidentsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<TabId>('stats');
+  const [activeTab, setActiveTab] = useState<TabId>('overview');
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -656,10 +726,9 @@ export default function MatchDetailPage() {
   const date = match ? new Date(match.startTimestamp * 1000) : null;
 
   const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
-    { id: 'stats', label: 'Thống kê', icon: <BarChart2 className="w-4 h-4" /> },
-    { id: 'info', label: 'Thông tin', icon: <Swords className="w-4 h-4" /> },
-    { id: 'lineup', label: 'Đội hình', icon: <Users className="w-4 h-4" /> },
-    
+    { id: 'overview', label: 'Tổng quan', icon: <BarChart2 className="w-4 h-4" /> },
+    { id: 'info',     label: 'Diễn biến', icon: <Swords className="w-4 h-4" /> },
+    { id: 'lineup',   label: 'Đội hình',  icon: <Users className="w-4 h-4" /> },
   ];
 
   if (loading) {
@@ -965,8 +1034,8 @@ export default function MatchDetailPage() {
               )
             )}
 
-            {activeTab === 'stats' && (
-              <StatsTab
+            {activeTab === 'overview' && (
+              <OverviewTab
                 home={(isFinished || isLive) ? matchStats.home : null}
                 away={(isFinished || isLive) ? matchStats.away : null}
                 homeTeamName={match?.homeTeam.name ?? 'Chủ nhà'}
