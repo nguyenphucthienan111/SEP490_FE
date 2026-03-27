@@ -140,57 +140,25 @@ export default function PlayerDetailPage() {
       : 0,
   } : null;
 
-  // Generate radar data based on player position
+  // Generate radar data from real player stats (latest season)
   const getRadarData = () => {
-    if (!player) {
-      // Default radar for API players without position info
-      return [
-        { stat: 'Ghi bàn', value: 70, fullMark: 100 },
-        { stat: 'Kiến tạo', value: 65, fullMark: 100 },
-        { stat: 'Chuyền bóng', value: 75, fullMark: 100 },
-        { stat: 'Phòng ngự', value: 60, fullMark: 100 },
-        { stat: 'Thể lực', value: 80, fullMark: 100 },
-        { stat: 'Kỹ thuật', value: 72, fullMark: 100 },
-      ];
-    }
-    
-    if (player.position === 'forward') {
-      return [
-        { stat: 'Finishing', value: 85, fullMark: 100 },
-        { stat: 'Dribbling', value: 78, fullMark: 100 },
-        { stat: 'Speed', value: 82, fullMark: 100 },
-        { stat: 'Positioning', value: 80, fullMark: 100 },
-        { stat: 'Heading', value: 65, fullMark: 100 },
-        { stat: 'Passing', value: 70, fullMark: 100 },
-      ];
-    } else if (player.position === 'midfielder') {
-      return [
-        { stat: 'Passing', value: 90, fullMark: 100 },
-        { stat: 'Vision', value: 88, fullMark: 100 },
-        { stat: 'Dribbling', value: 82, fullMark: 100 },
-        { stat: 'Tackling', value: 65, fullMark: 100 },
-        { stat: 'Stamina', value: 85, fullMark: 100 },
-        { stat: 'Shooting', value: 72, fullMark: 100 },
-      ];
-    } else if (player.position === 'defender') {
-      return [
-        { stat: 'Tackling', value: 88, fullMark: 100 },
-        { stat: 'Heading', value: 85, fullMark: 100 },
-        { stat: 'Positioning', value: 82, fullMark: 100 },
-        { stat: 'Strength', value: 80, fullMark: 100 },
-        { stat: 'Passing', value: 72, fullMark: 100 },
-        { stat: 'Speed', value: 70, fullMark: 100 },
-      ];
-    } else {
-      return [
-        { stat: 'Reflexes', value: 88, fullMark: 100 },
-        { stat: 'Handling', value: 85, fullMark: 100 },
-        { stat: 'Positioning', value: 82, fullMark: 100 },
-        { stat: 'Kicking', value: 75, fullMark: 100 },
-        { stat: 'Diving', value: 86, fullMark: 100 },
-        { stat: 'Communication', value: 78, fullMark: 100 },
-      ];
-    }
+    const latest = playerStats[0];
+    if (!latest) return null;
+
+    const norm = (val: number | null | undefined, max: number) =>
+      Math.min(100, Math.round(((val ?? 0) / max) * 100));
+
+    const data = [
+      { stat: 'Ghi bàn',    value: norm(latest.goals, 20) },
+      { stat: 'Kiến tạo',   value: norm(latest.assists, 15) },
+      { stat: 'Sút cầu môn',value: norm(latest.shotsOnTarget, 50) },
+      { stat: 'Chuyền bóng',value: norm(latest.passesKey, 60) },
+      { stat: 'Rê bóng',    value: norm(latest.dribblesSuccess, 60) },
+      { stat: 'Kỷ luật',    value: Math.max(0, 100 - norm((latest.yellowCards ?? 0) * 10 + (latest.redCards ?? 0) * 30, 100)) },
+    ];
+
+    if (data.every(d => d.value === 0)) return null;
+    return data;
   };
 
   const contributions = player?.matchHistory?.[0]?.contributions || [
@@ -375,49 +343,62 @@ export default function PlayerDetailPage() {
                             </span>
                           )}
                         </div>
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 text-sm">
-                          <div>
-                            <span className="text-slate-600 dark:text-[#A8A29E]">Trận đấu</span>
-                            <div className="font-mono-data text-lg font-semibold text-slate-900 dark:text-foreground">
-                              {stat.appearances}
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 text-sm">
+                          {[
+                            { label: 'Trận đấu',    val: stat.appearances },
+                            { label: 'Đá chính',    val: stat.lineups },
+                            { label: 'Phút',        val: stat.minutes },
+                            { label: 'Bàn thắng',   val: stat.goals },
+                            { label: 'Kiến tạo',    val: stat.assists },
+                            { label: 'Thẻ vàng',    val: stat.yellowCards },
+                            { label: 'Thẻ đỏ',      val: stat.redCards },
+                            { label: 'Vào sân',     val: stat.substitutionsIn },
+                            { label: 'Ra sân',      val: stat.substitutionsOut },
+                            { label: 'Sút',         val: stat.shotsTotal },
+                            { label: 'Sút trúng',   val: stat.shotsOnTarget },
+                            { label: 'Chuyền',      val: stat.passesTotal },
+                            { label: 'Chuyền then chốt', val: stat.passesKey },
+                            { label: 'Chuyền chính xác', val: stat.passesAccuracy },
+                            { label: 'Rê bóng thành công', val: stat.dribblesSuccess },
+                            { label: 'Dribble thử', val: stat.dribblesAttempted },
+                            { label: 'Duel thắng',  val: stat.duelsWon },
+                            { label: 'Duel tổng',   val: stat.duelsTotal },
+                            { label: 'Tắc bóng',    val: stat.tackles },
+                            { label: 'Cắt bóng',    val: stat.interceptions },
+                            { label: 'Bị phạm lỗi', val: stat.foulsDrawn },
+                            { label: 'Phạm lỗi',    val: stat.foulsCommitted },
+                            { label: 'Penalty ghi', val: stat.penaltiesScored },
+                            { label: 'Penalty hỏng',val: stat.penaltiesMissed },
+                          ].filter(item => item.val !== null && item.val !== undefined).map(({ label, val }) => (
+                            <div key={label}>
+                              <span className="text-slate-600 dark:text-[#A8A29E] text-xs">{label}</span>
+                              <div className="font-mono-data text-lg font-semibold text-slate-900 dark:text-foreground">
+                                {val}
+                              </div>
+                              {/* Sub-labels for context */}
+                              {label === 'Rê bóng thành công' && stat.appearances && (
+                                <div className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+                                  {(stat.dribblesSuccess! / stat.appearances).toFixed(1)}/trận
+                                  {stat.dribblesAttempted ? ` · ${Math.round((stat.dribblesSuccess! / stat.dribblesAttempted) * 100)}%` : ''}
+                                </div>
+                              )}
+                              {label === 'Sút trúng' && stat.shotsTotal ? (
+                                <div className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+                                  {Math.round((stat.shotsOnTarget! / stat.shotsTotal) * 100)}% trúng đích
+                                </div>
+                              ) : null}
+                              {label === 'Chuyền chính xác' && stat.passesTotal ? (
+                                <div className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+                                  {Math.round((stat.passesAccuracy! / stat.passesTotal) * 100)}% chính xác
+                                </div>
+                              ) : null}
+                              {label === 'Duel thắng' && stat.duelsTotal ? (
+                                <div className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+                                  {Math.round((stat.duelsWon! / stat.duelsTotal) * 100)}%
+                                </div>
+                              ) : null}
                             </div>
-                          </div>
-                          <div>
-                            <span className="text-slate-600 dark:text-[#A8A29E]">Đá chính</span>
-                            <div className="font-mono-data text-lg font-semibold text-slate-900 dark:text-foreground">
-                              {stat.lineups}
-                            </div>
-                          </div>
-                          <div>
-                            <span className="text-slate-600 dark:text-[#A8A29E]">Phút</span>
-                            <div className="font-mono-data text-lg font-semibold text-slate-900 dark:text-foreground">
-                              {stat.minutes}
-                            </div>
-                          </div>
-                          <div>
-                            <span className="text-slate-600 dark:text-[#A8A29E]">Bàn thắng</span>
-                            <div className="font-mono-data text-lg font-semibold text-slate-900 dark:text-foreground">
-                              {stat.goals}
-                            </div>
-                          </div>
-                          <div>
-                            <span className="text-slate-600 dark:text-[#A8A29E]">Kiến tạo</span>
-                            <div className="font-mono-data text-lg font-semibold text-slate-900 dark:text-foreground">
-                              {stat.assists}
-                            </div>
-                          </div>
-                          <div>
-                            <span className="text-slate-600 dark:text-[#A8A29E]">Thẻ vàng</span>
-                            <div className="font-mono-data text-lg font-semibold text-slate-900 dark:text-foreground">
-                              {stat.yellowCards}
-                            </div>
-                          </div>
-                          <div>
-                            <span className="text-slate-600 dark:text-[#A8A29E]">Thẻ đỏ</span>
-                            <div className="font-mono-data text-lg font-semibold text-slate-900 dark:text-foreground">
-                              {stat.redCards}
-                            </div>
-                          </div>
+                          ))}
                         </div>
                       </div>
                     );
@@ -478,30 +459,42 @@ export default function PlayerDetailPage() {
               <h3 className="font-label font-bold text-slate-900 dark:text-foreground uppercase tracking-wider text-sm mb-6">
                 Chỉ số cầu thủ
               </h3>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <RadarChart data={getRadarData()}>
-                    <PolarGrid stroke="rgba(255,255,255,0.1)" />
-                    <PolarAngleAxis 
-                      dataKey="stat" 
-                      tick={{ fill: '#A8A29E', fontSize: 11 }}
-                    />
-                    <PolarRadiusAxis 
-                      angle={30} 
-                      domain={[0, 100]} 
-                      tick={{ fill: '#A8A29E', fontSize: 10 }}
-                    />
-                    <Radar
-                      name="Chỉ số"
-                      dataKey="value"
-                      stroke="#00D9FF"
-                      fill="#00D9FF"
-                      fillOpacity={0.3}
-                      strokeWidth={2}
-                    />
-                  </RadarChart>
-                </ResponsiveContainer>
-              </div>
+              {(() => {
+                const radarData = getRadarData();
+                if (!radarData) {
+                  return (
+                    <div className="h-64 flex items-center justify-center text-slate-500 dark:text-[#A8A29E] text-sm">
+                      Chưa có đủ dữ liệu thống kê
+                    </div>
+                  );
+                }
+                return (
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RadarChart data={radarData}>
+                        <PolarGrid stroke="rgba(255,255,255,0.1)" />
+                        <PolarAngleAxis
+                          dataKey="stat"
+                          tick={{ fill: '#A8A29E', fontSize: 11 }}
+                        />
+                        <PolarRadiusAxis
+                          angle={30}
+                          domain={[0, 100]}
+                          tick={{ fill: '#A8A29E', fontSize: 10 }}
+                        />
+                        <Radar
+                          name="Chỉ số"
+                          dataKey="value"
+                          stroke="#00D9FF"
+                          fill="#00D9FF"
+                          fillOpacity={0.3}
+                          strokeWidth={2}
+                        />
+                      </RadarChart>
+                    </ResponsiveContainer>
+                  </div>
+                );
+              })()}
             </motion.div>
 
             {/* Rating Breakdown - only show for mock data */}
