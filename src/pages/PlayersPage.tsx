@@ -80,9 +80,11 @@ export default function PlayersPage() {
       try {
         const cached = localStorage.getItem('teams');
         if (cached && !forceRefresh) {
-          allTeams = JSON.parse(cached);
+          const parsed = JSON.parse(cached);
+          allTeams = Array.isArray(parsed) ? parsed : (parsed?.$values ?? []);
         } else {
-          allTeams = await leagueService.getTeams();
+          const raw = await leagueService.getTeams();
+          allTeams = Array.isArray(raw) ? raw : ((raw as any)?.$values ?? []);
           localStorage.setItem('teams', JSON.stringify(allTeams));
         }
       } catch (e) {}
@@ -93,9 +95,11 @@ export default function PlayersPage() {
       try {
         const cached = localStorage.getItem('all-players');
         if (cached && !forceRefresh) {
-          players = JSON.parse(cached);
+          const parsed = JSON.parse(cached);
+          players = Array.isArray(parsed) ? parsed : (parsed?.$values ?? []);
         } else {
-          players = await leagueService.getAllPlayers();
+          const raw = await leagueService.getAllPlayers();
+          players = Array.isArray(raw) ? raw : ((raw as any)?.$values ?? []);
           localStorage.setItem('all-players', JSON.stringify(players));
         }
       } catch (e) {}
@@ -112,9 +116,9 @@ export default function PlayersPage() {
   };
 
   // Teams filtered by selected league
-  const teamsInLeague = leagueFilter === 'all'
-    ? teams
-    : teams.filter(t => t.leagueId === leagueFilter);
+  const teamsInLeague = (Array.isArray(teams) ? teams : []).filter(t =>
+    leagueFilter === 'all' || t.leagueId === leagueFilter
+  );
 
   // Reset team filter when league changes
   const handleLeagueChange = (val: number | 'all') => {

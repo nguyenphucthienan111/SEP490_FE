@@ -1,11 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Calendar, Radio, Loader2, RefreshCw, Trophy } from 'lucide-react';
+import { Calendar, Radio, Loader2, Trophy, ChevronLeft, ChevronRight } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { cn } from '@/lib/utils';
 import { leagueService, SofascoreTeamMatch } from '@/services/leagueService';
-import { toast } from 'sonner';
 
 const LEAGUES = [
   { name: 'V-League 1', tournamentId: 626, seasonId: 78589 },
@@ -115,6 +114,10 @@ export default function MatchesPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<'all' | 'finished' | 'inprogress' | 'notstarted'>('all');
   const [selectedRound, setSelectedRound] = useState<number | null>(null);
+  const [teamSearch, setTeamSearch] = useState('');
+  const [showAllFinished, setShowAllFinished] = useState(false);
+  const [finishedPage, setFinishedPage] = useState(0); // for "Kết thúc" tab pagination
+  const PAGE_SIZE = 10;
 
   const activeLeague = LEAGUES[activeLeagueIdx];
 
@@ -122,42 +125,27 @@ export default function MatchesPage() {
     if (!force && matchesByLeague[league.tournamentId]) return;
     setIsLoading(true);
     try {
-      // Fetch all pages from both last-matches and next-matches in parallel
-      const fetchAll = async (fetcher: (page: number) => Promise<{ events: SofascoreTeamMatch[]; hasNextPage: boolean }>) => {
-        const all: SofascoreTeamMatch[] = [];
-        let page = 0;
-        let hasNext = true;
-        while (hasNext) {
-          const { events, hasNextPage } = await fetcher(page);
-          all.push(...events);
-          hasNext = hasNextPage;
-          page++;
-        }
-        return all;
-      };
-
-      const [lastEvents, nextEvents] = await Promise.all([
-        fetchAll((p) => leagueService.getTournamentLastMatches(league.tournamentId, league.seasonId, p)),
-        fetchAll((p) => leagueService.getTournamentNextMatches(league.tournamentId, league.seasonId, p)),
-      ]);
-
-      // Merge, deduplicate by id, sort by startTimestamp desc
-      const seen = new Set<number>();
-      const unique = [...lastEvents, ...nextEvents].filter(m => {
-        if (seen.has(m.id)) return false;
-        seen.add(m.id);
-        return true;
-      });
-      unique.sort((a, b) => a.startTimestamp - b.startTimestamp);
+      // Fetch from DB — fast, no scraping
+      const data = await leagueService.getAllMatchesFromDb(league.tournamentId, league.seasonId);
+      const matches: SofascoreTeamMatch[] = data.map((m: any) => ({
+        id: m.apiFixtureId ?? m.matchId,
+        homeTeam: { id: m.homeTeam?.apiTeamId ?? 0, name: m.homeTeam?.teamName ?? '' },
+        awayTeam: { id: m.awayTeam?.apiTeamId ?? 0, name: m.awayTeam?.teamName ?? '' },
+        homeScore: { current: m.homeGoals ?? 0 },
+        awayScore: { current: m.awayGoals ?? 0 },
+        startTimestamp: m.matchDate ? Math.floor(new Date(m.matchDate).getTime() / 1000) : 0,
+        status: { type: m.status ?? 'notstarted' },
+        roundInfo: m.round ? { round: Number(m.round) } : undefined,
+      }));
+      matches.sort((a, b) => a.startTimestamp - b.startTimestamp);
       setMatchesByLeague(prev => {
-        const updated = { ...prev, [league.tournamentId]: unique };
-        // Cache all matches for MatchDetailPage lookup
+        const updated = { ...prev, [league.tournamentId]: matches };
         const all = Object.values(updated).flat();
         try { sessionStorage.setItem('sofascore-matches', JSON.stringify(all)); } catch { /* ignore */ }
         return updated;
       });
     } catch {
-      toast.error('Không thể tải trận đấu');
+      // fallback silent
     } finally {
       setIsLoading(false);
     }
@@ -167,11 +155,17 @@ export default function MatchesPage() {
     loadMatches(activeLeague);
     setSelectedRound(null);
     setSelectedStatus('all');
+    setTeamSearch('');
+    setShowAllFinished(false);
+    setFinishedPage(0);
   }, [activeLeagueIdx]);
 
   const currentMatches = matchesByLeague[activeLeague.tournamentId] ?? [];
 
-  // Get sorted unique rounds
+  // Extract unique teams from current league matches
+  const teamsInLeague = [...new Map(
+    currentMatches.flatMap(m => [m.homeTeam, m.awayTeam]).map(t => [t.id, t])
+  ).values()].sort((a, b) => a.name.localeCompare(b.name));
   const rounds = [...new Set(currentMatches.map(m => m.roundInfo?.round).filter((r): r is number => r != null))].sort((a, b) => a - b);
 
   const filtered = currentMatches.filter(m => {
@@ -182,7 +176,6 @@ export default function MatchesPage() {
       if (selectedStatus === 'notstarted' && st !== 'notstarted') return false;
     }
     if (selectedRound !== null && m.roundInfo?.round !== selectedRound) return false;
-    // Khi filter "Sắp diễn ra" mà không chọn vòng cụ thể → chỉ hiện vòng tiếp theo gần nhất
     if (selectedStatus === 'notstarted' && selectedRound === null) {
       const nextRound = Math.min(
         ...currentMatches
@@ -191,11 +184,18 @@ export default function MatchesPage() {
       );
       if (isFinite(nextRound) && m.roundInfo?.round !== nextRound) return false;
     }
+    if (teamSearch) {
+      if (m.homeTeam.name !== teamSearch && m.awayTeam.name !== teamSearch) return false;
+    }
     return true;
   });
 
-  // Sort all filtered matches by startTimestamp ascending (earliest first)
-  const sortedFiltered = [...filtered].sort((a, b) => a.startTimestamp - b.startTimestamp);
+  // Sort: finished → newest first; upcoming/live → earliest first
+  const sortedFiltered = [...filtered].sort((a, b) =>
+    selectedStatus === 'finished'
+      ? b.startTimestamp - a.startTimestamp
+      : a.startTimestamp - b.startTimestamp
+  );
   const liveMatches = sortedFiltered.filter(m => m.status.type === 'inprogress');
   const otherMatches = sortedFiltered.filter(m => m.status.type !== 'inprogress');
 
@@ -218,14 +218,6 @@ export default function MatchesPage() {
                 Kết quả và lịch đấu các giải Việt Nam
               </p>
             </div>
-            <button
-              onClick={() => loadMatches(activeLeague, true)}
-              disabled={isLoading}
-              className="flex items-center gap-2 px-5 py-2.5 bg-[#00D9FF] hover:bg-[#00E8FF] text-slate-900 font-label font-semibold rounded-xl transition-colors disabled:opacity-50"
-            >
-              <RefreshCw className={cn('w-4 h-4', isLoading && 'animate-spin')} />
-              Làm mới
-            </button>
           </motion.div>
 
           {/* League Tabs */}
@@ -266,7 +258,7 @@ export default function MatchesPage() {
               ].map(s => (
                 <button
                   key={s.value}
-                  onClick={() => setSelectedStatus(s.value as typeof selectedStatus)}
+                  onClick={() => { setSelectedStatus(s.value as typeof selectedStatus); setFinishedPage(0); setShowAllFinished(false); }}
                   className={cn(
                     'px-4 py-2 rounded-xl text-sm font-label font-medium transition-all border',
                     selectedStatus === s.value
@@ -296,6 +288,18 @@ export default function MatchesPage() {
                   ))}
                 </select>
               )}
+
+              {/* Team dropdown */}
+              <select
+                value={teamSearch}
+                onChange={e => { setTeamSearch(e.target.value); setShowAllFinished(false); setFinishedPage(0); }}
+                className="px-4 py-2 rounded-xl text-sm font-label font-medium bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-[#A8A29E] border border-slate-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-[#00D9FF]/40 cursor-pointer min-w-[160px]"
+              >
+                <option value="">Tất cả đội</option>
+                {teamsInLeague.map(t => (
+                  <option key={t.id} value={t.name}>{t.name}</option>
+                ))}
+              </select>
             </div>
           </motion.div>
 
@@ -338,9 +342,59 @@ export default function MatchesPage() {
                     </h2>
                     <span className="text-sm text-slate-500 dark:text-[#A8A29E]">({otherMatches.length})</span>
                   </div>
-                  <div className="grid md:grid-cols-2 gap-5">
-                    {otherMatches.map((m, i) => <MatchCard key={m.id} match={m} index={i} />)}
-                  </div>
+
+                  {selectedStatus === 'finished' ? (
+                    // Pagination với mũi tên trái/phải
+                    (() => {
+                      const totalPages = Math.ceil(otherMatches.length / PAGE_SIZE);
+                      const paged = otherMatches.slice(finishedPage * PAGE_SIZE, (finishedPage + 1) * PAGE_SIZE);
+                      return (
+                        <>
+                          <div className="grid md:grid-cols-2 gap-5">
+                            {paged.map((m, i) => <MatchCard key={m.id} match={m} index={i} />)}
+                          </div>
+                          {totalPages > 1 && (
+                            <div className="flex items-center justify-center gap-4 mt-6">
+                              <button
+                                onClick={() => setFinishedPage(p => Math.max(0, p - 1))}
+                                disabled={finishedPage === 0}
+                                className="w-10 h-10 rounded-xl flex items-center justify-center bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-[#A8A29E] hover:bg-slate-200 dark:hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors border border-slate-200 dark:border-white/10"
+                              >
+                                <ChevronLeft className="w-5 h-5" />
+                              </button>
+                              <span className="text-sm text-slate-500 dark:text-[#A8A29E] font-medium">
+                                Trang {finishedPage + 1} / {totalPages}
+                              </span>
+                              <button
+                                onClick={() => setFinishedPage(p => Math.min(totalPages - 1, p + 1))}
+                                disabled={finishedPage >= totalPages - 1}
+                                className="w-10 h-10 rounded-xl flex items-center justify-center bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-[#A8A29E] hover:bg-slate-200 dark:hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors border border-slate-200 dark:border-white/10"
+                              >
+                                <ChevronRight className="w-5 h-5" />
+                              </button>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()
+                  ) : (
+                    // Tất cả / các tab khác: Xem thêm
+                    <>
+                      <div className="grid md:grid-cols-2 gap-5">
+                        {otherMatches.slice(0, showAllFinished ? otherMatches.length : PAGE_SIZE).map((m, i) => <MatchCard key={m.id} match={m} index={i} />)}
+                      </div>
+                      {otherMatches.length > PAGE_SIZE && !showAllFinished && (
+                        <div className="flex justify-center mt-6">
+                          <button
+                            onClick={() => setShowAllFinished(true)}
+                            className="px-6 py-2.5 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-[#A8A29E] text-sm font-semibold hover:bg-slate-200 dark:hover:bg-white/10 transition-colors border border-slate-200 dark:border-white/10"
+                          >
+                            Xem thêm ({otherMatches.length - PAGE_SIZE} trận)
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  )}
                 </motion.div>
               )}
             </>

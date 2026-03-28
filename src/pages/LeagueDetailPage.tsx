@@ -63,16 +63,26 @@ export default function LeagueDetailPage() {
   React.useEffect(() => {
     if (!tournamentId || seasons.length === 0) return;
     Promise.all([
-      leagueService.getVietnameseLeagues(),
+      leagueService.getLeagues(),          // DB — fast
       loadDbTeams(),
     ])
       .then(([leagues, allDbTeams]) => {
-        setLeague(leagues.find(l => l.uniqueTournamentId === tournamentId) ?? null);
+        // Map DB league to SofascoreLeague shape for header display
+        const dbLeague = leagues.find(l => l.apiLeagueId === tournamentId);
+        if (dbLeague) {
+          setLeague({
+            name: dbLeague.leagueName,
+            uniqueTournamentId: tournamentId,
+            currentSeasonId: selectedSeason?.seasonId ?? 0,
+            seasonName: '',
+            url: '',
+            logoUrl: dbLeague.logoUrl || `https://api.sofascore.app/api/v1/unique-tournament/${tournamentId}/image/dark`,
+          });
+        }
         setDbTeams(allDbTeams);
-        // Load standings/teams AFTER we have dbTeams
         if (hasStandings && selectedSeason) {
           setStandingsLoading(true);
-          leagueService.getSofascoreStandings(tournamentId, selectedSeason.seasonId)
+          leagueService.getHybridStandings(tournamentId, selectedSeason.seasonId)
             .then(rows => setStandingsRows(rows))
             .catch(() => setStandingsRows([]))
             .finally(() => setStandingsLoading(false));
@@ -110,7 +120,7 @@ export default function LeagueDetailPage() {
     if (!selectedSeason || !dbTeams.length) return;
     if (hasStandings) {
       setStandingsLoading(true);
-      leagueService.getSofascoreStandings(tournamentId, selectedSeason.seasonId)
+      leagueService.getHybridStandings(tournamentId, selectedSeason.seasonId)
         .then(rows => setStandingsRows(rows))
         .catch(() => setStandingsRows([]))
         .finally(() => setStandingsLoading(false));
@@ -130,10 +140,10 @@ export default function LeagueDetailPage() {
   async function loadTeams(seasonId: number, allDbTeams: Team[] = dbTeams) {
     setTeams([]);
     if (hasStandings) {
-      const rows = await leagueService.getSofascoreStandings(tournamentId, seasonId);
+      const rows = await leagueService.getHybridStandings(tournamentId, seasonId);
       setTeams(rows.map(r => ({
         sofaId: r.team.id,
-        dbTeamId: getDbTeamId(r.team.id, allDbTeams),
+        dbTeamId: r.team.dbTeamId || getDbTeamId(r.team.id, allDbTeams),
         name: r.team.name,
         logo: r.team.logo,
         position: r.position,
@@ -239,7 +249,27 @@ export default function LeagueDetailPage() {
               {/* Cup Bracket */}
               {!hasStandings && selectedSeason?.cupTreeId && (
                 <div className="mb-10">
-                  <h2 className="font-display font-bold text-xl text-slate-900 dark:text-foreground mb-6">Bracket</h2>
+                  <h2 className="font-display font-bold text-xl text-slate-900 dark:text-foreground mb-4">Bracket</h2>
+
+                  {/* Round labels as a step indicator */}
+                  <div className="flex items-center gap-1 mb-4 flex-wrap">
+                    {[
+                      { label: 'Vòng 1/8', color: 'bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-[#A8A29E] border-slate-200 dark:border-white/10' },
+                      { label: 'Tứ kết',   color: 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-500/20' },
+                      { label: 'Bán kết',  color: 'bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-500/20' },
+                      { label: 'Chung kết',color: 'bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/20' },
+                    ].map(({ label, color }, i, arr) => (
+                      <React.Fragment key={label}>
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${color}`}>
+                          {label}
+                        </span>
+                        {i < arr.length - 1 && (
+                          <span className="text-slate-500 dark:text-slate-400 text-sm font-bold">→</span>
+                        )}
+                      </React.Fragment>
+                    ))}
+                  </div>
+
                   <div className="rounded-2xl border border-slate-200 dark:border-white/10 overflow-hidden" style={{ height: 740 }}>
                     <iframe
                       src={`https://widgets.sofascore.com/embed/unique-tournament/${tournamentId}/season/${selectedSeason.seasonId}/cuptree/${selectedSeason.cupTreeId}?widgetTitle=Vietnam+Cup+${encodeURIComponent(selectedSeason.label)}&showCompetitionLogo=true&widgetTheme=light`}
