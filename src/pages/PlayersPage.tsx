@@ -21,38 +21,53 @@ const POSITIONS = [
 ];
 
 const POS_COLOR: Record<string, string> = {
-  G: 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300',
-  D: 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300',
-  M: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-300',
-  F: 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300',
+  G: 'bg-purple-500/90 text-white',
+  D: 'bg-amber-500/90 text-white',
+  M: 'bg-cyan-500/90 text-white',
+  F: 'bg-red-500/90 text-white',
 };
-const POS_LABEL: Record<string, string> = { G: 'TM', D: 'HV', M: 'TV', F: 'TĐ' };
+const POS_LABEL: Record<string, string> = { G: 'Thủ môn', D: 'Hậu vệ', M: 'Tiền vệ', F: 'Tiền đạo' };
 
 function PlayerCard({ player }: { player: PlayerFromAPI & { teamName?: string } }) {
   const [imgError, setImgError] = useState(false);
   const pos = player.position ?? '';
+  const posLabel = POS_LABEL[pos] ?? pos;
+  const posColor = POS_COLOR[pos] ?? 'bg-slate-500 text-white';
 
   return (
     <Link to={`/players/${player.playerId}`}>
-      <div className="group glass-card rounded-2xl overflow-hidden hover:translate-y-[-3px] hover:shadow-lg transition-all duration-200 border border-transparent hover:border-[#FF4444]/20">
-        <div className="relative h-24 bg-gradient-to-br from-slate-700 to-slate-900 p-4">
-          <div className="absolute -bottom-7 right-4 w-14 h-14 rounded-xl overflow-hidden border-2 border-background bg-slate-800 flex items-center justify-center">
+      <div className="group flex items-center gap-4 p-3 rounded-2xl bg-white dark:bg-white/5 border border-slate-100 dark:border-white/10 hover:border-[#00D9FF]/40 hover:shadow-md transition-all duration-200">
+        {/* Avatar */}
+        <div className="relative flex-shrink-0">
+          <div className="w-16 h-16 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800">
             {player.photoUrl && !imgError
-              ? <img src={player.photoUrl} alt={player.fullName} className="w-full h-full object-cover" referrerPolicy="no-referrer" onError={() => setImgError(true)} />
-              : <User className="w-7 h-7 text-slate-400" />
+              ? <img src={player.photoUrl} alt={player.fullName} className="w-full h-full object-cover object-top" referrerPolicy="no-referrer" onError={() => setImgError(true)} />
+              : <div className="w-full h-full flex items-center justify-center"><User className="w-8 h-8 text-slate-400" /></div>
             }
           </div>
-          {pos && (
-            <span className={cn("absolute top-3 left-3 w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold", POS_COLOR[pos] ?? 'bg-slate-200 text-slate-600')}>
-              {POS_LABEL[pos] ?? pos}
+          {/* Number badge */}
+          {(player as any).number && (
+            <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-slate-900 dark:bg-slate-700 border border-white/20 flex items-center justify-center text-[9px] font-bold text-white">
+              {(player as any).number}
             </span>
           )}
         </div>
-        <div className="p-4 pt-10">
-          <h3 className="font-display font-bold text-sm text-foreground truncate group-hover:text-[#FF4444] transition-colors">{player.fullName}</h3>
+
+        {/* Info */}
+        <div className="flex-1 min-w-0">
+          <h3 className="font-display font-bold text-sm text-slate-900 dark:text-foreground truncate group-hover:text-[#00D9FF] transition-colors">
+            {player.fullName}
+          </h3>
           <p className="text-xs text-slate-500 dark:text-[#A8A29E] truncate mt-0.5">{(player as any).teamName ?? ''}</p>
-          {player.nationality && <p className="text-xs text-slate-400 mt-0.5">{player.nationality}</p>}
+          <p className="text-xs text-slate-400 mt-0.5">{player.nationality ?? ''}</p>
         </div>
+
+        {/* Position */}
+        {pos && (
+          <span className={cn("flex-shrink-0 px-2 py-0.5 rounded-md text-[10px] font-bold", posColor)}>
+            {posLabel}
+          </span>
+        )}
       </div>
     </Link>
   );
@@ -66,6 +81,8 @@ export default function PlayersPage() {
   const [allPlayers, setAllPlayers] = useState<(PlayerFromAPI & { teamName?: string })[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 24;
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -124,6 +141,7 @@ export default function PlayersPage() {
   const handleLeagueChange = (val: number | 'all') => {
     setLeagueFilter(val);
     setTeamFilter('all');
+    setPage(1);
   };
 
   const filtered = allPlayers.filter(p => {
@@ -133,6 +151,9 @@ export default function PlayersPage() {
     const matchPos = posFilter === 'all' || p.position === posFilter;
     return matchSearch && matchLeague && matchTeam && matchPos;
   });
+
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
     <MainLayout>
@@ -150,7 +171,7 @@ export default function PlayersPage() {
             {/* Search */}
             <div className="relative mb-5">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input type="text" placeholder="Tìm kiếm cầu thủ..." value={search} onChange={e => setSearch(e.target.value)}
+              <input type="text" placeholder="Tìm kiếm cầu thủ..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
                 className="w-full h-11 pl-11 pr-4 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-foreground placeholder-slate-400 dark:placeholder-[#A8A29E] focus:outline-none focus:border-[#00D9FF]/50 text-sm transition-colors" />
             </div>
 
@@ -166,13 +187,13 @@ export default function PlayersPage() {
                 {
                   label: 'Đội bóng',
                   value: teamFilter === 'all' ? 'all' : String(teamFilter),
-                  onChange: (v: string) => setTeamFilter(v === 'all' ? 'all' : Number(v)),
+                  onChange: (v: string) => { setTeamFilter(v === 'all' ? 'all' : Number(v)); setPage(1); },
                   options: [{ value: 'all', label: 'Tất cả đội' }, ...teamsInLeague.map(t => ({ value: String(t.teamId), label: t.teamName }))],
                 },
                 {
                   label: 'Vị trí',
                   value: posFilter,
-                  onChange: (v: string) => setPosFilter(v),
+                  onChange: (v: string) => { setPosFilter(v); setPage(1); },
                   options: POSITIONS.map(p => ({ value: p.value, label: p.label })),
                 },
               ].map(f => (
@@ -209,7 +230,7 @@ export default function PlayersPage() {
 
           {/* Count */}
           <p className="text-sm text-slate-500 dark:text-[#A8A29E] mb-5">
-            Hiển thị <span className="font-mono-data font-semibold text-foreground">{filtered.length}</span> / {allPlayers.length} cầu thủ
+            Hiển thị <span className="font-mono-data font-semibold text-foreground">{Math.min(page * PAGE_SIZE, filtered.length)}</span> / {filtered.length} cầu thủ
           </p>
 
           {/* Grid */}
@@ -223,13 +244,51 @@ export default function PlayersPage() {
               <p>{allPlayers.length === 0 ? 'Chưa có dữ liệu cầu thủ' : 'Không tìm thấy cầu thủ phù hợp'}</p>
             </div>
           ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {filtered.map((player, i) => (
-                <motion.div key={player.playerId} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: Math.min(i * 0.03, 0.5) }}>
-                  <PlayerCard player={player} />
-                </motion.div>
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+                {paginated.map((player, i) => (
+                  <motion.div key={player.playerId} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: Math.min(i * 0.03, 0.4) }}>
+                    <PlayerCard player={player} />
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2 mt-8">
+                  <button
+                    onClick={() => { setPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                    disabled={page === 1}
+                    className="px-4 py-2 rounded-xl text-sm font-medium bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 disabled:opacity-40 hover:border-[#00D9FF] transition-colors"
+                  >
+                    ← Trước
+                  </button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter(p => p === 1 || p === totalPages || Math.abs(p - page) <= 2)
+                    .reduce<(number | '...')[]>((acc, p, idx, arr) => {
+                      if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push('...');
+                      acc.push(p);
+                      return acc;
+                    }, [])
+                    .map((p, i) => p === '...'
+                      ? <span key={`ellipsis-${i}`} className="px-2 text-slate-400">…</span>
+                      : <button key={p} onClick={() => { setPage(p as number); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                          className={cn("w-9 h-9 rounded-xl text-sm font-medium transition-colors",
+                            page === p ? "bg-[#00D9FF] text-slate-900 font-bold" : "bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:border-[#00D9FF]"
+                          )}>
+                          {p}
+                        </button>
+                    )}
+                  <button
+                    onClick={() => { setPage(p => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                    disabled={page === totalPages}
+                    className="px-4 py-2 rounded-xl text-sm font-medium bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 disabled:opacity-40 hover:border-[#00D9FF] transition-colors"
+                  >
+                    Sau →
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

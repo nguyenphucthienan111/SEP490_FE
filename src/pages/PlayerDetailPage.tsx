@@ -251,54 +251,52 @@ export default function PlayerDetailPage() {
                   {playerPosition && (
                     <div className="flex items-center gap-3 mb-2">
                       <span className="px-3 py-1 rounded-full text-xs font-label font-semibold uppercase tracking-wider border bg-blue-50 text-blue-700 border-blue-200 dark:bg-cyan-500/20 dark:text-cyan-400 dark:border-cyan-500/30">
-                        {playerPosition}
+                        {({'F':'Tiền đạo','M':'Tiền vệ','D':'Hậu vệ','G':'Thủ môn'} as Record<string,string>)[playerPosition] ?? playerPosition}
                       </span>
-                      {apiPlayer?.number && (
-                        <span className="text-slate-600 dark:text-[#A8A29E] text-sm">#{apiPlayer.number}</span>
-                      )}
                     </div>
                   )}
-                  <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-slate-900 dark:text-foreground mb-2">
-                    {playerName}
-                  </h1>
-                  
-                  {/* Club Name - for API players */}
-                  {apiPlayer?.team && (
-                    <p className="text-lg text-[#00D9FF] font-semibold mb-4">{apiPlayer.team.teamName}</p>
-                  )}
-                  
-                  {/* Club Name - for mock players */}
-                  {player && !apiPlayer && (
-                    <p className="text-lg text-slate-600 dark:text-[#A8A29E] mb-4">{player.team}</p>
-                  )}
-                  
-                  <div className="flex flex-wrap gap-4 text-sm">
+                  <div className="flex items-start gap-6">
                     <div>
-                      <span className="text-slate-600 dark:text-[#A8A29E]">Quốc tịch: </span>
-                      <span className="text-slate-900 dark:text-foreground font-semibold">
-                        {playerNationality || 'N/A'}
-                      </span>
+                      <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-slate-900 dark:text-foreground mb-2">
+                        {playerName}
+                      </h1>
+                      {apiPlayer?.team && (
+                        <p className="text-lg text-[#00D9FF] font-semibold mb-2">{apiPlayer.team.teamName}</p>
+                      )}
+                      {player && !apiPlayer && (
+                        <p className="text-lg text-slate-600 dark:text-[#A8A29E] mb-2">{player.team}</p>
+                      )}
+                      <div className="flex flex-wrap gap-4 text-sm">
+                        <div>
+                          <span className="text-slate-600 dark:text-[#A8A29E]">Quốc tịch: </span>
+                          <span className="text-slate-900 dark:text-foreground font-semibold">{playerNationality || 'N/A'}</span>
+                        </div>
+                        {playerAge && (
+                          <div>
+                            <span className="text-slate-600 dark:text-[#A8A29E]">Tuổi: </span>
+                            <span className="text-slate-900 dark:text-foreground font-semibold">{playerAge}</span>
+                          </div>
+                        )}
+                        <div>
+                          <span className="text-slate-600 dark:text-[#A8A29E]">Chiều cao: </span>
+                          <span className="text-slate-900 dark:text-foreground font-semibold">{playerHeight ? `${playerHeight} cm` : 'N/A'}</span>
+                        </div>
+                      </div>
                     </div>
-                    {playerAge && (
-                      <div>
-                        <span className="text-slate-600 dark:text-[#A8A29E]">Tuổi: </span>
-                        <span className="text-slate-900 dark:text-foreground font-semibold">
-                          {playerAge}
+
+                    {/* Jersey */}
+                    {apiPlayer?.number && (
+                      <div className="relative w-20 h-20 flex items-center justify-center flex-shrink-0">
+                        <svg viewBox="0 0 50 50" className="absolute inset-0 w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M18 5 L10 12 L4 9 L2 22 L10 22 L10 44 L40 44 L40 22 L48 22 L46 9 L40 12 L32 5 C30 8 27.5 9.5 25 9.5 C22.5 9.5 20 8 18 5Z"
+                            fill="white" fillOpacity="0.08" stroke="#222" strokeWidth="2" strokeLinejoin="round"
+                          />
+                        </svg>
+                        <span className="relative z-10 font-mono-data font-bold text-3xl text-slate-900 dark:text-white leading-none mt-2">
+                          {apiPlayer.number}
                         </span>
                       </div>
                     )}
-                    <div>
-                      <span className="text-slate-600 dark:text-[#A8A29E]">Chiều cao: </span>
-                      <span className="text-slate-900 dark:text-foreground font-semibold">
-                        {playerHeight ? `${playerHeight} cm` : 'N/A'}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-slate-600 dark:text-[#A8A29E]">Cân nặng: </span>
-                      <span className="text-slate-900 dark:text-foreground font-semibold">
-                        {playerWeight ? `${playerWeight} kg` : 'N/A'}
-                      </span>
-                    </div>
                   </div>
                 </div>
               </div>
