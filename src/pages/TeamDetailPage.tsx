@@ -216,13 +216,14 @@ export default function TeamDetailPage() {
     try {
       const cached = sessionStorage.getItem(cacheKey);
       if (cached) {
-        const { team, players: p, recent, upcoming, recentHasMore: hasMore } = JSON.parse(cached);
+        const { team, recent, upcoming, recentHasMore: hasMore } = JSON.parse(cached);
         setApiTeam(team);
-        setPlayers(p);
         setRecentMatches(recent);
         setUpcomingMatches(upcoming);
         setRecentHasMore(hasMore ?? false);
         setLoading(false);
+        // Vẫn fetch players mới nhất (không cache vì hay thay đổi)
+        leagueService.getPlayers(team.teamId).then(p => setPlayers(p)).catch(() => {});
         return;
       }
     } catch (e) {}
@@ -257,9 +258,9 @@ export default function TeamDetailPage() {
       setRecentMatches(recent);
       setRecentHasMore(r0val.length >= 10);
 
-      // Lưu cache
+      // Lưu cache (không cache players vì hay thay đổi)
       try {
-        sessionStorage.setItem(cacheKey, JSON.stringify({ team, players: p, recent, upcoming, recentHasMore: r0val.length >= 10 }));
+        sessionStorage.setItem(cacheKey, JSON.stringify({ team, recent, upcoming, recentHasMore: r0val.length >= 10 }));
       } catch (e) {}
 
     } catch {
@@ -529,14 +530,13 @@ export default function TeamDetailPage() {
                                   )}>{posLabelVI[pos]}</h3>
                                   <div className="glass-card rounded-2xl overflow-hidden">
                                     {/* Header */}
-                                    <div className="hidden sm:grid px-4 py-2 border-b border-slate-100 dark:border-white/5 text-xs text-slate-400 dark:text-[#A8A29E]"
-                                      style={{ gridTemplateColumns: '2rem 2.5rem 1fr 8rem 4.5rem 3rem', gap: '0.75rem', alignItems: 'center' }}>
-                                      <span />
-                                      <span />
-                                      <span className="pl-1">Cầu thủ</span>
-                                      <span className="text-center">Quốc tịch</span>
-                                      <span className="text-right">Cao</span>
-                                      <span className="text-right">Tuổi</span>
+                                    <div className="hidden sm:flex items-center px-4 py-2 border-b border-slate-100 dark:border-white/5 text-xs text-slate-400 dark:text-[#A8A29E] gap-2">
+                                      <span className="w-7 flex-shrink-0" />
+                                      <span className="w-9 flex-shrink-0" />
+                                      <span className="flex-1 pl-1">Cầu thủ</span>
+                                      <span className="w-24 text-center flex-shrink-0">Quốc tịch</span>
+                                      <span className="w-16 text-center flex-shrink-0">Cao (cm)</span>
+                                      <span className="w-10 text-right flex-shrink-0">Tuổi</span>
                                     </div>
                                     <div className="divide-y divide-slate-100 dark:divide-white/5">
                                       {group.map(p => {
@@ -547,8 +547,7 @@ export default function TeamDetailPage() {
                                         };
                                         return (
                                           <Link key={p.playerId} to={`/players/${p.playerId}`} state={{ fromTeamId: teamId }}
-                                            className="hidden sm:grid items-center px-4 py-3 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors group"
-                                            style={{ gridTemplateColumns: '2rem 2.5rem 1fr 8rem 4.5rem 3rem', gap: '0.75rem', alignItems: 'center' }}>
+                                            className="hidden sm:flex items-center px-4 py-3 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors group gap-2">
                                             {/* Number */}
                                             <div className={cn('w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0', numBg[normalizePos(p.position)] ?? 'bg-slate-700')}>
                                               <span className="font-mono-data text-[10px] font-bold text-white">{p.number ?? '—'}</span>
@@ -558,7 +557,7 @@ export default function TeamDetailPage() {
                                               {p.photoUrl ? <img src={p.photoUrl} alt={p.fullName} className="w-full h-full object-cover" /> : <User className="w-4 h-4 text-slate-400 m-auto mt-2" />}
                                             </div>
                                             {/* Name + sub */}
-                                            <div className="min-w-0 pl-1">
+                                            <div className="flex-1 min-w-0 pl-1">
                                               <p className="font-semibold text-sm text-slate-900 dark:text-foreground group-hover:text-[#00D9FF] transition-colors truncate">{p.fullName}</p>
                                               <p className={cn('text-xs truncate',
                                                 pos === 'Attacker' ? 'text-red-400' :
@@ -567,23 +566,23 @@ export default function TeamDetailPage() {
                                               )}>{posLabelVI[normalizePos(p.position)] ?? normalizePos(p.position)}</p>
                                             </div>
                                             {/* Nationality */}
-                                            <div className="flex items-center justify-center">
+                                            <div className="w-24 flex items-center justify-center flex-shrink-0">
                                               {p.nationality ? (
-                                                <span className={cn('inline-flex items-center justify-center px-2 py-0.5 rounded-md text-xs font-medium w-full text-center',
+                                                <span className={cn('px-2 py-0.5 rounded-md text-xs font-medium text-center',
                                                   isForeign
                                                     ? 'bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300'
                                                     : 'bg-slate-100 text-slate-600 dark:bg-white/5 dark:text-[#A8A29E]'
                                                 )}>
                                                   {p.nationality}
                                                 </span>
-                                              ) : <span className="text-xs text-slate-300 dark:text-white/20 text-center w-full block">—</span>}
+                                              ) : <span className="text-xs text-slate-300 dark:text-white/20">—</span>}
                                             </div>
                                             {/* Height */}
-                                            <span className="text-xs text-slate-500 dark:text-[#A8A29E] text-right">
+                                            <span className="w-16 text-xs text-slate-500 dark:text-[#A8A29E] text-center flex-shrink-0">
                                               {(p as any).heightCm ? `${(p as any).heightCm}` : '—'}
                                             </span>
                                             {/* Age */}
-                                            <span className="text-xs font-medium text-slate-600 dark:text-slate-300 text-right">
+                                            <span className="w-10 text-xs font-medium text-slate-600 dark:text-slate-300 text-right flex-shrink-0">
                                               {p.age ? `${p.age}` : '—'}
                                             </span>
                                           </Link>
@@ -910,6 +909,8 @@ export default function TeamDetailPage() {
     </MainLayout>
   );
 }
+
+
 
 
 
