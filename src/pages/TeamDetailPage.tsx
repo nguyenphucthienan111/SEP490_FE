@@ -140,6 +140,32 @@ export default function TeamDetailPage() {
     setContractsLoading(false);
   };
 
+  const loadTransfers = async (team: typeof apiTeam) => {
+    if (!team || transfersLoaded || transfersLoading) return;
+    setTransfersLoading(true);
+    try {
+      const mapping = LEAGUE_TOURNAMENT[team.leagueId];
+      if (!mapping) { setTransfersLoading(false); return; }
+      const res = await leagueService.getLeagueTransfers(mapping.tournamentId, mapping.seasonId);
+      const inByTeam: any[] = res?.transfersInByTeam ?? res?.data?.transfersInByTeam ?? res?.TransfersInByTeam ?? [];
+      const outByTeam: any[] = res?.transfersOutByTeam ?? res?.data?.transfersOutByTeam ?? res?.TransfersOutByTeam ?? [];
+      const inData = inByTeam.find((t: any) =>
+        t.teamId === team.teamId || t.apiTeamId === team.apiTeamId ||
+        t.TeamId === team.teamId || t.ApiTeamId === team.apiTeamId
+      );
+      const outData = outByTeam.find((t: any) =>
+        t.teamId === team.teamId || t.apiTeamId === team.apiTeamId ||
+        t.TeamId === team.teamId || t.ApiTeamId === team.apiTeamId
+      );
+      const inPlayers = inData?.players ?? inData?.transfers ?? inData?.Transfers ?? [];
+      const outPlayers = outData?.players ?? outData?.transfers ?? outData?.Transfers ?? [];
+      setTransfersIn(inPlayers);
+      setTransfersOut(outPlayers);
+      setTransfersLoaded(true);
+    } catch (e) { console.error('[Transfers] error:', e); }
+    setTransfersLoading(false);
+  };
+
   const loadMoreRecent = async () => {
     if (!apiTeam || recentLoading) return;
     setRecentLoading(true);
@@ -428,34 +454,40 @@ export default function TeamDetailPage() {
                 return (
                   <div>
                     {/* Sub-tab switcher */}
-                    <div className="flex items-center gap-3 mb-5">
+                    <div className="flex flex-wrap items-center gap-3 mb-5">
                       <div className="flex gap-1 bg-slate-100 dark:bg-white/5 rounded-lg p-1">
-                        {(['general', 'contract'] as const).map(v => (
-                          <button key={v} onClick={() => { setSquadView(v); if (v === 'contract' && !contractsLoaded) loadContracts(apiTeam); }}
-                            className={cn('px-4 py-1.5 rounded-md text-xs font-semibold transition-all',
+                        {(['general', 'contract', 'transfers'] as const).map(v => (
+                          <button key={v} onClick={() => {
+                            setSquadView(v);
+                            if (v === 'contract' && !contractsLoaded) loadContracts(apiTeam);
+                            if (v === 'transfers' && !transfersLoaded) loadTransfers(apiTeam);
+                          }}
+                            className={cn('px-3 py-1.5 rounded-md text-xs font-semibold transition-all whitespace-nowrap',
                               squadView === v
                                 ? 'bg-white dark:bg-white/15 text-slate-900 dark:text-foreground shadow-sm'
                                 : 'text-slate-500 dark:text-[#A8A29E] hover:text-slate-700 dark:hover:text-foreground'
                             )}>
-                            {v === 'general' ? 'Tổng quan' : 'Hợp đồng'}
+                            {v === 'general' ? 'Tổng quan' : v === 'contract' ? 'Hợp đồng' : 'Chuyển nhượng'}
                           </button>
                         ))}
                       </div>
-                      {/* Position filter pills */}
-                      <div className="flex gap-1.5 flex-wrap">
-                        {filterKeys.map(pos => (
-                          <button key={pos} onClick={() => setActiveFilter(pos)}
-                            className={cn('px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all',
-                              activeFilter === pos
-                                ? pos === 'all'
-                                  ? 'bg-[#00D9FF]/15 text-[#00D9FF] border-[#00D9FF]/40'
-                                  : cn(posPillActive[pos], 'border')
-                                : 'bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-[#A8A29E] border-transparent hover:bg-slate-200 dark:hover:bg-white/10'
-                            )}>
-                            {pos === 'all' ? 'Tất cả' : posLabelVI[pos]}
-                          </button>
-                        ))}
-                      </div>
+                      {/* Position filter pills — only for general/contract */}
+                      {squadView !== 'transfers' && (
+                        <div className="flex gap-1.5 flex-wrap">
+                          {filterKeys.map(pos => (
+                            <button key={pos} onClick={() => setActiveFilter(pos)}
+                              className={cn('px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all',
+                                activeFilter === pos
+                                  ? pos === 'all'
+                                    ? 'bg-[#00D9FF]/15 text-[#00D9FF] border-[#00D9FF]/40'
+                                    : cn(posPillActive[pos], 'border')
+                                  : 'bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-[#A8A29E] border-transparent hover:bg-slate-200 dark:hover:bg-white/10'
+                              )}>
+                              {pos === 'all' ? 'Tất cả' : posLabelVI[pos]}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     {/* ── General view ── */}
@@ -637,6 +669,152 @@ export default function TeamDetailPage() {
                         </div>
                       )
                     )}
+
+                    {/* ── Transfers view ── */}
+                    {squadView === 'transfers' && (
+                      transfersLoading ? (
+                        <div className="flex items-center justify-center py-16">
+                          <Loader2 className="w-8 h-8 text-[#00D9FF] animate-spin" />
+                        </div>
+                      ) : (transfersIn.length === 0 && transfersOut.length === 0) ? (
+                        <div className="text-center py-16 text-slate-400 dark:text-[#A8A29E]">
+                          <Users className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                          <p>Chưa có thông tin chuyển nhượng</p>
+                        </div>
+                      ) : (() => {
+                          const getTypeInfo = (tType: string, isIn: boolean) => {
+                            if (tType === 'Transfer') return { label: isIn ? 'Mua' : 'Bán', cls: isIn ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white' };
+                            if (tType === 'Loan') return { label: isIn ? 'Mượn' : 'Cho mượn', cls: 'bg-amber-500 text-white' };
+                            if (tType === 'Loan return' || tType === 'Loan Return') return { label: 'Hết mượn', cls: 'bg-slate-400 text-white' };
+                            return { label: tType ?? '—', cls: 'bg-slate-300 text-slate-700 dark:bg-slate-600 dark:text-slate-200' };
+                          };
+                          const parseTransfer = (t: any, isIn: boolean) => ({
+                            tType: t.transferType ?? t.type,
+                            rawDate: t.transferDate ?? t.date,
+                            fee: (t.transferFee && t.transferFee !== "") ? t.transferFee : (t.fee && t.fee !== "") ? t.fee : null,
+                            playerName: t.playerName ?? t.player?.name ?? t.player?.shortName,
+                            photoUrl: (t.apiPlayerId ?? t.player?.id) ? `https://api.sofascore.app/api/v1/player/${t.apiPlayerId ?? t.player?.id}/image` : null,
+                            teamName: isIn
+                              ? (typeof t.fromTeam === "string" ? t.fromTeam : null) ?? t.fromTeamName ?? t.fromTeamShortName ?? t.fromTeam?.name
+                              : (typeof t.toTeam === "string" ? t.toTeam : null) ?? t.toTeamName ?? t.toTeamShortName ?? t.toTeam?.name,
+                          });
+
+                          const TCard = ({ t, isIn }: { t: any; isIn: boolean }) => {
+                            const { tType, rawDate, fee, playerName, photoUrl, teamName } = parseTransfer(t, isIn);
+                            const { label, cls } = getTypeInfo(tType, isIn);
+                            const date = rawDate ? new Date(rawDate).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
+                            return (
+                              <div className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors group cursor-default">
+                                {/* Avatar */}
+                                <div className="relative flex-shrink-0">
+                                  <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-white/10 overflow-hidden border-2 border-slate-200 dark:border-white/10 flex items-center justify-center">
+                                    {photoUrl
+                                      ? <img src={photoUrl} alt={playerName} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                      : <User className="w-4 h-4 text-slate-400" />}
+                                  </div>
+                                  {/* In/Out dot */}
+                                  <div className={cn('absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border-2 border-white dark:border-slate-900 flex items-center justify-center text-white',
+                                    isIn ? 'bg-emerald-500' : 'bg-red-500'
+                                  )}>
+                                    <span className="text-[8px] font-black leading-none">{isIn ? '↓' : '↑'}</span>
+                                  </div>
+                                </div>
+
+                                {/* Main info */}
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-semibold text-sm text-slate-900 dark:text-foreground truncate group-hover:text-[#00D9FF] transition-colors leading-tight">{playerName ?? '—'}</p>
+                                  <div className="flex items-center gap-1.5 mt-0.5">
+                                    <span className="text-xs text-slate-400 dark:text-[#A8A29E] truncate max-w-[120px]">{teamName ?? '—'}</span>
+                                    {fee && fee !== 'Free' && (
+                                      <span className="text-xs font-semibold text-[#00D9FF] flex-shrink-0">· {fee}</span>
+                                    )}
+                                    {fee === 'Free' && (
+                                      <span className="text-xs text-slate-400 flex-shrink-0">· Tự do</span>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Right side */}
+                                <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                                  <span className={cn('px-2 py-0.5 rounded text-[10px] font-bold tracking-wide', cls)}>{label}</span>
+                                  <span className="text-[10px] text-slate-400 dark:text-[#A8A29E] tabular-nums">{date}</span>
+                                </div>
+                              </div>
+                            );
+                          };
+
+                          // Summary stats
+                          const inTypes = transfersIn.reduce((acc: any, t: any) => { const k = t.transferType ?? t.type ?? 'Unknown'; acc[k] = (acc[k] || 0) + 1; return acc; }, {});
+                          const outTypes = transfersOut.reduce((acc: any, t: any) => { const k = t.transferType ?? t.type ?? 'Unknown'; acc[k] = (acc[k] || 0) + 1; return acc; }, {});
+
+                          return (
+                            <div className="space-y-4">
+                              {/* Summary bar */}
+                              <div className="grid grid-cols-2 gap-3">
+                                <div className="glass-card rounded-xl p-4 border-l-4 border-emerald-500">
+                                  <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{transfersIn.length}</p>
+                                  <p className="text-xs text-slate-500 dark:text-[#A8A29E] mt-0.5">Cầu thủ gia nhập</p>
+                                  <div className="flex gap-1.5 mt-2 flex-wrap">
+                                    {Object.entries(inTypes).map(([k, v]: any) => {
+                                      const { label, cls } = getTypeInfo(k, true);
+                                      return <span key={k} className={cn('px-1.5 py-0.5 rounded text-[10px] font-bold', cls)}>{label}: {v}</span>;
+                                    })}
+                                  </div>
+                                </div>
+                                <div className="glass-card rounded-xl p-4 border-l-4 border-red-500">
+                                  <p className="text-2xl font-bold text-red-600 dark:text-red-400">{transfersOut.length}</p>
+                                  <p className="text-xs text-slate-500 dark:text-[#A8A29E] mt-0.5">Cầu thủ ra đi</p>
+                                  <div className="flex gap-1.5 mt-2 flex-wrap">
+                                    {Object.entries(outTypes).map(([k, v]: any) => {
+                                      const { label, cls } = getTypeInfo(k, false);
+                                      return <span key={k} className={cn('px-1.5 py-0.5 rounded text-[10px] font-bold', cls)}>{label}: {v}</span>;
+                                    })}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Two-column layout on desktop */}
+                              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                {/* Transfers In */}
+                                {transfersIn.length > 0 && (
+                                  <div className="glass-card rounded-2xl overflow-hidden">
+                                    <div className="flex items-center gap-3 px-4 py-3 bg-emerald-500/10 border-b border-emerald-500/20">
+                                      <div className="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0">
+                                        <span className="text-white font-black text-sm">↓</span>
+                                      </div>
+                                      <div>
+                                        <p className="font-bold text-sm text-emerald-700 dark:text-emerald-400">Gia nhập</p>
+                                        <p className="text-xs text-slate-500">{transfersIn.length} cầu thủ</p>
+                                      </div>
+                                    </div>
+                                    <div className="divide-y divide-slate-100 dark:divide-white/5 max-h-[600px] overflow-y-auto">
+                                      {transfersIn.map((t: any, i: number) => <TCard key={i} t={t} isIn={true} />)}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Transfers Out */}
+                                {transfersOut.length > 0 && (
+                                  <div className="glass-card rounded-2xl overflow-hidden">
+                                    <div className="flex items-center gap-3 px-4 py-3 bg-red-500/10 border-b border-red-500/20">
+                                      <div className="w-8 h-8 rounded-full bg-red-500 flex items-center justify-center flex-shrink-0">
+                                        <span className="text-white font-black text-sm">↑</span>
+                                      </div>
+                                      <div>
+                                        <p className="font-bold text-sm text-red-700 dark:text-red-400">Ra đi</p>
+                                        <p className="text-xs text-slate-500">{transfersOut.length} cầu thủ</p>
+                                      </div>
+                                    </div>
+                                    <div className="divide-y divide-slate-100 dark:divide-white/5 max-h-[600px] overflow-y-auto">
+                                      {transfersOut.map((t: any, i: number) => <TCard key={i} t={t} isIn={false} />)}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })()
+                    )}
                   </div>
                 );
               })()}
@@ -716,3 +894,9 @@ export default function TeamDetailPage() {
     </MainLayout>
   );
 }
+
+
+
+
+
+
