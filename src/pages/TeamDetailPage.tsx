@@ -1,6 +1,6 @@
 import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, MapPin, User, Loader2, Calendar, Users, ChevronDown, ChevronUp, Shield } from 'lucide-react';
+import { ArrowLeft, MapPin, User, Loader2, Calendar, Users, ChevronDown, ChevronUp, Shield, FileText } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -122,8 +122,65 @@ export default function TeamDetailPage() {
   const [dbTeams, setDbTeams] = React.useState<Team[]>(() => {
     try { return JSON.parse(localStorage.getItem('teams') || '[]'); } catch { return []; }
   });
+  const [contracts, setContracts] = React.useState<any[]>([]);
+  const [contractsLoading, setContractsLoading] = React.useState(false);
+  const [contractsLoaded, setContractsLoaded] = React.useState(false);
+  const [contractPosFilter, setContractPosFilter] = React.useState('all');
+  const [squadView, setSquadView] = React.useState<'general' | 'contract' | 'transfers'>('general');
+  const [transfersIn, setTransfersIn] = React.useState<any[]>([]);
+  const [transfersOut, setTransfersOut] = React.useState<any[]>([]);
+  const [transfersLoading, setTransfersLoading] = React.useState(false);
+  const [transfersLoaded, setTransfersLoaded] = React.useState(false);
 
   React.useEffect(() => { window.scrollTo(0, 0); loadData(); }, [teamId]);
+
+  // League → tournamentId + seasonId mapping
+  const LEAGUE_TOURNAMENT: Record<number, { tournamentId: number; seasonId: number }> = {
+    1: { tournamentId: 626, seasonId: 78589 },
+    2: { tournamentId: 771, seasonId: 80926 },
+    3: { tournamentId: 3087, seasonId: 81023 },
+  };
+
+  const loadContracts = async (team: typeof apiTeam) => {
+    if (!team || contractsLoaded || contractsLoading) return;
+    setContractsLoading(true);
+    try {
+      const mapping = LEAGUE_TOURNAMENT[team.leagueId];
+      if (!mapping) { setContractsLoading(false); return; }
+      const res = await leagueService.getTeamContracts(mapping.tournamentId, mapping.seasonId);
+      const byTeam: any[] = res?.contractsByTeam ?? res?.data?.contractsByTeam ?? [];
+      const teamData = byTeam.find((t: any) => t.teamId === team.teamId || t.apiTeamId === team.apiTeamId);
+      setContracts(teamData?.contracts ?? []);
+      setContractsLoaded(true);
+    } catch { /* ignore */ }
+    setContractsLoading(false);
+  };
+
+  const loadTransfers = async (team: typeof apiTeam) => {
+    if (!team || transfersLoaded || transfersLoading) return;
+    setTransfersLoading(true);
+    try {
+      const mapping = LEAGUE_TOURNAMENT[team.leagueId];
+      if (!mapping) { setTransfersLoading(false); return; }
+      const res = await leagueService.getLeagueTransfers(mapping.tournamentId, mapping.seasonId);
+      const inByTeam: any[] = res?.transfersInByTeam ?? res?.data?.transfersInByTeam ?? res?.TransfersInByTeam ?? [];
+      const outByTeam: any[] = res?.transfersOutByTeam ?? res?.data?.transfersOutByTeam ?? res?.TransfersOutByTeam ?? [];
+      const inData = inByTeam.find((t: any) =>
+        t.teamId === team.teamId || t.apiTeamId === team.apiTeamId ||
+        t.TeamId === team.teamId || t.ApiTeamId === team.apiTeamId
+      );
+      const outData = outByTeam.find((t: any) =>
+        t.teamId === team.teamId || t.apiTeamId === team.apiTeamId ||
+        t.TeamId === team.teamId || t.ApiTeamId === team.apiTeamId
+      );
+      const inPlayers = inData?.players ?? inData?.transfers ?? inData?.Transfers ?? [];
+      const outPlayers = outData?.players ?? outData?.transfers ?? outData?.Transfers ?? [];
+      setTransfersIn(inPlayers);
+      setTransfersOut(outPlayers);
+      setTransfersLoaded(true);
+    } catch (e) { console.error('[Transfers] error:', e); }
+    setTransfersLoading(false);
+  };
 
   const loadMoreRecent = async () => {
     if (!apiTeam || recentLoading) return;
@@ -271,7 +328,7 @@ export default function TeamDetailPage() {
                     <p className="text-slate-500 dark:text-[#A8A29E] text-sm mt-0.5">{apiTeam.shortName}</p>
                   )}
                   <div className="flex flex-wrap gap-4 mt-3 text-sm text-slate-600 dark:text-[#A8A29E]">
-                    {apiTeam.founded && <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" />Est. {apiTeam.founded}</span>}
+                    <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" />Est. {apiTeam.founded ?? '—'}</span>
                     {apiTeam.coachName && <span className="flex items-center gap-1.5"><User className="w-3.5 h-3.5" />{apiTeam.coachName}</span>}
                     {apiTeam.stadium && (
                       <Link to={`/stadiums/${apiTeam.stadium.stadiumId}`} state={{ fromTeamId: teamId }}
@@ -294,7 +351,7 @@ export default function TeamDetailPage() {
           {/* Tabs */}
           <div className="flex gap-0.5 bg-slate-100 dark:bg-white/5 rounded-xl p-1 mb-6">
             {TABS.map(tab => (
-              <button key={tab} onClick={() => setActiveTab(tab)}
+              <button key={tab} onClick={() => { setActiveTab(tab); if (tab === 'Đội hình') loadContracts(apiTeam); }}
                 className={cn("flex-1 py-2 px-3 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap",
                   activeTab === tab
                     ? "bg-white dark:bg-white/10 text-slate-900 dark:text-foreground shadow-sm"
@@ -357,64 +414,426 @@ export default function TeamDetailPage() {
               )}
 
               {/* ── Đội hình ── */}
-              {activeTab === 'Đội hình' && (
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <p className="text-sm text-slate-500 dark:text-[#A8A29E]">{filteredPlayers.length} / {players.length} cầu thủ</p>
-                    <select value={posFilter} onChange={e => setPosFilter(e.target.value)}
-                      className="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-slate-100 text-sm">
-                      <option value="all">Tất cả vị trí</option>
-                      <option value="Goalkeeper">Thủ môn</option>
-                      <option value="Defender">Hậu vệ</option>
-                      <option value="Midfielder">Tiền vệ</option>
-                      <option value="Attacker">Tiền đạo</option>
-                    </select>
-                  </div>
-                  {filteredPlayers.length === 0 ? (
-                    <div className="text-center py-16 text-slate-400 dark:text-[#A8A29E]">
-                      <Users className="w-12 h-12 mx-auto mb-3 opacity-30" /><p>Chưa có thông tin cầu thủ</p>
-                    </div>
-                  ) : (
-                    <div className="glass-card rounded-2xl overflow-hidden divide-y divide-slate-100 dark:divide-white/5">
-                      {filteredPlayers.map(p => (
-                        <Link key={p.playerId} to={`/players/${p.playerId}`} state={{ fromTeamId: teamId }}
-                          className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors group">
-                          <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-white/5 flex items-center justify-center overflow-hidden flex-shrink-0">
-                            {p.photoUrl ? <img src={p.photoUrl} alt={p.fullName} className="w-full h-full object-cover" /> : <User className="w-5 h-5 text-slate-400" />}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-sm text-slate-900 dark:text-foreground group-hover:text-[#00D9FF] transition-colors truncate">{p.fullName}</p>
-                            <div className="flex items-center gap-1.5 mt-0.5">
-                              {p.position && (
-                                <span className={cn("w-2 h-2 rounded-full flex-shrink-0",
-                                  normalizePos(p.position) === 'Goalkeeper' && "bg-purple-500",
-                                  normalizePos(p.position) === 'Defender' && "bg-amber-500",
-                                  normalizePos(p.position) === 'Midfielder' && "bg-cyan-500",
-                                  normalizePos(p.position) === 'Attacker' && "bg-red-500",
-                                  !['Goalkeeper','Defender','Midfielder','Attacker'].includes(normalizePos(p.position)) && "bg-slate-400"
-                                )} />
-                              )}
-                              <p className="text-xs text-slate-400 dark:text-[#A8A29E] truncate">
-                                {normalizePos(p.position) || ''}{p.nationality ? ` · ${p.nationality}` : ''}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            {p.age && <span className="text-xs text-slate-400">{p.age}t</span>}
-                            {p.position && (
-                              <span className={cn("w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0",
-                                POSITION_COLOR[normalizePos(p.position)] ?? 'bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-400'
+              {activeTab === 'Đội hình' && (() => {
+                const posOrderGeneral = ['Attacker', 'Midfielder', 'Defender', 'Goalkeeper'];
+                const posOrderContract = ['F', 'M', 'D', 'G'];
+                const posLabelVI: Record<string, string> = {
+                  Goalkeeper: 'Thủ môn', Defender: 'Hậu vệ', Midfielder: 'Tiền vệ', Attacker: 'Tiền đạo',
+                  G: 'Thủ môn', D: 'Hậu vệ', M: 'Tiền vệ', F: 'Tiền đạo',
+                };
+                const posColorBadge: Record<string, string> = {
+                  Goalkeeper: 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300',
+                  Defender:   'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300',
+                  Midfielder: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-300',
+                  Attacker:   'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300',
+                  G: 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300',
+                  D: 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300',
+                  M: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-300',
+                  F: 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300',
+                };
+                const posPillActive: Record<string, string> = {
+                  Goalkeeper: 'bg-purple-100 text-purple-700 border-purple-300 dark:bg-purple-500/20 dark:text-purple-300 dark:border-purple-500/40',
+                  Defender:   'bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/40',
+                  Midfielder: 'bg-cyan-100 text-cyan-700 border-cyan-300 dark:bg-cyan-500/20 dark:text-cyan-300 dark:border-cyan-500/40',
+                  Attacker:   'bg-red-100 text-red-700 border-red-300 dark:bg-red-500/20 dark:text-red-300 dark:border-red-500/40',
+                  G: 'bg-purple-100 text-purple-700 border-purple-300 dark:bg-purple-500/20 dark:text-purple-300 dark:border-purple-500/40',
+                  D: 'bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/40',
+                  M: 'bg-cyan-100 text-cyan-700 border-cyan-300 dark:bg-cyan-500/20 dark:text-cyan-300 dark:border-cyan-500/40',
+                  F: 'bg-red-100 text-red-700 border-red-300 dark:bg-red-500/20 dark:text-red-300 dark:border-red-500/40',
+                };
+                const fmtDate = (d: string | null) => d
+                  ? new Date(d).toLocaleDateString('vi-VN', { day: 'numeric', month: 'numeric', year: 'numeric' })
+                  : null;
+
+                // Group players
+                const playerGroups: Record<string, PlayerFromAPI[]> = {};
+                players.forEach(p => {
+                  const pos = normalizePos(p.position) || 'Other';
+                  if (!playerGroups[pos]) playerGroups[pos] = [];
+                  playerGroups[pos].push(p);
+                });
+
+                // Group contracts
+                const contractGroups: Record<string, any[]> = {};
+                contracts.forEach(c => {
+                  const pos = c.playerPosition ?? 'X';
+                  if (!contractGroups[pos]) contractGroups[pos] = [];
+                  contractGroups[pos].push(c);
+                });
+
+                const activeFilter = squadView === 'general' ? posFilter : contractPosFilter;
+                const setActiveFilter = squadView === 'general' ? setPosFilter : setContractPosFilter;
+                const filterKeys = squadView === 'general'
+                  ? ['all', 'Attacker', 'Midfielder', 'Defender', 'Goalkeeper']
+                  : ['all', 'F', 'M', 'D', 'G'];
+
+                return (
+                  <div>
+                    {/* Sub-tab switcher */}
+                    <div className="flex flex-wrap items-center gap-3 mb-5">
+                      <div className="flex gap-1 bg-slate-100 dark:bg-white/5 rounded-lg p-1">
+                        {(['general', 'contract', 'transfers'] as const).map(v => (
+                          <button key={v} onClick={() => {
+                            setSquadView(v);
+                            if (v === 'contract' && !contractsLoaded) loadContracts(apiTeam);
+                            if (v === 'transfers' && !transfersLoaded) loadTransfers(apiTeam);
+                          }}
+                            className={cn('px-3 py-1.5 rounded-md text-xs font-semibold transition-all whitespace-nowrap',
+                              squadView === v
+                                ? 'bg-white dark:bg-white/15 text-slate-900 dark:text-foreground shadow-sm'
+                                : 'text-slate-500 dark:text-[#A8A29E] hover:text-slate-700 dark:hover:text-foreground'
+                            )}>
+                            {v === 'general' ? 'Tổng quan' : v === 'contract' ? 'Hợp đồng' : 'Chuyển nhượng'}
+                          </button>
+                        ))}
+                      </div>
+                      {/* Position filter pills — only for general/contract */}
+                      {squadView !== 'transfers' && (
+                        <div className="flex gap-1.5 flex-wrap">
+                          {filterKeys.map(pos => (
+                            <button key={pos} onClick={() => setActiveFilter(pos)}
+                              className={cn('px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all',
+                                activeFilter === pos
+                                  ? pos === 'all'
+                                    ? 'bg-[#00D9FF]/15 text-[#00D9FF] border-[#00D9FF]/40'
+                                    : cn(posPillActive[pos], 'border')
+                                  : 'bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-[#A8A29E] border-transparent hover:bg-slate-200 dark:hover:bg-white/10'
                               )}>
-                                {POSITION_LABEL[normalizePos(p.position)] ?? normalizePos(p.position).slice(0, 2).toUpperCase()}
-                              </span>
-                            )}
-                          </div>
-                        </Link>
-                      ))}
+                              {pos === 'all' ? 'Tất cả' : posLabelVI[pos]}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              )}
+
+                    {/* ── General view ── */}
+                    {squadView === 'general' && (
+                      players.length === 0 ? (
+                        <div className="text-center py-16 text-slate-400 dark:text-[#A8A29E]">
+                          <Users className="w-12 h-12 mx-auto mb-3 opacity-30" /><p>Chưa có thông tin cầu thủ</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-6">
+                          {posOrderGeneral
+                            .filter(pos => posFilter === 'all' ? playerGroups[pos]?.length : pos === posFilter)
+                            .map(pos => {
+                              const group = playerGroups[pos] ?? [];
+                              if (!group.length) return null;
+                              return (
+                                <div key={pos}>
+                                  <h3 className={cn('font-bold text-lg mb-3',
+                                    pos === 'Attacker' ? 'text-red-600 dark:text-red-400' :
+                                    pos === 'Midfielder' ? 'text-cyan-600 dark:text-cyan-400' :
+                                    pos === 'Defender' ? 'text-amber-600 dark:text-amber-400' :
+                                    'text-purple-600 dark:text-purple-400'
+                                  )}>{posLabelVI[pos]}</h3>
+                                  <div className="glass-card rounded-2xl overflow-hidden">
+                                    {/* Header */}
+                                    <div className="hidden sm:grid px-4 py-2 border-b border-slate-100 dark:border-white/5 text-xs text-slate-400 dark:text-[#A8A29E]"
+                                      style={{ gridTemplateColumns: '2rem 2.5rem 1fr 8rem 4.5rem 3rem', gap: '0.75rem', alignItems: 'center' }}>
+                                      <span />
+                                      <span />
+                                      <span className="pl-1">Cầu thủ</span>
+                                      <span className="text-center">Quốc tịch</span>
+                                      <span className="text-right">Cao</span>
+                                      <span className="text-right">Tuổi</span>
+                                    </div>
+                                    <div className="divide-y divide-slate-100 dark:divide-white/5">
+                                      {group.map(p => {
+                                        const isForeign = p.nationality && p.nationality.toLowerCase() !== 'vietnam';
+                                        const numBg: Record<string, string> = {
+                                          Attacker: 'bg-red-500', Midfielder: 'bg-cyan-500',
+                                          Defender: 'bg-amber-500', Goalkeeper: 'bg-purple-500',
+                                        };
+                                        return (
+                                          <Link key={p.playerId} to={`/players/${p.playerId}`} state={{ fromTeamId: teamId }}
+                                            className="hidden sm:grid items-center px-4 py-3 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors group"
+                                            style={{ gridTemplateColumns: '2rem 2.5rem 1fr 8rem 4.5rem 3rem', gap: '0.75rem', alignItems: 'center' }}>
+                                            {/* Number */}
+                                            <div className={cn('w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0', numBg[normalizePos(p.position)] ?? 'bg-slate-700')}>
+                                              <span className="font-mono-data text-[10px] font-bold text-white">{p.number ?? '—'}</span>
+                                            </div>
+                                            {/* Avatar */}
+                                            <div className="w-9 h-9 rounded-full bg-slate-100 dark:bg-white/5 overflow-hidden border-2 border-slate-200 dark:border-white/10 flex-shrink-0">
+                                              {p.photoUrl ? <img src={p.photoUrl} alt={p.fullName} className="w-full h-full object-cover" /> : <User className="w-4 h-4 text-slate-400 m-auto mt-2" />}
+                                            </div>
+                                            {/* Name + sub */}
+                                            <div className="min-w-0 pl-1">
+                                              <p className="font-semibold text-sm text-slate-900 dark:text-foreground group-hover:text-[#00D9FF] transition-colors truncate">{p.fullName}</p>
+                                              <p className={cn('text-xs truncate',
+                                                pos === 'Attacker' ? 'text-red-400' :
+                                                pos === 'Midfielder' ? 'text-cyan-400' :
+                                                pos === 'Defender' ? 'text-amber-400' : 'text-purple-400'
+                                              )}>{posLabelVI[normalizePos(p.position)] ?? normalizePos(p.position)}</p>
+                                            </div>
+                                            {/* Nationality */}
+                                            <div className="flex items-center justify-center">
+                                              {p.nationality ? (
+                                                <span className={cn('inline-flex items-center justify-center px-2 py-0.5 rounded-md text-xs font-medium w-full text-center',
+                                                  isForeign
+                                                    ? 'bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300'
+                                                    : 'bg-slate-100 text-slate-600 dark:bg-white/5 dark:text-[#A8A29E]'
+                                                )}>
+                                                  {p.nationality}
+                                                </span>
+                                              ) : <span className="text-xs text-slate-300 dark:text-white/20 text-center w-full block">—</span>}
+                                            </div>
+                                            {/* Height */}
+                                            <span className="text-xs text-slate-500 dark:text-[#A8A29E] text-right">
+                                              {(p as any).heightCm ? `${(p as any).heightCm}` : '—'}
+                                            </span>
+                                            {/* Age */}
+                                            <span className="text-xs font-medium text-slate-600 dark:text-slate-300 text-right">
+                                              {p.age ? `${p.age}` : '—'}
+                                            </span>
+                                          </Link>
+                                        );
+                                      })}
+                                      {/* Mobile fallback */}
+                                      {group.map(p => (
+                                        <Link key={`m-${p.playerId}`} to={`/players/${p.playerId}`} state={{ fromTeamId: teamId }}
+                                          className="sm:hidden flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors group">
+                                          <div className={cn('w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0',
+                                            pos === 'Attacker' ? 'bg-red-500' : pos === 'Midfielder' ? 'bg-cyan-500' : pos === 'Defender' ? 'bg-amber-500' : 'bg-purple-500'
+                                          )}>
+                                            <span className="font-mono-data text-[10px] font-bold text-white">{p.number ?? '—'}</span>
+                                          </div>
+                                          <div className="w-9 h-9 rounded-full bg-slate-100 dark:bg-white/5 overflow-hidden border border-slate-200 dark:border-white/10 flex-shrink-0">
+                                            {p.photoUrl ? <img src={p.photoUrl} alt={p.fullName} className="w-full h-full object-cover" /> : <User className="w-4 h-4 text-slate-400 m-auto mt-2" />}
+                                          </div>
+                                          <div className="flex-1 min-w-0">
+                                            <p className="font-semibold text-sm text-slate-900 dark:text-foreground group-hover:text-[#00D9FF] truncate">{p.fullName}</p>
+                                            <p className="text-xs text-slate-400">{p.nationality ?? ''}{p.age ? ` · ${p.age}t` : ''}</p>
+                                          </div>
+                                        </Link>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                        </div>
+                      )
+                    )}
+
+                    {/* ── Contract view ── */}
+                    {squadView === 'contract' && (
+                      contractsLoading ? (
+                        <div className="flex items-center justify-center py-16">
+                          <Loader2 className="w-8 h-8 text-[#00D9FF] animate-spin" />
+                        </div>
+                      ) : contracts.length === 0 ? (
+                        <div className="text-center py-16 text-slate-400 dark:text-[#A8A29E]">
+                          <FileText className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                          <p>Chưa có thông tin hợp đồng</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-6">
+                          {posOrderContract
+                            .filter(pos => contractPosFilter === 'all' ? contractGroups[pos]?.length : pos === contractPosFilter)
+                            .map(pos => {
+                              const group = contractGroups[pos] ?? [];
+                              if (!group.length) return null;
+                              return (
+                                <div key={pos}>
+                                  <h3 className="font-bold text-lg text-slate-900 dark:text-foreground mb-3">{posLabelVI[pos]}</h3>
+                                  <div className="glass-card rounded-2xl overflow-hidden">
+                                    <div className="hidden sm:flex items-center px-4 py-2 border-b border-slate-100 dark:border-white/5 text-xs text-slate-400 dark:text-[#A8A29E]">
+                                      <span className="flex-1">Cầu thủ</span>
+                                      <span className="w-28 text-right">Gia nhập</span>
+                                      <span className="w-28 text-right">Hết hạn</span>
+                                    </div>
+                                    <div className="divide-y divide-slate-100 dark:divide-white/5">
+                                      {group.map((c: any) => {
+                                        const joined = fmtDate(c.startDate);
+                                        const expires = fmtDate(c.endDate);
+                                        const isExpiringSoon = c.endDate && new Date(c.endDate).getTime() - Date.now() < 180 * 24 * 3600 * 1000;
+                                        return (
+                                          <div key={c.contractId} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                                            {/* Number */}
+                                            <div className="w-8 h-8 rounded-full bg-slate-800 dark:bg-slate-700 flex items-center justify-center flex-shrink-0">
+                                              <span className="font-mono-data text-xs font-bold text-white">{c.playerNumber ?? '—'}</span>
+                                            </div>
+                                            {/* Avatar */}
+                                            <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-white/5 overflow-hidden border border-slate-200 dark:border-white/10 flex-shrink-0">
+                                              <img src={c.playerPhotoUrl} alt={c.playerName} className="w-full h-full object-cover"
+                                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                            </div>
+                                            {/* Name */}
+                                            <div className="flex-1 min-w-0">
+                                              <p className="font-semibold text-sm text-slate-900 dark:text-foreground truncate">{c.playerName}</p>
+                                              <p className={cn('text-xs', posColorBadge[pos]?.split(' ')[1] ?? 'text-slate-400')}>
+                                                {posLabelVI[pos]}
+                                              </p>
+                                            </div>
+                                            {/* Joined */}
+                                            <span className="text-sm text-slate-500 dark:text-[#A8A29E] hidden sm:block w-28 text-right">{joined ?? '-'}</span>
+                                            {/* Expires */}
+                                            <span className={cn('text-sm hidden sm:block w-28 text-right font-medium',
+                                              isExpiringSoon ? 'text-orange-500' : expires ? 'text-slate-700 dark:text-slate-300' : 'text-slate-400 dark:text-[#A8A29E]'
+                                            )}>
+                                              {expires ?? '-'}
+                                            </span>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                        </div>
+                      )
+                    )}
+
+                    {/* ── Transfers view ── */}
+                    {squadView === 'transfers' && (
+                      transfersLoading ? (
+                        <div className="flex items-center justify-center py-16">
+                          <Loader2 className="w-8 h-8 text-[#00D9FF] animate-spin" />
+                        </div>
+                      ) : (transfersIn.length === 0 && transfersOut.length === 0) ? (
+                        <div className="text-center py-16 text-slate-400 dark:text-[#A8A29E]">
+                          <Users className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                          <p>Chưa có thông tin chuyển nhượng</p>
+                        </div>
+                      ) : (() => {
+                          const getTypeInfo = (tType: string, isIn: boolean) => {
+                            if (tType === 'Transfer') return { label: isIn ? 'Mua' : 'Bán', cls: isIn ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white' };
+                            if (tType === 'Loan') return { label: isIn ? 'Mượn' : 'Cho mượn', cls: 'bg-amber-500 text-white' };
+                            if (tType === 'Loan return' || tType === 'Loan Return') return { label: 'Hết mượn', cls: 'bg-slate-400 text-white' };
+                            return { label: tType ?? '—', cls: 'bg-slate-300 text-slate-700 dark:bg-slate-600 dark:text-slate-200' };
+                          };
+                          const parseTransfer = (t: any, isIn: boolean) => ({
+                            tType: t.transferType ?? t.type,
+                            rawDate: t.transferDate ?? t.date,
+                            fee: (t.transferFee && t.transferFee !== "") ? t.transferFee : (t.fee && t.fee !== "") ? t.fee : null,
+                            playerName: t.playerName ?? t.player?.name ?? t.player?.shortName,
+                            photoUrl: (t.apiPlayerId ?? t.player?.id) ? `https://api.sofascore.app/api/v1/player/${t.apiPlayerId ?? t.player?.id}/image` : null,
+                            teamName: isIn
+                              ? (typeof t.fromTeam === "string" ? t.fromTeam : null) ?? t.fromTeamName ?? t.fromTeamShortName ?? t.fromTeam?.name
+                              : (typeof t.toTeam === "string" ? t.toTeam : null) ?? t.toTeamName ?? t.toTeamShortName ?? t.toTeam?.name,
+                          });
+
+                          const TCard = ({ t, isIn }: { t: any; isIn: boolean }) => {
+                            const { tType, rawDate, fee, playerName, photoUrl, teamName } = parseTransfer(t, isIn);
+                            const { label, cls } = getTypeInfo(tType, isIn);
+                            const date = rawDate ? new Date(rawDate).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
+                            return (
+                              <div className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors group cursor-default">
+                                {/* Avatar */}
+                                <div className="relative flex-shrink-0">
+                                  <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-white/10 overflow-hidden border-2 border-slate-200 dark:border-white/10 flex items-center justify-center">
+                                    {photoUrl
+                                      ? <img src={photoUrl} alt={playerName} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                      : <User className="w-4 h-4 text-slate-400" />}
+                                  </div>
+                                  {/* In/Out dot */}
+                                  <div className={cn('absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border-2 border-white dark:border-slate-900 flex items-center justify-center text-white',
+                                    isIn ? 'bg-emerald-500' : 'bg-red-500'
+                                  )}>
+                                    <span className="text-[8px] font-black leading-none">{isIn ? '↓' : '↑'}</span>
+                                  </div>
+                                </div>
+
+                                {/* Main info */}
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-semibold text-sm text-slate-900 dark:text-foreground truncate group-hover:text-[#00D9FF] transition-colors leading-tight">{playerName ?? '—'}</p>
+                                  <div className="flex items-center gap-1.5 mt-0.5">
+                                    <span className="text-xs text-slate-400 dark:text-[#A8A29E] truncate max-w-[120px]">{teamName ?? '—'}</span>
+                                    {fee && fee !== 'Free' && (
+                                      <span className="text-xs font-semibold text-[#00D9FF] flex-shrink-0">· {fee}</span>
+                                    )}
+                                    {fee === 'Free' && (
+                                      <span className="text-xs text-slate-400 flex-shrink-0">· Tự do</span>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Right side */}
+                                <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                                  <span className={cn('px-2 py-0.5 rounded text-[10px] font-bold tracking-wide', cls)}>{label}</span>
+                                  <span className="text-[10px] text-slate-400 dark:text-[#A8A29E] tabular-nums">{date}</span>
+                                </div>
+                              </div>
+                            );
+                          };
+
+                          // Summary stats
+                          const inTypes = transfersIn.reduce((acc: any, t: any) => { const k = t.transferType ?? t.type ?? 'Unknown'; acc[k] = (acc[k] || 0) + 1; return acc; }, {});
+                          const outTypes = transfersOut.reduce((acc: any, t: any) => { const k = t.transferType ?? t.type ?? 'Unknown'; acc[k] = (acc[k] || 0) + 1; return acc; }, {});
+
+                          return (
+                            <div className="space-y-4">
+                              {/* Summary bar */}
+                              <div className="grid grid-cols-2 gap-3">
+                                <div className="glass-card rounded-xl p-4 border-l-4 border-emerald-500">
+                                  <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{transfersIn.length}</p>
+                                  <p className="text-xs text-slate-500 dark:text-[#A8A29E] mt-0.5">Cầu thủ gia nhập</p>
+                                  <div className="flex gap-1.5 mt-2 flex-wrap">
+                                    {Object.entries(inTypes).map(([k, v]: any) => {
+                                      const { label, cls } = getTypeInfo(k, true);
+                                      return <span key={k} className={cn('px-1.5 py-0.5 rounded text-[10px] font-bold', cls)}>{label}: {v}</span>;
+                                    })}
+                                  </div>
+                                </div>
+                                <div className="glass-card rounded-xl p-4 border-l-4 border-red-500">
+                                  <p className="text-2xl font-bold text-red-600 dark:text-red-400">{transfersOut.length}</p>
+                                  <p className="text-xs text-slate-500 dark:text-[#A8A29E] mt-0.5">Cầu thủ ra đi</p>
+                                  <div className="flex gap-1.5 mt-2 flex-wrap">
+                                    {Object.entries(outTypes).map(([k, v]: any) => {
+                                      const { label, cls } = getTypeInfo(k, false);
+                                      return <span key={k} className={cn('px-1.5 py-0.5 rounded text-[10px] font-bold', cls)}>{label}: {v}</span>;
+                                    })}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Two-column layout on desktop */}
+                              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                {/* Transfers In */}
+                                {transfersIn.length > 0 && (
+                                  <div className="glass-card rounded-2xl overflow-hidden">
+                                    <div className="flex items-center gap-3 px-4 py-3 bg-emerald-500/10 border-b border-emerald-500/20">
+                                      <div className="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0">
+                                        <span className="text-white font-black text-sm">↓</span>
+                                      </div>
+                                      <div>
+                                        <p className="font-bold text-sm text-emerald-700 dark:text-emerald-400">Gia nhập</p>
+                                        <p className="text-xs text-slate-500">{transfersIn.length} cầu thủ</p>
+                                      </div>
+                                    </div>
+                                    <div className="divide-y divide-slate-100 dark:divide-white/5 max-h-[600px] overflow-y-auto">
+                                      {transfersIn.map((t: any, i: number) => <TCard key={i} t={t} isIn={true} />)}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Transfers Out */}
+                                {transfersOut.length > 0 && (
+                                  <div className="glass-card rounded-2xl overflow-hidden">
+                                    <div className="flex items-center gap-3 px-4 py-3 bg-red-500/10 border-b border-red-500/20">
+                                      <div className="w-8 h-8 rounded-full bg-red-500 flex items-center justify-center flex-shrink-0">
+                                        <span className="text-white font-black text-sm">↑</span>
+                                      </div>
+                                      <div>
+                                        <p className="font-bold text-sm text-red-700 dark:text-red-400">Ra đi</p>
+                                        <p className="text-xs text-slate-500">{transfersOut.length} cầu thủ</p>
+                                      </div>
+                                    </div>
+                                    <div className="divide-y divide-slate-100 dark:divide-white/5 max-h-[600px] overflow-y-auto">
+                                      {transfersOut.map((t: any, i: number) => <TCard key={i} t={t} isIn={false} />)}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })()
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* ── Lịch thi đấu ── */}
               {activeTab === 'Lịch thi đấu' && (
@@ -491,3 +910,9 @@ export default function TeamDetailPage() {
     </MainLayout>
   );
 }
+
+
+
+
+
+

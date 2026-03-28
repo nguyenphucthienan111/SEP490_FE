@@ -41,7 +41,8 @@ export default function PlayerDetailPage() {
   const [seasons, setSeasons] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [fromTeamId, setFromTeamId] = useState<string | null>(null);
-  const [transfers] = useState<any[]>([]);
+  const [transfers, setTransfers] = useState<any[]>([]);
+  const [transfersLoading, setTransfersLoading] = useState(false);
   const player = getPlayerById(playerId || '');
   const [expandedContribution, setExpandedContribution] = useState<string | null>(null);
 
@@ -75,6 +76,42 @@ export default function PlayerDetailPage() {
           setSeasons(leagueSeasons);
         } catch { /* ignore */ }
       }
+
+          // Fetch transfer history (chỉ khi đã đăng nhập)
+          const token = localStorage.getItem('accessToken');
+          if (foundPlayer.teamId && token) {
+            try {
+              setTransfersLoading(true);
+              const LEAGUE_MAP: Record<number, { tournamentId: number; seasonId: number }> = {
+                1: { tournamentId: 626, seasonId: 78589 },
+                2: { tournamentId: 771, seasonId: 80926 },
+                3: { tournamentId: 3087, seasonId: 81023 },
+              };
+              // Lấy leagueId từ stats (leagueId 1/2/3), fallback thử cả 3
+              const statLeagueIds = [...new Set(allStats.map(s => s.leagueId).filter(id => LEAGUE_MAP[id]))];
+              const leagueIdsToTry = statLeagueIds.length > 0 ? statLeagueIds : [1, 2, 3];
+              for (const lid of leagueIdsToTry) {
+                const mapping = LEAGUE_MAP[lid];
+                if (!mapping) continue;
+                try {
+                  const res = await leagueService.getLeagueTransfers(mapping.tournamentId, mapping.seasonId);
+                  const byPlayer: any[] = res?.transfersByPlayer ?? res?.data?.transfersByPlayer ?? [];
+                  const playerData = byPlayer.find((p: any) =>
+                    p.apiPlayerId === foundPlayer.apiPlayerId ||
+                    p.playerId === foundPlayer.playerId ||
+                    String(p.apiPlayerId) === String(foundPlayer.apiPlayerId) ||
+                    String(p.playerId) === String(foundPlayer.playerId)
+                  );
+                  if (playerData?.transferHistory?.length) {
+                    setTransfers(playerData.transferHistory);
+                    break;
+                  }
+                } catch { /* try next */ }
+              }
+            } catch { /* ignore */ } finally {
+              setTransfersLoading(false);
+            }
+          }
     } catch (error) {
       console.error('Failed to load player data:', error);
       toast.error('Không thể tải thông tin cầu thủ');
@@ -622,68 +659,78 @@ export default function PlayerDetailPage() {
             </motion.div>
           )}
 
-          {/* Transfer History */}
-          {transfers.length > 0 && (() => {
-            let cachedTeams: any[] = [];
-            try { cachedTeams = JSON.parse(localStorage.getItem('teams') || '[]'); } catch (e) {}
-            const getTeamName = (id: number) => cachedTeams.find((t: any) => t.teamId === id)?.teamName ?? `Đội ${id}`;
-            const getTeamLogo = (id: number) => cachedTeams.find((t: any) => t.teamId === id)?.logoUrl ?? null;
-            const typeLabel: Record<string, string> = { Free: 'Tự do', Loan: 'Cho mượn', Transfer: 'Chuyển nhượng', 'N/A': 'N/A' };
-            const typeColor: Record<string, string> = {
-              Free: 'bg-green-50 text-green-700 border-green-200 dark:bg-green-500/20 dark:text-green-400 dark:border-green-500/30',
-              Loan: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/20 dark:text-amber-400 dark:border-amber-500/30',
-              Transfer: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/20 dark:text-blue-400 dark:border-blue-500/30',
-              'N/A': 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-white/5 dark:text-[#A8A29E] dark:border-white/10',
-            };
-            return (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.45 }}
-                className="glass-card rounded-2xl p-6 mb-8"
-              >
-                <h3 className="font-label font-bold text-slate-900 dark:text-foreground uppercase tracking-wider text-sm mb-4">
+          {/* Transfer History - chỉ hiện khi đã đăng nhập và có data */}
+          {(transfers.length > 0 || transfersLoading) && localStorage.getItem('accessToken') && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.45 }}
+              className="glass-card rounded-2xl overflow-hidden mb-8"
+            >
+              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-white/5">
+                <h3 className="font-label font-bold text-slate-900 dark:text-foreground uppercase tracking-wider text-sm">
                   Lịch sử chuyển nhượng
                 </h3>
-                <div className="space-y-3">
-                  {[...transfers].sort((a, b) => new Date(b.transferDate).getTime() - new Date(a.transferDate).getTime()).map(t => (
-                    <div key={t.transferId} className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10">
-                      {/* From */}
-                      <Link to={`/teams/${t.fromTeamId}`} className="flex items-center gap-2 flex-1 min-w-0 hover:opacity-80 transition-opacity">
-                        <div className="w-8 h-8 rounded-lg bg-slate-200 dark:bg-white/10 flex items-center justify-center overflow-hidden flex-shrink-0">
-                          {getTeamLogo(t.fromTeamId)
-                            ? <img src={getTeamLogo(t.fromTeamId)} alt="" className="w-full h-full object-contain" />
-                            : <span className="text-xs font-bold text-foreground">{getTeamName(t.fromTeamId).charAt(0)}</span>
-                          }
-                        </div>
-                        <span className="text-sm font-medium text-slate-900 dark:text-foreground truncate">{getTeamName(t.fromTeamId)}</span>
-                      </Link>
-                      <ArrowRight className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                      {/* To */}
-                      <Link to={`/teams/${t.toTeamId}`} className="flex items-center gap-2 flex-1 min-w-0 hover:opacity-80 transition-opacity">
-                        <div className="w-8 h-8 rounded-lg bg-slate-200 dark:bg-white/10 flex items-center justify-center overflow-hidden flex-shrink-0">
-                          {getTeamLogo(t.toTeamId)
-                            ? <img src={getTeamLogo(t.toTeamId)} alt="" className="w-full h-full object-contain" />
-                            : <span className="text-xs font-bold text-foreground">{getTeamName(t.toTeamId).charAt(0)}</span>
-                          }
-                        </div>
-                        <span className="text-sm font-medium text-slate-900 dark:text-foreground truncate">{getTeamName(t.toTeamId)}</span>
-                      </Link>
-                      {/* Date & Type */}
-                      <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                        <span className="text-xs text-slate-500 dark:text-[#A8A29E]">
-                          {new Date(t.transferDate).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                        </span>
-                        <span className={cn("px-2 py-0.5 rounded-md text-xs font-semibold border", typeColor[t.transferType] ?? typeColor['N/A'])}>
-                          {typeLabel[t.transferType] ?? t.transferType}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                {transfers.length > 0 && (
+                  <span className="text-xs text-slate-400">{transfers.length} lần</span>
+                )}
+              </div>
+              {transfersLoading ? (
+                <div className="flex items-center justify-center py-10">
+                  <Loader2 className="w-6 h-6 text-[#00D9FF] animate-spin" />
                 </div>
-              </motion.div>
-            );
-          })()}
+              ) : (
+                <div className="divide-y divide-slate-100 dark:divide-white/5">
+                  {[...transfers]
+                    .sort((a, b) => new Date(b.transferDate ?? b.date ?? 0).getTime() - new Date(a.transferDate ?? a.date ?? 0).getTime())
+                    .map((t, i) => {
+                      const tType = t.transferType ?? t.type;
+                      const rawDate = t.transferDate ?? t.date;
+                      const date = rawDate ? new Date(rawDate).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
+                      const fee = (t.transferFee && t.transferFee !== '') ? t.transferFee : null;
+                      const fromTeam = (typeof t.fromTeam === 'string' ? t.fromTeam : null) ?? t.fromTeamName ?? t.fromTeamShortName ?? t.fromTeam?.name ?? (t.fromTeamId ? `Đội #${t.fromTeamId}` : null);
+                      const toTeam = (typeof t.toTeam === 'string' ? t.toTeam : null) ?? t.toTeamName ?? t.toTeamShortName ?? t.toTeam?.name ?? (t.toTeamId ? `Đội #${t.toTeamId}` : null);
+                      const typeMeta: Record<string, { label: string; cls: string }> = {
+                        Transfer: { label: 'Chuyển nhượng', cls: 'bg-blue-500 text-white' },
+                        Loan: { label: 'Cho mượn', cls: 'bg-amber-500 text-white' },
+                        'Loan return': { label: 'Hết mượn', cls: 'bg-slate-400 text-white' },
+                        'Loan Return': { label: 'Hết mượn', cls: 'bg-slate-400 text-white' },
+                        Free: { label: 'Tự do', cls: 'bg-emerald-500 text-white' },
+                      };
+                      const meta = typeMeta[tType] ?? { label: tType ?? '—', cls: 'bg-slate-300 text-slate-700' };
+                      return (
+                        <div key={i} className="flex items-center gap-3 px-5 py-3.5 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                          {/* Timeline dot */}
+                          <div className="flex flex-col items-center flex-shrink-0 self-stretch">
+                            <div className="w-2.5 h-2.5 rounded-full bg-[#00D9FF] mt-1 flex-shrink-0" />
+                            {i < transfers.length - 1 && <div className="w-px flex-1 bg-slate-200 dark:bg-white/10 mt-1" />}
+                          </div>
+
+                          {/* Content */}
+                          <div className="flex-1 min-w-0 pb-1">
+                            {/* From → To */}
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-sm font-medium text-slate-500 dark:text-[#A8A29E] truncate max-w-[140px]">{fromTeam ?? '—'}</span>
+                              <ArrowRight className="w-3.5 h-3.5 text-[#00D9FF] flex-shrink-0" />
+                              <span className="text-sm font-semibold text-slate-900 dark:text-foreground truncate max-w-[140px]">{toTeam ?? '—'}</span>
+                            </div>
+                            {/* Date + fee */}
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-xs text-slate-400">{date}</span>
+                              {fee && fee !== 'Free' && <span className="text-xs text-[#00D9FF] font-semibold">· {fee}</span>}
+                              {(fee === 'Free' || tType === 'Free') && <span className="text-xs text-emerald-500 font-medium">· Tự do</span>}
+                            </div>
+                          </div>
+
+                          {/* Badge */}
+                          <span className={cn('px-2.5 py-1 rounded text-[10px] font-bold flex-shrink-0', meta.cls)}>{meta.label}</span>
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
+            </motion.div>
+          )}
 
           {/* Compare Button */}
           <motion.div
