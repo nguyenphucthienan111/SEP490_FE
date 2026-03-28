@@ -664,12 +664,50 @@ export const leagueService = {
     }));
   },
 
+  async getAllPlayerSeasonRatings(): Promise<Record<number, number>> {
+    try {
+      const cached = sessionStorage.getItem('player-season-ratings');
+      if (cached) return JSON.parse(cached);
+      const raw = await apiClient.get<any[]>('/api/SofascoreHybrid/player-season-statistics');
+      if (!Array.isArray(raw)) return {};
+      const map: Record<number, number> = {};
+      for (const x of raw) {
+        const pid = x.playerId ?? x.PlayerId;
+        const r = x.rating ?? x.Rating;
+        if (pid && r != null && (map[pid] == null || r > map[pid])) map[pid] = r;
+      }
+      sessionStorage.setItem('player-season-ratings', JSON.stringify(map));
+      return map;
+    } catch { return {}; }
+  },
+
   async getPlayers(teamId: number): Promise<PlayerFromAPI[]> {
     return await apiClient.get<PlayerFromAPI[]>(`/api/Football/players?teamId=${teamId}`);
   },
 
   async getAllPlayers(): Promise<PlayerFromAPI[]> {
-    return await apiClient.get<PlayerFromAPI[]>('/api/Football/players');
+    const raw = await apiClient.get<any[]>('/api/Football/players');
+    if (!Array.isArray(raw)) return [];
+    return raw.map((p) => ({
+      playerId: p.PlayerId ?? p.playerId,
+      apiPlayerId: p.ApiPlayerId ?? p.apiPlayerId,
+      firstName: p.FirstName ?? p.firstName,
+      lastName: p.LastName ?? p.lastName,
+      fullName: p.FullName ?? p.fullName,
+      dateOfBirth: p.DateOfBirth ?? p.dateOfBirth,
+      age: p.Age ?? p.age,
+      nationality: p.Nationality ?? p.nationality,
+      birthPlace: p.BirthPlace ?? p.birthPlace ?? null,
+      birthCountry: p.BirthCountry ?? p.birthCountry,
+      heightCm: p.HeightCm ?? p.heightCm ?? null,
+      weightKg: p.WeightKg ?? p.weightKg ?? null,
+      photoUrl: p.PhotoUrl ?? p.photoUrl,
+      isInjured: p.IsInjured ?? p.isInjured ?? false,
+      teamId: p.TeamId ?? p.teamId,
+      position: p.Position ?? p.position,
+      number: p.Number ?? p.number ?? null,
+      team: p.Team ?? p.team,
+    }));
   },
 
   async getPlayerStats(playerId: number, seasonId: number): Promise<PlayerStats[]> {
