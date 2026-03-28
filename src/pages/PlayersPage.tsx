@@ -28,7 +28,7 @@ const POS_COLOR: Record<string, string> = {
 };
 const POS_LABEL: Record<string, string> = { G: 'Thủ môn', D: 'Hậu vệ', M: 'Tiền vệ', F: 'Tiền đạo' };
 
-function PlayerCard({ player }: { player: PlayerFromAPI & { teamName?: string } }) {
+function PlayerCard({ player, rating }: { player: PlayerFromAPI & { teamName?: string }, rating?: number }) {
   const [imgError, setImgError] = useState(false);
   const pos = player.position ?? '';
   const posLabel = POS_LABEL[pos] ?? pos;
@@ -36,21 +36,40 @@ function PlayerCard({ player }: { player: PlayerFromAPI & { teamName?: string } 
 
   return (
     <Link to={`/players/${player.playerId}`}>
-      <div className="group flex items-center gap-4 p-3 rounded-2xl bg-white dark:bg-white/5 border border-slate-100 dark:border-white/10 hover:border-[#00D9FF]/40 hover:shadow-md transition-all duration-200">
+      <div className="group flex items-center gap-3 p-3 rounded-2xl bg-white dark:bg-white/5 border border-slate-100 dark:border-white/10 hover:border-[#00D9FF]/40 hover:shadow-md transition-all duration-200">
+        {/* Jersey Number */}
+        <div className="w-9 flex-shrink-0 flex items-center justify-center">
+          {(player as any).number != null ? (
+            <div className="relative w-9 h-9 flex items-center justify-center">
+              <svg viewBox="0 0 50 50" className="absolute inset-0 w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M18 5 L10 12 L4 9 L2 22 L10 22 L10 44 L40 44 L40 22 L48 22 L46 9 L40 12 L32 5 C30 8 27.5 9.5 25 9.5 C22.5 9.5 20 8 18 5Z"
+                  fill="currentColor" className="text-slate-100 dark:text-white/10"
+                  stroke="currentColor" strokeWidth="2" strokeLinejoin="round"
+                  style={{ color: undefined }}
+                />
+              </svg>
+              <svg viewBox="0 0 50 50" className="absolute inset-0 w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M18 5 L10 12 L4 9 L2 22 L10 22 L10 44 L40 44 L40 22 L48 22 L46 9 L40 12 L32 5 C30 8 27.5 9.5 25 9.5 C22.5 9.5 20 8 18 5Z"
+                  fill="rgba(0,217,255,0.08)" stroke="rgba(0,217,255,0.4)" strokeWidth="2" strokeLinejoin="round"
+                />
+              </svg>
+              <span className="relative z-10 font-mono-data font-bold text-[11px] text-slate-700 dark:text-white leading-none mt-1">
+                {(player as any).number}
+              </span>
+            </div>
+          ) : (
+            <span className="font-mono-data text-xs text-slate-300 dark:text-white/20">—</span>
+          )}
+        </div>
+
         {/* Avatar */}
         <div className="relative flex-shrink-0">
-          <div className="w-16 h-16 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800">
+          <div className="w-14 h-14 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800">
             {player.photoUrl && !imgError
               ? <img src={player.photoUrl} alt={player.fullName} className="w-full h-full object-cover object-top" referrerPolicy="no-referrer" onError={() => setImgError(true)} />
-              : <div className="w-full h-full flex items-center justify-center"><User className="w-8 h-8 text-slate-400" /></div>
+              : <div className="w-full h-full flex items-center justify-center"><User className="w-7 h-7 text-slate-400" /></div>
             }
           </div>
-          {/* Number badge */}
-          {(player as any).number && (
-            <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-slate-900 dark:bg-slate-700 border border-white/20 flex items-center justify-center text-[9px] font-bold text-white">
-              {(player as any).number}
-            </span>
-          )}
         </div>
 
         {/* Info */}
@@ -62,12 +81,28 @@ function PlayerCard({ player }: { player: PlayerFromAPI & { teamName?: string } 
           <p className="text-xs text-slate-400 mt-0.5">{player.nationality ?? ''}</p>
         </div>
 
-        {/* Position */}
-        {pos && (
-          <span className={cn("flex-shrink-0 px-2 py-0.5 rounded-md text-[10px] font-bold", posColor)}>
-            {posLabel}
-          </span>
-        )}
+        {/* Position + Rating */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {pos && (
+            <span className={cn("px-2 py-0.5 rounded-md text-[10px] font-bold", posColor)}>
+              {posLabel}
+            </span>
+          )}
+          {rating != null ? (
+            <div className="relative w-11 h-11">
+              <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
+                <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(0,217,255,0.15)" strokeWidth="3" />
+                <circle cx="18" cy="18" r="15" fill="none" stroke="#00D9FF" strokeWidth="3"
+                  strokeDasharray={`${(rating / 10) * 94.2} 94.2`} strokeLinecap="round" />
+              </svg>
+              <span className="absolute inset-0 flex items-center justify-center font-mono-data font-bold text-[11px] text-[#00D9FF]">
+                {rating.toFixed(1)}
+              </span>
+            </div>
+          ) : (
+            <div className="w-11 h-11" />
+          )}
+        </div>
       </div>
     </Link>
   );
@@ -83,6 +118,7 @@ export default function PlayersPage() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 24;
+  const [ratings, setRatings] = useState<Record<number, number>>({});
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -107,17 +143,17 @@ export default function PlayersPage() {
       } catch (e) {}
       setTeams(allTeams);
 
-      // Load all players — single request
+      // Load all players — use sessionStorage to avoid stale localStorage cache
       let players: PlayerFromAPI[] = [];
       try {
-        const cached = localStorage.getItem('all-players');
+        const cached = sessionStorage.getItem('all-players');
         if (cached && !forceRefresh) {
           const parsed = JSON.parse(cached);
           players = Array.isArray(parsed) ? parsed : (parsed?.$values ?? []);
         } else {
           const raw = await leagueService.getAllPlayers();
           players = Array.isArray(raw) ? raw : ((raw as any)?.$values ?? []);
-          localStorage.setItem('all-players', JSON.stringify(players));
+          sessionStorage.setItem('all-players', JSON.stringify(players));
         }
       } catch (e) {}
 
@@ -128,6 +164,9 @@ export default function PlayersPage() {
         teamName: teamMap.get(p.teamId ?? 0)?.teamName ?? '',
       }));
       setAllPlayers(enriched);
+
+      // Load ratings in background
+      leagueService.getAllPlayerSeasonRatings().then(setRatings).catch(() => {});
     } catch (e) {}
     setLoading(false);
   };
@@ -248,7 +287,7 @@ export default function PlayersPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
                 {paginated.map((player, i) => (
                   <motion.div key={player.playerId} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: Math.min(i * 0.03, 0.4) }}>
-                    <PlayerCard player={player} />
+                    <PlayerCard player={player} rating={ratings[player.playerId]} />
                   </motion.div>
                 ))}
               </div>
