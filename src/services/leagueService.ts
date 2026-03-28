@@ -692,6 +692,14 @@ export const leagueService = {
     return await apiClient.get<MatchStat[]>('/api/SofascoreHybrid/match-statistics');
   },
 
+  async getTeamContracts(tournamentId: number, seasonId: number): Promise<any> {
+    return await apiClient.get<any>(`/api/SofascoreHybrid/contracts?tournamentId=${tournamentId}&seasonId=${seasonId}`);
+  },
+
+  async getLeagueTransfers(tournamentId: number, seasonId: number): Promise<any> {
+    return await apiClient.get<any>(`/api/SofascoreHybrid/transfers?tournamentId=${tournamentId}&seasonId=${seasonId}`);
+  },
+
   async getTransfers(): Promise<Transfer[]> {
     return await apiClient.get<Transfer[]>('/api/Football/transfers');
   },
