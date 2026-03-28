@@ -255,7 +255,7 @@ export default function TeamDetailPage() {
                     <p className="text-slate-500 dark:text-[#A8A29E] text-sm mt-0.5">{apiTeam.shortName}</p>
                   )}
                   <div className="flex flex-wrap gap-4 mt-3 text-sm text-slate-600 dark:text-[#A8A29E]">
-                    {apiTeam.founded && <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" />Est. {apiTeam.founded}</span>}
+                    <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" />Est. {apiTeam.founded ?? '—'}</span>
                     {apiTeam.coachName && <span className="flex items-center gap-1.5"><User className="w-3.5 h-3.5" />{apiTeam.coachName}</span>}
                     {apiTeam.stadium && (
                       <Link to={`/stadiums/${apiTeam.stadium.stadiumId}`} state={{ fromTeamId: teamId }}
