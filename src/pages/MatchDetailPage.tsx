@@ -856,12 +856,37 @@ export default function MatchDetailPage() {
           const found = all.find(m => m.id === eventId);
           if (found) { setMatch(found); setLoading(false); loadMatchStats(found.homeTeam.id, found.awayTeam.id); return; }
         }
-        // 2. Not found — fetch all leagues in parallel
+
+        // 2. Try DB first — much faster than scraping Sofascore
         const LEAGUES = [
           { tournamentId: 626, seasonId: 78589 },
           { tournamentId: 771, seasonId: 80926 },
           { tournamentId: 3087, seasonId: 81023 },
         ];
+        for (const league of LEAGUES) {
+          try {
+            const dbMatches = await leagueService.getAllMatchesFromDb(league.tournamentId, league.seasonId);
+            const found = dbMatches.find((m: any) => m.apiFixtureId === eventId);
+            if (found) {
+              const normalized: SofascoreTeamMatch = {
+                id: found.apiFixtureId,
+                homeTeam: { id: found.homeTeam?.apiTeamId ?? 0, name: found.homeTeam?.teamName ?? '' },
+                awayTeam: { id: found.awayTeam?.apiTeamId ?? 0, name: found.awayTeam?.teamName ?? '' },
+                homeScore: { current: found.homeGoals ?? 0 },
+                awayScore: { current: found.awayGoals ?? 0 },
+                startTimestamp: found.matchDate ? new Date(found.matchDate).getTime() / 1000 : 0,
+                status: { type: found.status === 'FT' || found.status === 'finished' ? 'finished' : found.status === 'NS' ? 'notstarted' : found.status ?? 'finished' },
+                roundInfo: { round: found.round ?? 0 },
+              };
+              setMatch(normalized);
+              setLoading(false);
+              loadMatchStats(normalized.homeTeam.id, normalized.awayTeam.id);
+              return;
+            }
+          } catch { /* try next league */ }
+        }
+
+        // 3. Fallback: fetch from Sofascore if not in DB
         const fetchAll = async (fetcher: (page: number) => Promise<{ events: SofascoreTeamMatch[]; hasNextPage: boolean }>) => {
           const all: SofascoreTeamMatch[] = [];
           let page = 0;
@@ -874,8 +899,6 @@ export default function MatchDetailPage() {
           }
           return all;
         };
-
-        // Fetch all leagues in parallel instead of sequential
         const leagueResults = await Promise.all(
           LEAGUES.map(league => Promise.all([
             fetchAll(p => leagueService.getTournamentLastMatches(league.tournamentId, league.seasonId, p)),
@@ -883,14 +906,9 @@ export default function MatchDetailPage() {
           ]))
         );
         const allMatches: SofascoreTeamMatch[] = leagueResults.flatMap(([last, next]) => [...last, ...next]);
-
         try { sessionStorage.setItem('sofascore-matches', JSON.stringify(allMatches)); } catch { /* ignore */ }
-
         const found = allMatches.find(m => m.id === eventId);
-        if (found) {
-          setMatch(found);
-          loadMatchStats(found.homeTeam.id, found.awayTeam.id);
-        }
+        if (found) { setMatch(found); loadMatchStats(found.homeTeam.id, found.awayTeam.id); }
       } catch { /* ignore */ }
       setLoading(false);
     };
