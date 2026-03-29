@@ -303,6 +303,16 @@ export interface PlayerStats {
   foulsCommitted: number | null;
   penaltiesScored: number | null;
   penaltiesMissed: number | null;
+  // GK stats
+  saves: number | null;
+  savesInsideBox: number | null;
+  punches: number | null;
+  runsOut: number | null;
+  runsOutSuccessful: number | null;
+  highClaims: number | null;
+  goalsConceded: number | null;
+  penaltiesSaved: number | null;
+  cleanSheets: number | null;
   league?: League;
   player?: PlayerFromAPI;
   season?: Season;
@@ -389,6 +399,33 @@ export interface LineupPlayer {
     ownGoals: number;
     minutesPlayed: number;
     totalShots: number;
+    // extended match stats
+    rating?: number;
+    assists?: number;
+    yellowCards?: number;
+    redCards?: number;
+    shotsOnTarget?: number;
+    blockedShots?: number;
+    bigChancesCreated?: number;
+    bigChancesMissed?: number;
+    keyPasses?: number;
+    accuratePasses?: number;
+    totalPasses?: number;
+    accurateLongBalls?: number;
+    totalLongBalls?: number;
+    accurateCrosses?: number;
+    totalCrosses?: number;
+    dribbleAttempts?: number;
+    successfulDribbles?: number;
+    tackles?: number;
+    interceptions?: number;
+    clearances?: number;
+    aerialDuelsWon?: number;
+    aerialDuelsTotal?: number;
+    foulsCommitted?: number;
+    wasFouled?: number;
+    possessionLost?: number;
+    touches?: number;
   };
 }
 
@@ -441,6 +478,17 @@ export interface SofascoreLeague {
 export const leagueService = {
   async getLineups(eventId: number): Promise<MatchLineups> {
     return await apiClient.get<MatchLineups>(`/api/Sofascore/lineups?eventId=${eventId}`);
+  },
+
+  async getPlayerMatchStatistics(eventId: number, playerId: number): Promise<any> {
+    return await apiClient.get<any>(`/api/Sofascore/player-match-statistics?eventId=${eventId}&playerId=${playerId}`);
+  },
+
+  async getPlayerMatchStatsByMatch(apiFixtureId: number): Promise<any[]> {
+    try {
+      const data = await apiClient.get<any[]>(`/api/SofascoreHybrid/player-match-stats-by-match?apiFixtureId=${apiFixtureId}`);
+      return Array.isArray(data) ? data : [];
+    } catch { return []; }
   },
 
   async getIncidents(eventId: number): Promise<any> {
@@ -661,6 +709,15 @@ export const leagueService = {
       foulsCommitted: x.FoulsCommitted ?? x.foulsCommitted ?? null,
       penaltiesScored: x.PenaltiesScored ?? x.penaltiesScored ?? null,
       penaltiesMissed: x.PenaltiesMissed ?? x.penaltiesMissed ?? null,
+      saves: x.Saves ?? x.saves ?? null,
+      savesInsideBox: x.SavesInsideBox ?? x.savesInsideBox ?? null,
+      cleanSheets: x.CleanSheets ?? x.cleanSheets ?? null,
+      goalsConceded: x.GoalsConceded ?? x.goalsConceded ?? null,
+      penaltiesSaved: x.PenaltiesSaved ?? x.penaltiesSaved ?? null,
+      punches: x.Punches ?? x.punches ?? null,
+      runsOut: x.RunsOut ?? x.runsOut ?? null,
+      runsOutSuccessful: x.RunsOutSuccessful ?? x.runsOutSuccessful ?? null,
+      highClaims: x.HighClaims ?? x.highClaims ?? null,
     }));
   },
 

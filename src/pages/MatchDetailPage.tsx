@@ -26,11 +26,140 @@ function posLabel(pos: string) {
 }
 
 // ─── Player modal ─────────────────────────────────────────────────────────────
-function PlayerModal({ p, onClose }: { p: LineupPlayer; onClose: () => void }) {
-  const dob = p.player.dateOfBirthTimestamp
-    ? new Date(p.player.dateOfBirthTimestamp * 1000)
-    : null;
-  const age = dob ? Math.floor((Date.now() - dob.getTime()) / (365.25 * 24 * 3600 * 1000)) : null;
+function PlayerModal({ p, eventId, matchStatsMap, onClose }: { p: LineupPlayer; eventId: number; matchStatsMap?: Map<number, any>; onClose: () => void }) {
+  const isGK = p.position === 'G';
+  const [statTab, setStatTab] = useState<'shot' | 'pass' | 'drib' | 'def' | 'gk'>(isGK ? 'gk' : 'shot');
+  const [extraStats, setExtraStats] = useState<any>(null);
+  const [loadingStats, setLoadingStats] = useState(false);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      if (!p.player.id) return;
+      // matchStatsMap đã được LineupTab sync sẵn — dùng trực tiếp
+      if (matchStatsMap && matchStatsMap.has(p.player.id)) {
+        setExtraStats(matchStatsMap.get(p.player.id));
+      }
+    };
+    fetchStats();
+  }, [p.player.id, matchStatsMap]);
+  // Merge lineup stats + detailed stats, map both DB field names and Sofascore field names
+  const raw = extraStats ?? {};
+  const isDbData = matchStatsMap?.has(p.player.id) && extraStats === matchStatsMap.get(p.player.id);
+  const s = {
+    goals:               p.statistics?.goals              ?? raw.goals,
+    ownGoals:            p.statistics?.ownGoals            ?? raw.ownGoals,
+    minutesPlayed:       p.statistics?.minutesPlayed       ?? raw.minutes         ?? raw.minutesPlayed,
+    totalShots:          p.statistics?.totalShots          ?? raw.shots           ?? raw.totalShots,
+    rating:              p.statistics?.rating              ?? (raw.rating != null ? Number(raw.rating) : undefined),
+    assists:             p.statistics?.assists             ?? raw.assists,
+    yellowCards:         p.statistics?.yellowCards         ?? raw.yellowCards,
+    redCards:            p.statistics?.redCards            ?? raw.redCards,
+    shotsOnTarget:       p.statistics?.shotsOnTarget       ?? raw.shotsOnTarget   ?? raw.onTargetScoringAttempt,
+    blockedShots:        p.statistics?.blockedShots        ?? raw.blocks          ?? raw.blockedScoringAttempt,
+    bigChancesCreated:   p.statistics?.bigChancesCreated   ?? raw.bigChanceCreated,
+    bigChancesMissed:    p.statistics?.bigChancesMissed    ?? raw.bigChanceMissed,
+    keyPasses:           p.statistics?.keyPasses           ?? raw.passesKey       ?? raw.keyPass,
+    accuratePasses:      p.statistics?.accuratePasses      ?? (isDbData && raw.passes && raw.passesAccuracy ? Math.round(raw.passes * raw.passesAccuracy / 100) : null) ?? raw.accuratePass,
+    totalPasses:         p.statistics?.totalPasses         ?? raw.passes          ?? raw.totalPass,
+    accurateLongBalls:   p.statistics?.accurateLongBalls   ?? raw.accurateLongBalls,
+    totalLongBalls:      p.statistics?.totalLongBalls      ?? raw.totalLongBalls,
+    accurateCrosses:     p.statistics?.accurateCrosses     ?? raw.accurateCrosses ?? raw.accurateCross,
+    totalCrosses:        p.statistics?.totalCrosses        ?? raw.totalCrosses    ?? raw.totalCross,
+    dribbleAttempts:     p.statistics?.dribbleAttempts     ?? raw.dribblesAttempted ?? raw.attemptedDribbles,
+    successfulDribbles:  p.statistics?.successfulDribbles  ?? raw.dribblesSuccess ?? raw.wonDribble,
+    tackles:             p.statistics?.tackles             ?? raw.tackles         ?? raw.totalTackle,
+    interceptions:       p.statistics?.interceptions       ?? raw.interceptions   ?? raw.interceptionWon,
+    clearances:          p.statistics?.clearances          ?? raw.clearances      ?? raw.totalClearance,
+    aerialDuelsWon:      p.statistics?.aerialDuelsWon      ?? raw.aerialDuelsWon  ?? raw.aerialWon,
+    aerialDuelsTotal:    p.statistics?.aerialDuelsTotal    ?? (raw.aerialDuelsWon != null && raw.aerialDuelsLost != null ? raw.aerialDuelsWon + raw.aerialDuelsLost : null),
+    groundDuelsWon:      raw.groundDuelsWon,
+    groundDuelsTotal:    raw.groundDuelsWon != null && raw.groundDuelsLost != null ? raw.groundDuelsWon + raw.groundDuelsLost : null,
+    foulsCommitted:      p.statistics?.foulsCommitted      ?? raw.foulsCommitted  ?? raw.foulCommitted,
+    wasFouled:           p.statistics?.wasFouled           ?? raw.wasFouled,
+    possessionLost:      p.statistics?.possessionLost      ?? raw.possessionLost,
+    touches:             p.statistics?.touches             ?? raw.touches,
+    // GK stats — DB field names match model
+    saves:               raw.saves,
+    savesInsideBox:      raw.savesInsideBox,
+    punches:             raw.punches,
+    runsOut:             raw.runsOut             ?? raw.totalKeeperSweeper,
+    runsOutSuccessful:   raw.runsOutSuccessful   ?? raw.keeperSweeper,
+    highClaims:          raw.highClaims          ?? raw.goodHighClaim,
+    goalsConceded:       raw.goalsConceded,
+    penaltiesSaved:      raw.penaltiesSaved       ?? raw.penaltySave,
+  };
+  const hasAnyStats = p.statistics != null || extraStats != null;
+  const rating = s?.rating;
+
+  const ratingColor = rating == null ? '#6b7280'
+    : rating >= 8 ? '#22c55e'
+    : rating >= 7 ? '#84cc16'
+    : rating >= 6 ? '#eab308'
+    : '#ef4444';
+
+  const statSections: Record<string, { label: string; rows: { label: string; val: number | string | undefined | null }[] }> = {
+    shot: {
+      label: 'Sút',
+      rows: [
+        { label: 'Bàn thắng', val: s?.goals },
+        { label: 'Tổng cú sút', val: s?.totalShots },
+        { label: 'Sút trúng đích', val: s?.shotsOnTarget },
+        { label: 'Sút bị chặn', val: s?.blockedShots },
+        { label: 'Cơ hội lớn bỏ lỡ', val: s?.bigChancesMissed },
+      ],
+    },
+    pass: {
+      label: 'Chuyền',
+      rows: [
+        { label: 'Kiến tạo', val: s?.assists },
+        { label: 'Chuyền chính xác', val: s?.accuratePasses != null && s?.totalPasses != null ? `${s.accuratePasses}/${s.totalPasses}` : s?.accuratePasses },
+        { label: 'Chuyền dài chính xác', val: s?.accurateLongBalls != null && s?.totalLongBalls != null ? `${s.accurateLongBalls}/${s.totalLongBalls}` : undefined },
+        { label: 'Tạt bóng chính xác', val: s?.accurateCrosses != null && s?.totalCrosses != null ? `${s.accurateCrosses}/${s.totalCrosses}` : undefined },
+        { label: 'Chuyền then chốt', val: s?.keyPasses },
+        { label: 'Cơ hội lớn tạo ra', val: s?.bigChancesCreated },
+      ],
+    },
+    drib: {
+      label: 'Rê bóng',
+      rows: [
+        { label: 'Rê bóng thành công', val: s?.successfulDribbles != null && s?.dribbleAttempts != null ? `${s.successfulDribbles}/${s.dribbleAttempts}` : s?.successfulDribbles },
+        { label: 'Chạm bóng', val: s?.touches },
+        { label: 'Mất bóng', val: s?.possessionLost },
+        { label: 'Bị phạm lỗi', val: s?.wasFouled },
+        { label: 'Phạm lỗi', val: s?.foulsCommitted },
+      ],
+    },
+    def: {
+      label: 'Phòng thủ',
+      rows: [
+        { label: 'Tắc bóng', val: s?.tackles },
+        { label: 'Cắt bóng', val: s?.interceptions },
+        { label: 'Phá bóng', val: s?.clearances },
+        { label: 'Tranh chấp thành công trên không', val: s?.aerialDuelsWon != null && s?.aerialDuelsTotal != null ? `${s.aerialDuelsWon}/${s.aerialDuelsTotal}` : undefined },
+        { label: 'Tranh chấp thành công dưới đất', val: s?.groundDuelsWon != null && s?.groundDuelsTotal != null ? `${s.groundDuelsWon}/${s.groundDuelsTotal}` : s?.groundDuelsWon != null ? String(s.groundDuelsWon) : undefined },
+        { label: 'Thẻ vàng', val: s?.yellowCards },
+        { label: 'Thẻ đỏ', val: s?.redCards },
+      ],
+    },
+    gk: {
+      label: 'Thủ môn',
+      rows: [
+        { label: 'Cứu thua', val: s?.saves },
+        { label: 'Cứu thua trong vòng cấm', val: s?.savesInsideBox },
+        { label: 'Thủng lưới', val: s?.goalsConceded },
+        { label: 'Cản phá penalty', val: s?.penaltiesSaved },
+        { label: 'Đấm bóng', val: s?.punches },
+        { label: 'Ra khỏi khung thành', val: s?.runsOut != null && s?.runsOutSuccessful != null ? `${s.runsOutSuccessful}/${s.runsOut}` : s?.runsOut },
+        { label: 'Bắt bóng bổng', val: s?.highClaims },
+      ],
+    },
+  };
+
+  const visibleTabs = isGK
+    ? (['gk', 'shot', 'pass', 'def'] as const)
+    : (['shot', 'pass', 'drib', 'def'] as const);
+
+  const activeRows = statSections[statTab]?.rows.filter(r => r.val != null && r.val !== undefined) ?? [];
 
   return (
     <AnimatePresence>
@@ -42,96 +171,124 @@ function PlayerModal({ p, onClose }: { p: LineupPlayer; onClose: () => void }) {
         onClick={onClose}
       >
         <motion.div
-          initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          initial={{ opacity: 0, scale: 0.92, y: 16 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.9, y: 20 }}
-          transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-          className="glass-card rounded-2xl p-6 w-full max-w-sm relative"
+          exit={{ opacity: 0, scale: 0.92, y: 16 }}
+          transition={{ type: 'spring', damping: 22, stiffness: 320 }}
+          className="glass-card rounded-2xl w-full max-w-sm relative overflow-hidden"
           onClick={e => e.stopPropagation()}
         >
-          <button onClick={onClose} className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 transition-colors">
-            <X className="w-4 h-4 text-slate-500 dark:text-[#A8A29E]" />
-          </button>
-
-          <div className="flex items-center gap-4 mb-5">
-            <div className="w-16 h-16 rounded-xl overflow-hidden bg-slate-100 dark:bg-white/5 flex-shrink-0 border border-slate-200 dark:border-white/10">
+          {/* Header */}
+          <div className="flex items-center gap-3 p-4 border-b border-slate-100 dark:border-white/10">
+            <div className="w-14 h-14 rounded-xl overflow-hidden bg-slate-100 dark:bg-white/5 flex-shrink-0 border border-slate-200 dark:border-white/10">
               <img
                 src={playerPhoto(p.player.id)}
                 alt={p.player.name}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = '';
-                  (e.target as HTMLImageElement).style.display = 'none';
-                }}
+                className="w-full h-full object-cover object-top"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
               />
             </div>
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs px-2 py-0.5 rounded-full bg-[#00D9FF]/10 text-[#00D9FF] font-label font-semibold">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-0.5">
+                <span className="text-xs px-2 py-0.5 rounded-full bg-[#00D9FF]/10 text-[#00D9FF] font-semibold">
                   {posLabel(p.position)}
                 </span>
-                {p.captain && <span className="text-xs text-yellow-500 font-bold">Đội trưởng ©</span>}
+                {p.captain && <span className="text-xs text-yellow-500 font-bold">© Đội trưởng</span>}
               </div>
-              <h3 className="font-display font-bold text-lg text-foreground leading-tight">{p.player.name}</h3>
-              <p className="text-sm text-slate-500 dark:text-[#A8A29E]">#{p.shirtNumber}</p>
+              <h3 className="font-display font-bold text-base text-foreground leading-tight truncate">{p.player.name}</h3>
+              <p className="text-xs text-slate-500 dark:text-[#A8A29E]">#{p.shirtNumber}{p.player.country?.name ? ` · ${p.player.country.name}` : ''}</p>
             </div>
+            {/* Rating */}
+            {rating != null && (
+              <div className="flex flex-col items-center flex-shrink-0">
+                <span className="font-mono-data text-2xl font-black leading-none" style={{ color: ratingColor }}>{rating.toFixed(1)}</span>
+                <span className="text-[9px] text-slate-400 mt-0.5 uppercase tracking-wide">Rating</span>
+              </div>
+            )}
+            <button onClick={onClose} className="ml-1 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 transition-colors flex-shrink-0">
+              <X className="w-4 h-4 text-slate-500 dark:text-[#A8A29E]" />
+            </button>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            {p.player.country?.name && (
-              <div className="flex items-center gap-2 p-3 rounded-xl bg-slate-50 dark:bg-white/5">
-                <Flag className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                <div>
-                  <p className="text-xs text-slate-500 dark:text-[#A8A29E]">Quốc tịch</p>
-                  <p className="text-sm font-semibold text-foreground">{p.player.country.name}</p>
-                </div>
+          {/* Quick info row */}
+          <div className="flex divide-x divide-slate-100 dark:divide-white/10 border-b border-slate-100 dark:border-white/10">
+            {s.minutesPlayed != null && (
+              <div className="flex-1 flex flex-col items-center py-2.5">
+                <span className="font-mono-data font-bold text-base text-foreground">{s.minutesPlayed}'</span>
+                <span className="text-[10px] text-slate-400 mt-0.5">Phút</span>
               </div>
             )}
-            {age && (
-              <div className="flex items-center gap-2 p-3 rounded-xl bg-slate-50 dark:bg-white/5">
-                <Calendar className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                <div>
-                  <p className="text-xs text-slate-500 dark:text-[#A8A29E]">Tuổi</p>
-                  <p className="text-sm font-semibold text-foreground">{age}</p>
-                </div>
+            {s.goals != null && (
+              <div className="flex-1 flex flex-col items-center py-2.5">
+                <span className="font-mono-data font-bold text-base text-foreground">{s.goals}</span>
+                <span className="text-[10px] text-slate-400 mt-0.5">Bàn thắng</span>
               </div>
             )}
-            {p.player.height && (
-              <div className="flex items-center gap-2 p-3 rounded-xl bg-slate-50 dark:bg-white/5">
-                <Ruler className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                <div>
-                  <p className="text-xs text-slate-500 dark:text-[#A8A29E]">Chiều cao</p>
-                  <p className="text-sm font-semibold text-foreground">{p.player.height} cm</p>
-                </div>
+            {s.assists != null && (
+              <div className="flex-1 flex flex-col items-center py-2.5">
+                <span className="font-mono-data font-bold text-base text-foreground">{s.assists}</span>
+                <span className="text-[10px] text-slate-400 mt-0.5">Kiến tạo</span>
               </div>
             )}
-            {p.statistics && (
-              <div className="flex items-center gap-2 p-3 rounded-xl bg-slate-50 dark:bg-white/5">
-                <Users className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                <div>
-                  <p className="text-xs text-slate-500 dark:text-[#A8A29E]">Phút thi đấu</p>
-                  <p className="text-sm font-semibold text-foreground">{p.statistics.minutesPlayed}'</p>
-                </div>
+            {s.totalShots != null && (
+              <div className="flex-1 flex flex-col items-center py-2.5">
+                <span className="font-mono-data font-bold text-base text-foreground">{s.totalShots}</span>
+                <span className="text-[10px] text-slate-400 mt-0.5">Cú sút</span>
               </div>
             )}
           </div>
 
-          {p.statistics && (p.statistics.goals > 0 || p.statistics.ownGoals > 0 || p.statistics.totalShots > 0) && (
-            <div className="mt-3 flex gap-3">
-              {p.statistics.goals > 0 && (
-                <div className="flex-1 text-center p-2 rounded-xl bg-green-50 dark:bg-green-500/10">
-                  <p className="font-mono-data text-xl font-bold text-green-600 dark:text-green-400">{p.statistics.goals}</p>
-                  <p className="text-xs text-slate-500 dark:text-[#A8A29E]">Bàn thắng</p>
+          {/* Stat tabs */}
+          {hasAnyStats && (
+            <div className="p-4">
+              <div className="flex gap-1 bg-slate-100 dark:bg-white/5 rounded-lg p-1 mb-3">
+                {visibleTabs.map(tab => (
+                  <button key={tab} onClick={() => setStatTab(tab)}
+                    className={cn('flex-1 py-1.5 rounded-md text-[11px] font-semibold transition-all',
+                      statTab === tab
+                        ? 'bg-white dark:bg-white/15 text-slate-900 dark:text-foreground shadow-sm'
+                        : 'text-slate-500 dark:text-[#A8A29E] hover:text-slate-700 dark:hover:text-foreground'
+                    )}>
+                    {statSections[tab].label}
+                  </button>
+                ))}
+              </div>
+
+              {loadingStats ? (
+                <div className="flex items-center justify-center py-6">
+                  <Loader2 className="w-5 h-5 text-[#00D9FF] animate-spin" />
                 </div>
-              )}
-              {p.statistics.totalShots > 0 && (
-                <div className="flex-1 text-center p-2 rounded-xl bg-slate-50 dark:bg-white/5">
-                  <p className="font-mono-data text-xl font-bold text-foreground">{p.statistics.totalShots}</p>
-                  <p className="text-xs text-slate-500 dark:text-[#A8A29E]">Cú sút</p>
+              ) : activeRows.length > 0 ? (
+                <div className="space-y-2">
+                  {activeRows.map(row => (
+                    <div key={row.label} className="flex items-center justify-between py-1 border-b border-slate-100 dark:border-white/5 last:border-0">
+                      <span className="text-xs text-slate-500 dark:text-[#A8A29E]">{row.label}</span>
+                      <span className="font-mono-data text-sm font-semibold text-foreground">{row.val}</span>
+                    </div>
+                  ))}
                 </div>
+              ) : (
+                <p className="text-center text-xs text-slate-400 py-4">Không có dữ liệu</p>
               )}
             </div>
           )}
+
+          {/* Link to player page — chỉ hiện khi player đã sync vào DB */}
+          {(() => {
+            // apiPlayerId chỉ có khi x.Player được Include thành công
+            // Nếu null nghĩa là player chưa sync → ẩn link tránh 404
+            const dbPlayerId = extraStats?.playerId;
+            const hasApiPlayerId = extraStats?.apiPlayerId != null;
+            if (!dbPlayerId || !hasApiPlayerId) return null;
+            return (
+              <div className="px-4 pb-4">
+                <a href={`/players/${dbPlayerId}`}
+                  className="block w-full text-center py-2 rounded-xl bg-[#00D9FF]/10 text-[#00D9FF] text-xs font-semibold hover:bg-[#00D9FF]/20 transition-colors">
+                  Xem trang cầu thủ →
+                </a>
+              </div>
+            );
+          })()}
         </motion.div>
       </motion.div>
     </AnimatePresence>
@@ -139,18 +296,126 @@ function PlayerModal({ p, onClose }: { p: LineupPlayer; onClose: () => void }) {
 }
 
 // ─── Formation pitch ──────────────────────────────────────────────────────────
-function FormationPitch({ lineup, side, onSelect }: {
-  lineup: { players: LineupPlayer[]; formation: string; playerColor: { primary: string; number: string } };
+function PitchSVG() {
+  return (
+    <svg viewBox="0 0 100 160" className="absolute inset-0 w-full h-full" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      {/* Grass stripes */}
+      {[0,1,2,3,4,5,6,7].map(i => (
+        <rect key={i} x="0" y={i*20} width="100" height="20" fill={i%2===0 ? 'rgba(255,255,255,0.03)' : 'transparent'} />
+      ))}
+      {/* Outer border */}
+      <rect x="2" y="2" width="96" height="156" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="0.6" />
+      {/* Halfway line */}
+      <line x1="2" y1="80" x2="98" y2="80" stroke="rgba(255,255,255,0.25)" strokeWidth="0.5" />
+      {/* Center circle */}
+      <circle cx="50" cy="80" r="14" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="0.5" />
+      {/* Center dot */}
+      <circle cx="50" cy="80" r="0.8" fill="rgba(255,255,255,0.4)" />
+      {/* Top penalty area */}
+      <rect x="20" y="2" width="60" height="26" fill="none" stroke="rgba(255,255,255,0.22)" strokeWidth="0.5" />
+      {/* Top goal area */}
+      <rect x="33" y="2" width="34" height="10" fill="none" stroke="rgba(255,255,255,0.22)" strokeWidth="0.5" />
+      {/* Top goal */}
+      <rect x="40" y="0.5" width="20" height="3" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="0.6" />
+      {/* Top penalty spot */}
+      <circle cx="50" cy="20" r="0.8" fill="rgba(255,255,255,0.35)" />
+      {/* Top penalty arc */}
+      <path d="M 36 28 A 14 14 0 0 1 64 28" fill="none" stroke="rgba(255,255,255,0.22)" strokeWidth="0.5" />
+      {/* Bottom penalty area */}
+      <rect x="20" y="132" width="60" height="26" fill="none" stroke="rgba(255,255,255,0.22)" strokeWidth="0.5" />
+      {/* Bottom goal area */}
+      <rect x="33" y="148" width="34" height="10" fill="none" stroke="rgba(255,255,255,0.22)" strokeWidth="0.5" />
+      {/* Bottom goal */}
+      <rect x="40" y="156.5" width="20" height="3" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="0.6" />
+      {/* Bottom penalty spot */}
+      <circle cx="50" cy="140" r="0.8" fill="rgba(255,255,255,0.35)" />
+      {/* Bottom penalty arc */}
+      <path d="M 36 132 A 14 14 0 0 0 64 132" fill="none" stroke="rgba(255,255,255,0.22)" strokeWidth="0.5" />
+      {/* Corner arcs */}
+      <path d="M 2 6 A 4 4 0 0 1 6 2" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="0.5" />
+      <path d="M 94 2 A 4 4 0 0 1 98 6" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="0.5" />
+      <path d="M 2 154 A 4 4 0 0 0 6 158" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="0.5" />
+      <path d="M 98 154 A 4 4 0 0 1 94 158" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="0.5" />
+    </svg>
+  );
+}
+
+function PlayerPin({ p, color, onSelect, events }: {
+  p: LineupPlayer;
+  color: { primary: string; number: string };
+  onSelect: (p: LineupPlayer) => void;
+  events?: { icon: string; time: string }[];
+}) {
+  const [imgOk, setImgOk] = useState(true);
+  const hasGoal = events?.some(e => e.icon.startsWith('⚽'));
+  const hasYellow = events?.some(e => e.icon === '🟨');
+  const hasRed = events?.some(e => e.icon === '🟥');
+  const hasSub = events?.some(e => e.icon.startsWith('🔼') || e.icon.startsWith('🔽'));
+  const rating = p.statistics?.rating;
+
+  return (
+    <button onClick={() => onSelect(p)} className="flex flex-col items-center gap-0.5 group" style={{ width: 52 }}>
+      <div className="relative">
+        {/* Avatar circle */}
+        <div
+          className="w-9 h-9 rounded-full overflow-hidden border-2 shadow-lg group-hover:scale-110 transition-transform duration-150 flex items-center justify-center text-xs font-bold"
+          style={{ borderColor: `#${color.primary}`, background: `#${color.primary}`, color: `#${color.number}` }}
+        >
+          {imgOk ? (
+            <img
+              src={playerPhoto(p.player.id)}
+              alt={p.player.name}
+              className="w-full h-full object-cover object-top"
+              onError={() => setImgOk(false)}
+            />
+          ) : (
+            <span style={{ color: `#${color.number}`, fontSize: 11, fontWeight: 700 }}>{p.shirtNumber}</span>
+          )}
+        </div>
+
+        {/* Captain badge */}
+        {p.captain && (
+          <span className="absolute -top-1 -left-1 w-3.5 h-3.5 rounded-full bg-yellow-400 flex items-center justify-center text-[7px] font-black text-yellow-900 leading-none shadow">C</span>
+        )}
+
+        {/* Rating badge */}
+        {rating != null && (
+          <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 px-1 py-px rounded text-[8px] font-bold leading-none shadow"
+            style={{ background: rating >= 7 ? '#22c55e' : rating >= 6 ? '#eab308' : '#ef4444', color: '#fff', minWidth: 20, textAlign: 'center' }}>
+            {rating.toFixed(1)}
+          </span>
+        )}
+
+        {/* Event icons */}
+        {(hasGoal || hasYellow || hasRed || hasSub) && (
+          <div className="absolute -top-1 -right-1 flex gap-px">
+            {hasGoal && <span className="text-[9px] leading-none drop-shadow">⚽</span>}
+            {hasRed && <span className="text-[9px] leading-none drop-shadow">🟥</span>}
+            {hasYellow && !hasRed && <span className="text-[9px] leading-none drop-shadow">🟨</span>}
+            {hasSub && <span className="text-[9px] leading-none drop-shadow">{events?.find(e => e.icon.startsWith('🔼')) ? '🔼' : '🔽'}</span>}
+          </div>
+        )}
+      </div>
+
+      {/* Name */}
+      <span className="text-[9px] text-white/90 text-center leading-tight font-medium max-w-[50px] truncate group-hover:text-yellow-300 transition-colors mt-1">
+        {p.player.shortName || p.player.name.split(' ').slice(-1)[0]}
+      </span>
+    </button>
+  );
+}
+
+function FormationPitch({ lineup, side, onSelect, playerEvents }: {
+  lineup: { players: LineupPlayer[]; formation: string; playerColor: { primary: string; number: string }; goalkeeperColor: { primary: string; number: string } };
   side: 'home' | 'away';
   onSelect: (p: LineupPlayer) => void;
+  playerEvents?: Map<number, { icon: string; time: string }[]>;
 }) {
   const starters = lineup.players.filter(p => !p.substitute);
   const rows = lineup.formation.split('-').map(Number);
-  // Build rows: GK first, then field rows
   const gk = starters.filter(p => p.position === 'G');
   const field = starters.filter(p => p.position !== 'G');
 
-  // Distribute field players into formation rows
   const groups: LineupPlayer[][] = [gk];
   let idx = 0;
   for (const count of rows) {
@@ -158,44 +423,23 @@ function FormationPitch({ lineup, side, onSelect }: {
     idx += count;
   }
 
-  // Away team: reverse row order so GK is at top
   const displayGroups = side === 'away' ? [...groups].reverse() : groups;
 
   return (
-    <div className="relative w-full rounded-xl overflow-hidden" style={{ background: 'linear-gradient(180deg, #1a4a2e 0%, #1e5c38 50%, #1a4a2e 100%)', minHeight: 320 }}>
-      {/* Pitch lines */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute left-1/2 top-0 bottom-0 w-px bg-white/20 -translate-x-1/2" />
-        <div className="absolute left-1/2 top-1/2 w-20 h-20 rounded-full border border-white/20 -translate-x-1/2 -translate-y-1/2" />
-        <div className="absolute left-[15%] right-[15%] top-[5%] h-[18%] border border-white/15 rounded" />
-        <div className="absolute left-[15%] right-[15%] bottom-[5%] h-[18%] border border-white/15 rounded" />
-      </div>
-
-      <div className="relative flex flex-col justify-around h-full py-3 px-2 gap-1" style={{ minHeight: 320 }}>
+    <div className="relative w-full rounded-xl overflow-hidden select-none"
+      style={{ background: 'linear-gradient(180deg, #1b5e35 0%, #1e6b3c 30%, #1e6b3c 70%, #1b5e35 100%)', aspectRatio: '10/16', minHeight: 340 }}>
+      <PitchSVG />
+      <div className="absolute inset-0 flex flex-col justify-around py-4 px-1">
         {displayGroups.map((row, ri) => (
           <div key={ri} className="flex justify-around items-center">
             {row.map(p => (
-              <button key={p.player.id} onClick={() => onSelect(p)} className="flex flex-col items-center gap-0.5 w-12 group">
-                <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 border-white/30 shadow-lg overflow-hidden group-hover:scale-110 transition-transform"
-                  style={{ background: `#${lineup.playerColor.primary}`, color: `#${lineup.playerColor.number}` }}
-                >
-                  <img
-                    src={playerPhoto(p.player.id)}
-                    alt={p.player.name}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      const el = e.target as HTMLImageElement;
-                      el.style.display = 'none';
-                      el.parentElement!.innerHTML = `<span style="color:#${lineup.playerColor.number};font-size:11px;font-weight:700">${p.shirtNumber}</span>`;
-                    }}
-                  />
-                </div>
-                {p.captain && <span className="text-[8px] text-yellow-300 font-bold leading-none">©</span>}
-                <span className="text-[9px] text-white/90 text-center leading-tight font-medium line-clamp-2 max-w-[44px] group-hover:text-yellow-300 transition-colors">
-                  {p.player.shortName || p.player.name}
-                </span>
-              </button>
+              <PlayerPin
+                key={p.player.id}
+                p={p}
+                color={p.position === 'G' ? lineup.goalkeeperColor : lineup.playerColor}
+                onSelect={onSelect}
+                events={playerEvents?.get(p.player.id)}
+              />
             ))}
           </div>
         ))}
@@ -248,16 +492,45 @@ function PlayerRow({ p, color, onSelect, badges }: {
 }
 
 // ─── Lineup tab content ───────────────────────────────────────────────────────
-function LineupTab({ lineups, homeTeamName, awayTeamName, homeTeamId, awayTeamId, incidents }: {
+function LineupTab({ lineups, homeTeamName, awayTeamName, homeTeamId, awayTeamId, incidents, eventId }: {
   lineups: MatchLineups;
   homeTeamName: string;
   awayTeamName: string;
   homeTeamId: number;
   awayTeamId: number;
   incidents?: any[] | null;
+  eventId: number;
 }) {
   const [view, setView] = useState<'pitch' | 'list'>('pitch');
   const [selectedPlayer, setSelectedPlayer] = useState<LineupPlayer | null>(null);
+  // Pre-fetch all player match stats from DB once — keyed by apiPlayerId
+  const [matchStatsMap, setMatchStatsMap] = useState<Map<number, any>>(new Map());
+  const [statsSyncing, setStatsSyncing] = useState(false);
+
+  useEffect(() => {
+    if (!eventId) return;
+    const loadStats = async () => {
+      // Try DB first
+      const rows = await leagueService.getPlayerMatchStatsByMatch(eventId).catch(() => [] as any[]);
+      if (rows.length > 0) {
+        const map = new Map<number, any>();
+        for (const r of rows) { if (r.apiPlayerId) map.set(r.apiPlayerId, r); }
+        setMatchStatsMap(map);
+        return;
+      }
+      // DB empty — trigger sync in background
+      setStatsSyncing(true);
+      try {
+        await fetch(`/api/SofascoreHybrid/sync-player-match-stats-by-match?apiFixtureId=${eventId}`, { method: 'POST' });
+        const synced = await leagueService.getPlayerMatchStatsByMatch(eventId).catch(() => [] as any[]);
+        const map = new Map<number, any>();
+        for (const r of synced) { if (r.apiPlayerId) map.set(r.apiPlayerId, r); }
+        setMatchStatsMap(map);
+      } catch { /* ignore */ }
+      setStatsSyncing(false);
+    };
+    loadStats();
+  }, [eventId]);
 
   // Build a map: playerId → list of incident badges
   const playerEvents = new Map<number, { icon: string; time: string }[]>();
@@ -321,7 +594,7 @@ function LineupTab({ lineups, homeTeamName, awayTeamName, homeTeamId, awayTeamId
               <span className="font-body font-semibold text-sm text-foreground">{homeTeamName}</span>
               <span className="text-xs text-slate-500 dark:text-[#A8A29E] ml-auto">{lineups.home.formation}</span>
             </div>
-            <FormationPitch lineup={lineups.home} side="home" onSelect={setSelectedPlayer} />
+            <FormationPitch lineup={lineups.home} side="home" onSelect={setSelectedPlayer} playerEvents={playerEvents} />
           </div>
           {/* Away */}
           <div>
@@ -330,7 +603,7 @@ function LineupTab({ lineups, homeTeamName, awayTeamName, homeTeamId, awayTeamId
               <span className="font-body font-semibold text-sm text-foreground">{awayTeamName}</span>
               <span className="text-xs text-slate-500 dark:text-[#A8A29E] ml-auto">{lineups.away.formation}</span>
             </div>
-            <FormationPitch lineup={lineups.away} side="away" onSelect={setSelectedPlayer} />
+            <FormationPitch lineup={lineups.away} side="away" onSelect={setSelectedPlayer} playerEvents={playerEvents} />
           </div>
         </div>
       ) : (
@@ -370,7 +643,7 @@ function LineupTab({ lineups, homeTeamName, awayTeamName, homeTeamId, awayTeamId
         </div>
       )}
     </div>
-    {selectedPlayer && <PlayerModal p={selectedPlayer} onClose={() => setSelectedPlayer(null)} />}
+    {selectedPlayer && <PlayerModal p={selectedPlayer} eventId={eventId} matchStatsMap={matchStatsMap} onClose={() => setSelectedPlayer(null)} />}
     </>
   );
 }
@@ -684,7 +957,8 @@ export default function MatchDetailPage() {
     try {
       const data = await leagueService.getLineups(eventId);
       setLineups(data);
-    } catch {
+    } catch (err) {
+      console.error('[Lineup] Failed to load:', err);
       toast.error('Không thể tải đội hình');
     } finally {
       setLineupLoading(false);
@@ -1025,6 +1299,7 @@ export default function MatchDetailPage() {
                   homeTeamId={match?.homeTeam.id ?? 0}
                   awayTeamId={match?.awayTeam.id ?? 0}
                   incidents={incidents}
+                  eventId={match?.id ?? 0}
                 />
               ) : (
                 <div className="text-center py-16 text-slate-500 dark:text-[#A8A29E]">

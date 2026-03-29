@@ -77,7 +77,15 @@ function PlayerCard({ player, rating }: { player: PlayerFromAPI & { teamName?: s
           <h3 className="font-display font-bold text-sm text-slate-900 dark:text-foreground truncate group-hover:text-[#00D9FF] transition-colors">
             {player.fullName}
           </h3>
-          <p className="text-xs text-slate-500 dark:text-[#A8A29E] truncate mt-0.5">{(player as any).teamName ?? ''}</p>
+          {(player as any).teamName && (
+            <div className="flex items-center gap-1 mt-0.5">
+              {(player as any).teamLogoUrl && (
+                <img src={(player as any).teamLogoUrl} alt={(player as any).teamName} className="w-3.5 h-3.5 object-contain flex-shrink-0"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+              )}
+              <p className="text-xs text-slate-500 dark:text-[#A8A29E] truncate">{(player as any).teamName}</p>
+            </div>
+          )}
           <p className="text-xs text-slate-400 mt-0.5">{player.nationality ?? ''}</p>
         </div>
 
@@ -158,11 +166,22 @@ export default function PlayersPage() {
       } catch (e) {}
 
       // Attach teamName
-      const teamMap = new Map(allTeams.map(t => [t.teamId, t]));
-      const enriched = players.map(p => ({
-        ...p,
-        teamName: teamMap.get(p.teamId ?? 0)?.teamName ?? '',
+      const teamMap = new Map(allTeams.map(t => {
+        // Handle both camelCase and PascalCase from BE
+        const id = (t as any).teamId ?? (t as any).TeamId;
+        const name = (t as any).teamName ?? (t as any).TeamName ?? '';
+        const logo = (t as any).logoUrl ?? (t as any).LogoUrl ?? '';
+        return [id, { teamName: name, logoUrl: logo }];
       }));
+      const enriched = players.map(p => {
+        const tid = (p as any).teamId ?? (p as any).TeamId ?? 0;
+        const teamInfo = teamMap.get(tid);
+        return {
+          ...p,
+          teamName: teamInfo?.teamName ?? '',
+          teamLogoUrl: teamInfo?.logoUrl ?? '',
+        };
+      });
       setAllPlayers(enriched);
 
       // Load ratings in background

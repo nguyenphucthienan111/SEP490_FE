@@ -36,6 +36,7 @@ const performanceTrend = [
 export default function PlayerDetailPage() {
   const { playerId } = useParams<{ playerId: string }>();
   const location = useLocation();
+  const [playerTeam, setPlayerTeam] = useState<any>(null);
   const [apiPlayer, setApiPlayer] = useState<PlayerFromAPI | null>(null);
   const [playerStats, setPlayerStats] = useState<PlayerStats[]>([]);
   const [seasons, setSeasons] = useState<any[]>([]);
@@ -65,6 +66,14 @@ export default function PlayerDetailPage() {
     try {
       const foundPlayer = await leagueService.getPlayerById(Number(playerId));
       setApiPlayer(foundPlayer);
+
+      // Load team info
+      if (foundPlayer.teamId) {
+        try {
+          const team = await leagueService.getTeamById(foundPlayer.teamId);
+          setPlayerTeam(team);
+        } catch { /* ignore */ }
+      }
 
       const allStats = await leagueService.getPlayerStatsByPlayerId(Number(playerId));
       setPlayerStats(allStats);
@@ -260,8 +269,24 @@ export default function PlayerDetailPage() {
                       <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-slate-900 dark:text-foreground mb-2">
                         {playerName}
                       </h1>
-                      {apiPlayer?.team && (
-                        <p className="text-lg text-[#00D9FF] font-semibold mb-2">{apiPlayer.team.teamName}</p>
+                      {(apiPlayer?.team || playerTeam) && (
+                        <Link
+                          to={`/teams/${playerTeam?.teamId ?? apiPlayer?.team?.teamId}`}
+                          state={{ fromPlayerId: playerId }}
+                          className="inline-flex items-center gap-2 mb-2 group"
+                        >
+                          {(playerTeam?.logoUrl ?? apiPlayer?.team?.logoUrl) && (
+                            <img
+                              src={playerTeam?.logoUrl ?? apiPlayer?.team?.logoUrl}
+                              alt={playerTeam?.teamName ?? apiPlayer?.team?.teamName}
+                              className="w-6 h-6 object-contain"
+                              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                            />
+                          )}
+                          <span className="text-lg text-[#00D9FF] font-semibold group-hover:underline">
+                            {playerTeam?.teamName ?? apiPlayer?.team?.teamName}
+                          </span>
+                        </Link>
                       )}
                       {player && !apiPlayer && (
                         <p className="text-lg text-slate-600 dark:text-[#A8A29E] mb-2">{player.team}</p>
@@ -364,76 +389,149 @@ export default function PlayerDetailPage() {
                 <div className="space-y-3 max-h-96 overflow-y-auto">
                   {playerStats.map((stat, index) => {
                     const season = seasons.find(s => s.seasonId === stat.seasonId);
+                    const pos = playerPosition ?? '';
+                    const ratingColor = stat.rating
+                      ? stat.rating >= 8 ? '#22c55e' : stat.rating >= 7 ? '#84cc16' : stat.rating >= 6 ? '#eab308' : '#ef4444'
+                      : '#6b7280';
+
+                    // ── Stat section builder ──────────────────────────────
+                    type StatItem = { label: string; val: number | null | undefined; sub?: string; pct?: number };
+                    const pct = (a?: number | null, b?: number | null) =>
+                      a != null && b != null && b > 0 ? Math.round((a / b) * 100) : undefined;
+
+                    const overview: StatItem[] = [
+                      { label: 'Trận đấu',  val: stat.appearances },
+                      { label: 'Đá chính',  val: stat.lineups },
+                      { label: 'Phút',      val: stat.minutes },
+                      { label: 'Vào sân',   val: stat.substitutionsIn },
+                      { label: 'Ra sân',    val: stat.substitutionsOut },
+                      { label: 'Thẻ vàng',  val: stat.yellowCards },
+                      { label: 'Thẻ đỏ',   val: stat.redCards },
+                    ];
+
+                    const attacking: StatItem[] = [
+                      { label: 'Bàn thắng',     val: stat.goals },
+                      { label: 'Kiến tạo',      val: stat.assists },
+                      { label: 'Tổng cú sút',   val: stat.shotsTotal },
+                      { label: 'Sút trúng đích',val: stat.shotsOnTarget, sub: `${pct(stat.shotsOnTarget, stat.shotsTotal) ?? '—'}% chính xác`, pct: pct(stat.shotsOnTarget, stat.shotsTotal) },
+                      { label: 'Penalty ghi',   val: stat.penaltiesScored },
+                      { label: 'Penalty hỏng',  val: stat.penaltiesMissed },
+                    ];
+
+                    const passing: StatItem[] = [
+                      { label: 'Tổng chuyền',       val: stat.passesTotal },
+                      { label: 'Chuyền chính xác',  val: stat.passesAccuracy, sub: `${pct(stat.passesAccuracy, stat.passesTotal) ?? '—'}%`, pct: pct(stat.passesAccuracy, stat.passesTotal) },
+                      { label: 'Chuyền then chốt',  val: stat.passesKey },
+                    ];
+
+                    const dribbling: StatItem[] = [
+                      { label: 'Rê bóng thành công', val: stat.dribblesSuccess, sub: `${pct(stat.dribblesSuccess, stat.dribblesAttempted) ?? '—'}%`, pct: pct(stat.dribblesSuccess, stat.dribblesAttempted) },
+                      { label: 'Rê bóng thử',        val: stat.dribblesAttempted },
+                      { label: 'Tranh chấp thắng',   val: stat.duelsWon, sub: `${pct(stat.duelsWon, stat.duelsTotal) ?? '—'}%`, pct: pct(stat.duelsWon, stat.duelsTotal) },
+                      { label: 'Tranh chấp tổng',    val: stat.duelsTotal },
+                      { label: 'Phạm lỗi',           val: stat.foulsCommitted },
+                      { label: 'Bị phạm lỗi',        val: stat.foulsDrawn },
+                    ];
+
+                    const defending: StatItem[] = [
+                      { label: 'Tắc bóng',    val: stat.tackles },
+                      { label: 'Cắt bóng',    val: stat.interceptions },
+                    ];
+
+                    const gkStats: StatItem[] = [
+                      { label: 'Cứu thua',              val: stat.saves },
+                      { label: 'Cứu thua trong vòng cấm', val: stat.savesInsideBox },
+                      { label: 'Không thủng lưới',      val: stat.cleanSheets },
+                      { label: 'Thủng lưới',            val: stat.goalsConceded },
+                      { label: 'Cản phá penalty',       val: stat.penaltiesSaved },
+                      { label: 'Đấm bóng',              val: stat.punches },
+                      { label: 'Ra khỏi khung thành',   val: stat.runsOut },
+                      { label: 'Ra thành công',         val: stat.runsOutSuccessful, sub: `${pct(stat.runsOutSuccessful, stat.runsOut) ?? '—'}%`, pct: pct(stat.runsOutSuccessful, stat.runsOut) },
+                      { label: 'Bắt bóng bổng',         val: stat.highClaims },
+                    ];
+
+                    // Groups by position
+                    type Group = { title: string; color: string; icon: string; items: StatItem[] };
+                    let groups: Group[];
+                    if (pos === 'G') {
+                      groups = [
+                        { title: 'Tổng quan',   color: 'text-slate-500',  icon: '📋', items: overview },
+                        { title: 'Thủ môn',     color: 'text-purple-500', icon: '🧤', items: gkStats },
+                        { title: 'Chuyền bóng', color: 'text-cyan-500',   icon: '🎯', items: passing },
+                      ];
+                    } else if (pos === 'D') {
+                      groups = [
+                        { title: 'Tổng quan',   color: 'text-slate-500',  icon: '📋', items: overview },
+                        { title: 'Phòng thủ',   color: 'text-amber-500',  icon: '🛡️', items: defending },
+                        { title: 'Tranh chấp',  color: 'text-orange-500', icon: '⚔️', items: dribbling },
+                        { title: 'Chuyền bóng', color: 'text-cyan-500',   icon: '🎯', items: passing },
+                        { title: 'Tấn công',    color: 'text-red-500',    icon: '⚽', items: [{ label: 'Bàn thắng', val: stat.goals }, { label: 'Kiến tạo', val: stat.assists }] },
+                      ];
+                    } else if (pos === 'M') {
+                      groups = [
+                        { title: 'Tổng quan',   color: 'text-slate-500',  icon: '📋', items: overview },
+                        { title: 'Chuyền bóng', color: 'text-cyan-500',   icon: '🎯', items: passing },
+                        { title: 'Tấn công',    color: 'text-red-500',    icon: '⚽', items: attacking },
+                        { title: 'Tranh chấp',  color: 'text-orange-500', icon: '⚔️', items: dribbling },
+                        { title: 'Phòng thủ',   color: 'text-amber-500',  icon: '🛡️', items: defending },
+                      ];
+                    } else {
+                      groups = [
+                        { title: 'Tổng quan',   color: 'text-slate-500',  icon: '📋', items: overview },
+                        { title: 'Tấn công',    color: 'text-red-500',    icon: '⚽', items: attacking },
+                        { title: 'Chuyền bóng', color: 'text-cyan-500',   icon: '🎯', items: passing },
+                        { title: 'Tranh chấp',  color: 'text-orange-500', icon: '⚔️', items: dribbling },
+                      ];
+                    }
+
                     return (
-                      <div key={index} className="p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-3">
-                            <span className="font-label font-bold text-lg text-slate-900 dark:text-foreground">
-                              Mùa {season?.year || stat.seasonId}
-                            </span>
-                          </div>
+                      <div key={index} className="rounded-2xl border border-slate-200 dark:border-white/10 overflow-hidden">
+                        {/* Season header */}
+                        <div className="flex items-center justify-between px-5 py-3 bg-slate-50 dark:bg-white/5 border-b border-slate-200 dark:border-white/10">
+                          <span className="font-display font-bold text-base text-slate-900 dark:text-foreground">
+                            Mùa {season?.year || stat.seasonId}
+                          </span>
                           {stat.rating && (
-                            <span className="font-mono-data text-xl font-bold text-[#00D9FF]">
-                              {stat.rating.toFixed(1)}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-slate-500 dark:text-[#A8A29E]">Đánh giá</span>
+                              <span className="font-mono-data text-xl font-black" style={{ color: ratingColor }}>
+                                {stat.rating.toFixed(1)}
+                              </span>
+                            </div>
                           )}
                         </div>
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 text-sm">
-                          {[
-                            { label: 'Trận đấu',    val: stat.appearances },
-                            { label: 'Đá chính',    val: stat.lineups },
-                            { label: 'Phút',        val: stat.minutes },
-                            { label: 'Bàn thắng',   val: stat.goals },
-                            { label: 'Kiến tạo',    val: stat.assists },
-                            { label: 'Thẻ vàng',    val: stat.yellowCards },
-                            { label: 'Thẻ đỏ',      val: stat.redCards },
-                            { label: 'Vào sân',     val: stat.substitutionsIn },
-                            { label: 'Ra sân',      val: stat.substitutionsOut },
-                            { label: 'Sút',         val: stat.shotsTotal },
-                            { label: 'Sút trúng',   val: stat.shotsOnTarget },
-                            { label: 'Chuyền',      val: stat.passesTotal },
-                            { label: 'Chuyền then chốt', val: stat.passesKey },
-                            { label: 'Chuyền chính xác', val: stat.passesAccuracy },
-                            { label: 'Rê bóng thành công', val: stat.dribblesSuccess },
-                            { label: 'Dribble thử', val: stat.dribblesAttempted },
-                            { label: 'Duel thắng',  val: stat.duelsWon },
-                            { label: 'Duel tổng',   val: stat.duelsTotal },
-                            { label: 'Tắc bóng',    val: stat.tackles },
-                            { label: 'Cắt bóng',    val: stat.interceptions },
-                            { label: 'Bị phạm lỗi', val: stat.foulsDrawn },
-                            { label: 'Phạm lỗi',    val: stat.foulsCommitted },
-                            { label: 'Penalty ghi', val: stat.penaltiesScored },
-                            { label: 'Penalty hỏng',val: stat.penaltiesMissed },
-                          ].filter(item => item.val !== null && item.val !== undefined).map(({ label, val }) => (
-                            <div key={label}>
-                              <span className="text-slate-600 dark:text-[#A8A29E] text-xs">{label}</span>
-                              <div className="font-mono-data text-lg font-semibold text-slate-900 dark:text-foreground">
-                                {val}
+
+                        {/* Stat groups */}
+                        <div className="divide-y divide-slate-100 dark:divide-white/5">
+                          {groups.map(group => {
+                            const visible = group.items.filter(i => i.val != null && i.val !== undefined);
+                            if (!visible.length) return null;
+                            return (
+                              <div key={group.title} className="px-5 py-4">
+                                <p className={`text-xs font-bold uppercase tracking-wider mb-3 ${group.color}`}>
+                                  {group.icon} {group.title}
+                                </p>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3">
+                                  {visible.map(item => (
+                                    <div key={item.label}>
+                                      <p className="text-[11px] text-slate-500 dark:text-[#A8A29E] mb-0.5">{item.label}</p>
+                                      <p className="font-mono-data text-lg font-bold text-slate-900 dark:text-foreground leading-none">
+                                        {item.val}
+                                      </p>
+                                      {item.pct != null && (
+                                        <div className="mt-1">
+                                          <div className="h-1 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden">
+                                            <div className="h-full rounded-full bg-[#00D9FF]" style={{ width: `${item.pct}%` }} />
+                                          </div>
+                                          <p className="text-[10px] text-slate-400 mt-0.5">{item.sub}</p>
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
-                              {/* Sub-labels for context */}
-                              {label === 'Rê bóng thành công' && stat.appearances && (
-                                <div className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
-                                  {(stat.dribblesSuccess! / stat.appearances).toFixed(1)}/trận
-                                  {stat.dribblesAttempted ? ` · ${Math.round((stat.dribblesSuccess! / stat.dribblesAttempted) * 100)}%` : ''}
-                                </div>
-                              )}
-                              {label === 'Sút trúng' && stat.shotsTotal ? (
-                                <div className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
-                                  {Math.round((stat.shotsOnTarget! / stat.shotsTotal) * 100)}% trúng đích
-                                </div>
-                              ) : null}
-                              {label === 'Chuyền chính xác' && stat.passesTotal ? (
-                                <div className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
-                                  {Math.round((stat.passesAccuracy! / stat.passesTotal) * 100)}% chính xác
-                                </div>
-                              ) : null}
-                              {label === 'Duel thắng' && stat.duelsTotal ? (
-                                <div className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
-                                  {Math.round((stat.duelsWon! / stat.duelsTotal) * 100)}%
-                                </div>
-                              ) : null}
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
                     );
