@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { ArrowLeft, TrendingUp, ChevronDown, ChevronUp, Users, Loader2, ArrowRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowLeft, ChevronDown, ChevronUp, Users, Loader2, ArrowRight, ChevronLeft, ChevronRight, TrendingUp } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { getPlayerById } from '@/data/mockData';
@@ -9,18 +9,23 @@ import { cn } from '@/lib/utils';
 import { PlayerFromAPI, PlayerStats, leagueService } from '@/services/leagueService';
 import { toast } from 'sonner';
 import { 
-  LineChart, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer,
   RadarChart,
   PolarGrid,
   PolarAngleAxis,
   PolarRadiusAxis,
-  Radar
+  Radar,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  Area,
+  AreaChart,
 } from 'recharts';
 
 // Mock performance trend data
@@ -44,12 +49,15 @@ export default function PlayerDetailPage() {
   const [fromTeamId, setFromTeamId] = useState<string | null>(null);
   const [transfers, setTransfers] = useState<any[]>([]);
   const [transfersLoading, setTransfersLoading] = useState(false);
+  const [selectedSeasonIdx, setSelectedSeasonIdx] = useState(0);
+  const [showTrend, setShowTrend] = useState(false);
   const player = getPlayerById(playerId || '');
   const [expandedContribution, setExpandedContribution] = useState<string | null>(null);
 
   useEffect(() => {
     // Scroll to top when page loads
     window.scrollTo(0, 0);
+    setSelectedSeasonIdx(0); // reset về mùa mới nhất khi đổi cầu thủ
     
     // Check if we came from a team detail page
     const state = location.state as { fromTeamId?: string } | undefined;
@@ -76,7 +84,9 @@ export default function PlayerDetailPage() {
       }
 
       const allStats = await leagueService.getPlayerStatsByPlayerId(Number(playerId));
-      setPlayerStats(allStats);
+      // Sort mùa mới nhất lên đầu (seasonId 1 = mới nhất, số lớn hơn = cũ hơn)
+      const sortedStats = [...allStats].sort((a, b) => (a.seasonId ?? 99) - (b.seasonId ?? 99));
+      setPlayerStats(sortedStats);
 
       // Fetch seasons to map seasonId → year for display
       if (allStats.length > 0 && allStats[0].leagueId) {
@@ -383,160 +393,258 @@ export default function PlayerDetailPage() {
                 transition={{ duration: 0.5, delay: 0.1 }}
                 className="glass-card rounded-2xl p-6 lg:col-span-2"
               >
-                <h3 className="font-label font-bold text-slate-900 dark:text-foreground uppercase tracking-wider text-sm mb-4">
-                  Thống kê thi đấu
-                </h3>
-                <div className="space-y-3 max-h-96 overflow-y-auto">
-                  {playerStats.map((stat, index) => {
-                    const season = seasons.find(s => s.seasonId === stat.seasonId);
-                    const pos = playerPosition ?? '';
-                    const ratingColor = stat.rating
-                      ? stat.rating >= 8 ? '#22c55e' : stat.rating >= 7 ? '#84cc16' : stat.rating >= 6 ? '#eab308' : '#ef4444'
-                      : '#6b7280';
+                {/* Header + season selector */}
+                <div className="flex items-center justify-between mb-5 gap-3 flex-wrap">
+                  <h3 className="font-label font-bold text-slate-900 dark:text-foreground uppercase tracking-wider text-sm">
+                    Thống kê thi đấu
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setSelectedSeasonIdx(i => Math.max(0, i - 1))} disabled={selectedSeasonIdx === 0}
+                      className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-white/5 flex items-center justify-center disabled:opacity-30 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors">
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <select
+                      value={selectedSeasonIdx}
+                      onChange={e => setSelectedSeasonIdx(Number(e.target.value))}
+                      className="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/10 text-sm font-semibold text-slate-900 dark:text-foreground focus:outline-none cursor-pointer"
+                    >
+                      {playerStats.map((stat, i) => {
+                        const season = seasons.find(s => s.seasonId === stat.seasonId);
+                        return <option key={i} value={i}>Mùa {season?.year || stat.seasonId}</option>;
+                      })}
+                    </select>
+                    <button onClick={() => setSelectedSeasonIdx(i => Math.min(playerStats.length - 1, i + 1))} disabled={selectedSeasonIdx === playerStats.length - 1}
+                      className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-white/5 flex items-center justify-center disabled:opacity-30 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors">
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
 
-                    // ── Stat section builder ──────────────────────────────
-                    type StatItem = { label: string; val: number | null | undefined; sub?: string; pct?: number };
-                    const pct = (a?: number | null, b?: number | null) =>
-                      a != null && b != null && b > 0 ? Math.round((a / b) * 100) : undefined;
-
-                    const overview: StatItem[] = [
-                      { label: 'Trận đấu',  val: stat.appearances },
-                      { label: 'Đá chính',  val: stat.lineups },
-                      { label: 'Phút',      val: stat.minutes },
-                      { label: 'Vào sân',   val: stat.substitutionsIn },
-                      { label: 'Ra sân',    val: stat.substitutionsOut },
-                      { label: 'Thẻ vàng',  val: stat.yellowCards },
-                      { label: 'Thẻ đỏ',   val: stat.redCards },
-                    ];
-
-                    const attacking: StatItem[] = [
-                      { label: 'Bàn thắng',     val: stat.goals },
-                      { label: 'Kiến tạo',      val: stat.assists },
-                      { label: 'Tổng cú sút',   val: stat.shotsTotal },
-                      { label: 'Sút trúng đích',val: stat.shotsOnTarget, sub: `${pct(stat.shotsOnTarget, stat.shotsTotal) ?? '—'}% chính xác`, pct: pct(stat.shotsOnTarget, stat.shotsTotal) },
-                      { label: 'Penalty ghi',   val: stat.penaltiesScored },
-                      { label: 'Penalty hỏng',  val: stat.penaltiesMissed },
-                    ];
-
-                    const passing: StatItem[] = [
-                      { label: 'Tổng chuyền',       val: stat.passesTotal },
-                      { label: 'Chuyền chính xác',  val: stat.passesAccuracy, sub: `${pct(stat.passesAccuracy, stat.passesTotal) ?? '—'}%`, pct: pct(stat.passesAccuracy, stat.passesTotal) },
-                      { label: 'Chuyền then chốt',  val: stat.passesKey },
-                    ];
-
-                    const dribbling: StatItem[] = [
-                      { label: 'Rê bóng thành công', val: stat.dribblesSuccess, sub: `${pct(stat.dribblesSuccess, stat.dribblesAttempted) ?? '—'}%`, pct: pct(stat.dribblesSuccess, stat.dribblesAttempted) },
-                      { label: 'Rê bóng thử',        val: stat.dribblesAttempted },
-                      { label: 'Tranh chấp thắng',   val: stat.duelsWon, sub: `${pct(stat.duelsWon, stat.duelsTotal) ?? '—'}%`, pct: pct(stat.duelsWon, stat.duelsTotal) },
-                      { label: 'Tranh chấp tổng',    val: stat.duelsTotal },
-                      { label: 'Phạm lỗi',           val: stat.foulsCommitted },
-                      { label: 'Bị phạm lỗi',        val: stat.foulsDrawn },
-                    ];
-
-                    const defending: StatItem[] = [
-                      { label: 'Tắc bóng',    val: stat.tackles },
-                      { label: 'Cắt bóng',    val: stat.interceptions },
-                    ];
-
-                    const gkStats: StatItem[] = [
-                      { label: 'Cứu thua',              val: stat.saves },
-                      { label: 'Cứu thua trong vòng cấm', val: stat.savesInsideBox },
-                      { label: 'Không thủng lưới',      val: stat.cleanSheets },
-                      { label: 'Thủng lưới',            val: stat.goalsConceded },
-                      { label: 'Cản phá penalty',       val: stat.penaltiesSaved },
-                      { label: 'Đấm bóng',              val: stat.punches },
-                      { label: 'Ra khỏi khung thành',   val: stat.runsOut },
-                      { label: 'Ra thành công',         val: stat.runsOutSuccessful, sub: `${pct(stat.runsOutSuccessful, stat.runsOut) ?? '—'}%`, pct: pct(stat.runsOutSuccessful, stat.runsOut) },
-                      { label: 'Bắt bóng bổng',         val: stat.highClaims },
-                    ];
-
-                    // Groups by position
-                    type Group = { title: string; color: string; icon: string; items: StatItem[] };
-                    let groups: Group[];
-                    if (pos === 'G') {
-                      groups = [
-                        { title: 'Tổng quan',   color: 'text-slate-500',  icon: '📋', items: overview },
-                        { title: 'Thủ môn',     color: 'text-purple-500', icon: '🧤', items: gkStats },
-                        { title: 'Chuyền bóng', color: 'text-cyan-500',   icon: '🎯', items: passing },
-                      ];
-                    } else if (pos === 'D') {
-                      groups = [
-                        { title: 'Tổng quan',   color: 'text-slate-500',  icon: '📋', items: overview },
-                        { title: 'Phòng thủ',   color: 'text-amber-500',  icon: '🛡️', items: defending },
-                        { title: 'Tranh chấp',  color: 'text-orange-500', icon: '⚔️', items: dribbling },
-                        { title: 'Chuyền bóng', color: 'text-cyan-500',   icon: '🎯', items: passing },
-                        { title: 'Tấn công',    color: 'text-red-500',    icon: '⚽', items: [{ label: 'Bàn thắng', val: stat.goals }, { label: 'Kiến tạo', val: stat.assists }] },
-                      ];
-                    } else if (pos === 'M') {
-                      groups = [
-                        { title: 'Tổng quan',   color: 'text-slate-500',  icon: '📋', items: overview },
-                        { title: 'Chuyền bóng', color: 'text-cyan-500',   icon: '🎯', items: passing },
-                        { title: 'Tấn công',    color: 'text-red-500',    icon: '⚽', items: attacking },
-                        { title: 'Tranh chấp',  color: 'text-orange-500', icon: '⚔️', items: dribbling },
-                        { title: 'Phòng thủ',   color: 'text-amber-500',  icon: '🛡️', items: defending },
-                      ];
-                    } else {
-                      groups = [
-                        { title: 'Tổng quan',   color: 'text-slate-500',  icon: '📋', items: overview },
-                        { title: 'Tấn công',    color: 'text-red-500',    icon: '⚽', items: attacking },
-                        { title: 'Chuyền bóng', color: 'text-cyan-500',   icon: '🎯', items: passing },
-                        { title: 'Tranh chấp',  color: 'text-orange-500', icon: '⚔️', items: dribbling },
-                      ];
-                    }
-
-                    return (
-                      <div key={index} className="rounded-2xl border border-slate-200 dark:border-white/10 overflow-hidden">
-                        {/* Season header */}
-                        <div className="flex items-center justify-between px-5 py-3 bg-slate-50 dark:bg-white/5 border-b border-slate-200 dark:border-white/10">
-                          <span className="font-display font-bold text-base text-slate-900 dark:text-foreground">
-                            Mùa {season?.year || stat.seasonId}
-                          </span>
-                          {stat.rating && (
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs text-slate-500 dark:text-[#A8A29E]">Đánh giá</span>
-                              <span className="font-mono-data text-xl font-black" style={{ color: ratingColor }}>
-                                {stat.rating.toFixed(1)}
-                              </span>
-                            </div>
-                          )}
+                {/* Selected season stats */}
+                {(() => {
+                  const stat = playerStats[selectedSeasonIdx];
+                  if (!stat) return null;
+                  const pos = playerPosition ?? '';
+                  const ratingColor = stat.rating
+                    ? stat.rating >= 8 ? '#22c55e' : stat.rating >= 7 ? '#84cc16' : stat.rating >= 6 ? '#eab308' : '#ef4444'
+                    : '#6b7280';
+                  type StatItem = { label: string; val: number | null | undefined; sub?: string; pct?: number };
+                  const pct = (a?: number | null, b?: number | null) =>
+                    a != null && b != null && b > 0 ? Math.round((a / b) * 100) : undefined;
+                  const overview: StatItem[] = [
+                    { label: 'Trận đấu', val: stat.appearances },
+                    { label: 'Đá chính', val: stat.lineups },
+                    { label: 'Phút', val: stat.minutes },
+                    { label: 'Vào sân', val: stat.substitutionsIn },
+                    { label: 'Ra sân', val: stat.substitutionsOut },
+                    { label: 'Thẻ vàng', val: stat.yellowCards },
+                    { label: 'Thẻ đỏ', val: stat.redCards },
+                  ];
+                  const attacking: StatItem[] = [
+                    { label: 'Bàn thắng', val: stat.goals },
+                    { label: 'Kiến tạo', val: stat.assists },
+                    { label: 'Tổng cú sút', val: stat.shotsTotal },
+                    { label: 'Sút trúng đích', val: stat.shotsOnTarget, sub: `${pct(stat.shotsOnTarget, stat.shotsTotal) ?? '—'}%`, pct: pct(stat.shotsOnTarget, stat.shotsTotal) },
+                    { label: 'Penalty ghi', val: stat.penaltiesScored },
+                    { label: 'Penalty hỏng', val: stat.penaltiesMissed },
+                  ];
+                  const passing: StatItem[] = [
+                    { label: 'Tổng chuyền', val: stat.passesTotal },
+                    { label: 'Chuyền chính xác', val: stat.passesAccuracy, sub: `${pct(stat.passesAccuracy, stat.passesTotal) ?? '—'}%`, pct: pct(stat.passesAccuracy, stat.passesTotal) },
+                    { label: 'Chuyền then chốt', val: stat.passesKey },
+                  ];
+                  const dribbling: StatItem[] = [
+                    { label: 'Rê bóng thành công', val: stat.dribblesSuccess, sub: `${pct(stat.dribblesSuccess, stat.dribblesAttempted) ?? '—'}%`, pct: pct(stat.dribblesSuccess, stat.dribblesAttempted) },
+                    { label: 'Rê bóng thử', val: stat.dribblesAttempted },
+                    { label: 'Tranh chấp thắng', val: stat.duelsWon, sub: `${pct(stat.duelsWon, stat.duelsTotal) ?? '—'}%`, pct: pct(stat.duelsWon, stat.duelsTotal) },
+                    { label: 'Tranh chấp tổng', val: stat.duelsTotal },
+                    { label: 'Phạm lỗi', val: stat.foulsCommitted },
+                    { label: 'Bị phạm lỗi', val: stat.foulsDrawn },
+                  ];
+                  const defending: StatItem[] = [
+                    { label: 'Tắc bóng', val: stat.tackles },
+                    { label: 'Cắt bóng', val: stat.interceptions },
+                  ];
+                  type Group = { title: string; color: string; icon: string; items: StatItem[] };
+                  const groups: Group[] = pos === 'G' ? [
+                    { title: 'Tổng quan', color: 'text-slate-500', icon: '📋', items: overview },
+                    { title: 'Chuyền bóng', color: 'text-cyan-500', icon: '🎯', items: passing },
+                  ] : pos === 'D' ? [
+                    { title: 'Tổng quan', color: 'text-slate-500', icon: '📋', items: overview },
+                    { title: 'Phòng thủ', color: 'text-amber-500', icon: '🛡️', items: defending },
+                    { title: 'Tranh chấp', color: 'text-orange-500', icon: '⚔️', items: dribbling },
+                    { title: 'Chuyền bóng', color: 'text-cyan-500', icon: '🎯', items: passing },
+                  ] : pos === 'M' ? [
+                    { title: 'Tổng quan', color: 'text-slate-500', icon: '📋', items: overview },
+                    { title: 'Chuyền bóng', color: 'text-cyan-500', icon: '🎯', items: passing },
+                    { title: 'Tấn công', color: 'text-red-500', icon: '⚽', items: attacking },
+                    { title: 'Tranh chấp', color: 'text-orange-500', icon: '⚔️', items: dribbling },
+                    { title: 'Phòng thủ', color: 'text-amber-500', icon: '🛡️', items: defending },
+                  ] : [
+                    { title: 'Tổng quan', color: 'text-slate-500', icon: '📋', items: overview },
+                    { title: 'Tấn công', color: 'text-red-500', icon: '⚽', items: attacking },
+                    { title: 'Chuyền bóng', color: 'text-cyan-500', icon: '🎯', items: passing },
+                    { title: 'Tranh chấp', color: 'text-orange-500', icon: '⚔️', items: dribbling },
+                  ];
+                  return (
+                    <div className="rounded-2xl border border-slate-200 dark:border-white/10 overflow-hidden">
+                      {/* Rating bar */}
+                      {stat.rating && (
+                        <div className="flex items-center gap-3 px-5 py-3 bg-slate-50 dark:bg-white/5 border-b border-slate-200 dark:border-white/10">
+                          <span className="text-xs text-slate-500 dark:text-[#A8A29E]">Đánh giá mùa này</span>
+                          <span className="font-mono-data text-2xl font-black" style={{ color: ratingColor }}>{stat.rating.toFixed(1)}</span>
+                          <div className="flex-1 h-2 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden">
+                            <div className="h-full rounded-full transition-all" style={{ width: `${(stat.rating / 10) * 100}%`, backgroundColor: ratingColor }} />
+                          </div>
                         </div>
-
-                        {/* Stat groups */}
-                        <div className="divide-y divide-slate-100 dark:divide-white/5">
-                          {groups.map(group => {
-                            const visible = group.items.filter(i => i.val != null && i.val !== undefined);
-                            if (!visible.length) return null;
-                            return (
-                              <div key={group.title} className="px-5 py-4">
-                                <p className={`text-xs font-bold uppercase tracking-wider mb-3 ${group.color}`}>
-                                  {group.icon} {group.title}
-                                </p>
-                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3">
-                                  {visible.map(item => (
-                                    <div key={item.label}>
-                                      <p className="text-[11px] text-slate-500 dark:text-[#A8A29E] mb-0.5">{item.label}</p>
-                                      <p className="font-mono-data text-lg font-bold text-slate-900 dark:text-foreground leading-none">
-                                        {item.val}
-                                      </p>
-                                      {item.pct != null && (
-                                        <div className="mt-1">
-                                          <div className="h-1 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden">
-                                            <div className="h-full rounded-full bg-[#00D9FF]" style={{ width: `${item.pct}%` }} />
-                                          </div>
-                                          <p className="text-[10px] text-slate-400 mt-0.5">{item.sub}</p>
+                      )}
+                      <div className="divide-y divide-slate-100 dark:divide-white/5">
+                        {groups.map(group => {
+                          const visible = group.items.filter(i => i.val != null);
+                          if (!visible.length) return null;
+                          return (
+                            <div key={group.title} className="px-5 py-4">
+                              <p className={`text-xs font-bold uppercase tracking-wider mb-3 ${group.color}`}>{group.icon} {group.title}</p>
+                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3">
+                                {visible.map(item => (
+                                  <div key={item.label}>
+                                    <p className="text-[11px] text-slate-500 dark:text-[#A8A29E] mb-0.5">{item.label}</p>
+                                    <p className="font-mono-data text-lg font-bold text-slate-900 dark:text-foreground leading-none">{item.val}</p>
+                                    {item.pct != null && (
+                                      <div className="mt-1">
+                                        <div className="h-1 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden">
+                                          <div className="h-full rounded-full bg-[#00D9FF]" style={{ width: `${item.pct}%` }} />
                                         </div>
-                                      )}
-                                    </div>
-                                  ))}
+                                        <p className="text-[10px] text-slate-400 mt-0.5">{item.sub}</p>
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Season trend — collapsible, chỉ hiện khi có ≥2 mùa */}
+                {playerStats.length >= 2 && (() => {
+                  const trendData = [...playerStats].reverse().map(s => {
+                    const season = seasons.find(x => x.seasonId === s.seasonId);
+                    return {
+                      name: `${season?.year || s.seasonId}`,
+                      'Bàn thắng': s.goals ?? 0,
+                      'Kiến tạo': s.assists ?? 0,
+                      'Trận đấu': s.appearances ?? 0,
+                      'Đánh giá': s.rating ? parseFloat(s.rating.toFixed(1)) : undefined,
+                    };
+                  });
+                  return (
+                    <div className="mt-4 rounded-2xl border border-slate-200 dark:border-white/10 overflow-hidden">
+                      {/* Toggle button */}
+                      <button
+                        onClick={() => setShowTrend(v => !v)}
+                        className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-7 h-7 rounded-lg bg-[#00D9FF]/15 flex items-center justify-center">
+                            <TrendingUp className="w-4 h-4 text-[#00D9FF]" />
+                          </div>
+                          <span className="font-semibold text-sm text-slate-900 dark:text-foreground">Phân tích phong độ qua các mùa</span>
+                          <span className="text-xs text-slate-400">{playerStats.length} mùa</span>
+                        </div>
+                        <ChevronDown className={cn('w-4 h-4 text-slate-400 transition-transform duration-200', showTrend && 'rotate-180')} />
+                      </button>
+
+                      <AnimatePresence>
+                        {showTrend && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.25 }}
+                            className="overflow-hidden border-t border-slate-100 dark:border-white/5"
+                          >
+                            <div className="p-5 space-y-5">
+                              {/* Goals + Assists area chart */}
+                              <div>
+                                <p className="text-xs font-semibold text-slate-500 dark:text-[#A8A29E] uppercase tracking-wider mb-3">Bàn thắng & Kiến tạo</p>
+                                <div className="h-44">
+                                  <ResponsiveContainer width="100%" height="100%">
+                                    <AreaChart data={trendData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+                                      <defs>
+                                        <linearGradient id="goalGrad" x1="0" y1="0" x2="0" y2="1">
+                                          <stop offset="5%" stopColor="#FF4444" stopOpacity={0.3} />
+                                          <stop offset="95%" stopColor="#FF4444" stopOpacity={0} />
+                                        </linearGradient>
+                                        <linearGradient id="assistGrad" x1="0" y1="0" x2="0" y2="1">
+                                          <stop offset="5%" stopColor="#00D9FF" stopOpacity={0.3} />
+                                          <stop offset="95%" stopColor="#00D9FF" stopOpacity={0} />
+                                        </linearGradient>
+                                      </defs>
+                                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" vertical={false} />
+                                      <XAxis dataKey="name" tick={{ fill: '#A8A29E', fontSize: 11 }} axisLine={false} tickLine={false} />
+                                      <YAxis tick={{ fill: '#A8A29E', fontSize: 10 }} axisLine={false} tickLine={false} allowDecimals={false} />
+                                      <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', fontSize: 12 }} cursor={{ stroke: 'rgba(255,255,255,0.1)' }} />
+                                      <Area type="monotone" dataKey="Bàn thắng" stroke="#FF4444" strokeWidth={2} fill="url(#goalGrad)" dot={{ fill: '#FF4444', r: 3, strokeWidth: 0 }} activeDot={{ r: 5 }} />
+                                      <Area type="monotone" dataKey="Kiến tạo" stroke="#00D9FF" strokeWidth={2} fill="url(#assistGrad)" dot={{ fill: '#00D9FF', r: 3, strokeWidth: 0 }} activeDot={{ r: 5 }} />
+                                    </AreaChart>
+                                  </ResponsiveContainer>
+                                </div>
+                                <div className="flex items-center gap-4 mt-2 justify-center">
+                                  <span className="flex items-center gap-1.5 text-xs text-slate-500"><span className="w-3 h-0.5 bg-[#FF4444] rounded inline-block" />Bàn thắng</span>
+                                  <span className="flex items-center gap-1.5 text-xs text-slate-500"><span className="w-3 h-0.5 bg-[#00D9FF] rounded inline-block" />Kiến tạo</span>
                                 </div>
                               </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+
+                              {/* Rating line chart */}
+                              {trendData.some(d => d['Đánh giá'] != null) && (
+                                <div>
+                                  <p className="text-xs font-semibold text-slate-500 dark:text-[#A8A29E] uppercase tracking-wider mb-3">Đánh giá trung bình</p>
+                                  <div className="h-36">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                      <LineChart data={trendData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+                                        <defs>
+                                          <linearGradient id="ratingLineGrad" x1="0" y1="0" x2="1" y2="0">
+                                            <stop offset="0%" stopColor="#FF4444" />
+                                            <stop offset="100%" stopColor="#00D9FF" />
+                                          </linearGradient>
+                                        </defs>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" vertical={false} />
+                                        <XAxis dataKey="name" tick={{ fill: '#A8A29E', fontSize: 11 }} axisLine={false} tickLine={false} />
+                                        <YAxis domain={['auto', 'auto']} tick={{ fill: '#A8A29E', fontSize: 10 }} axisLine={false} tickLine={false} />
+                                        <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', fontSize: 12 }} cursor={{ stroke: 'rgba(255,255,255,0.1)' }} />
+                                        <Line type="monotone" dataKey="Đánh giá" stroke="url(#ratingLineGrad)" strokeWidth={2.5} dot={{ fill: '#fff', stroke: '#00D9FF', strokeWidth: 2, r: 4 }} activeDot={{ r: 6, fill: '#00D9FF' }} connectNulls />
+                                      </LineChart>
+                                    </ResponsiveContainer>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Appearances bar */}
+                              <div>
+                                <p className="text-xs font-semibold text-slate-500 dark:text-[#A8A29E] uppercase tracking-wider mb-3">Số trận thi đấu</p>
+                                <div className="h-32">
+                                  <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={trendData} barCategoryGap="35%" margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+                                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" vertical={false} />
+                                      <XAxis dataKey="name" tick={{ fill: '#A8A29E', fontSize: 11 }} axisLine={false} tickLine={false} />
+                                      <YAxis tick={{ fill: '#A8A29E', fontSize: 10 }} axisLine={false} tickLine={false} allowDecimals={false} />
+                                      <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', fontSize: 12 }} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
+                                      <Bar dataKey="Trận đấu" fill="#a78bfa" radius={[4,4,0,0]} />
+                                    </BarChart>
+                                  </ResponsiveContainer>
+                                </div>
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  );
+                })()}
               </motion.div>
             ) : apiPlayer ? (
               <motion.div
@@ -701,59 +809,6 @@ export default function PlayerDetailPage() {
               </motion.div>
             )}
           </div>
-
-          {/* Performance Trend - only show for mock data */}
-          {player && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-              className="glass-card rounded-2xl p-6 mb-8"
-            >
-              <h3 className="font-label font-bold text-slate-900 dark:text-foreground uppercase tracking-wider text-sm mb-6">
-                Xu hướng phong độ
-              </h3>
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={performanceTrend}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                    <XAxis 
-                      dataKey="date" 
-                      stroke="#A8A29E"
-                      tick={{ fill: '#A8A29E', fontSize: 12 }}
-                    />
-                    <YAxis 
-                      domain={[6, 10]}
-                      stroke="#A8A29E"
-                      tick={{ fill: '#A8A29E', fontSize: 12 }}
-                    />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'hsl(var(--background))', 
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        borderRadius: '12px',
-                        color: 'hsl(var(--foreground))'
-                      }}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="rating" 
-                      stroke="url(#lineGradient)" 
-                      strokeWidth={3}
-                      dot={{ fill: '#00D9FF', strokeWidth: 2, r: 5 }}
-                      activeDot={{ fill: '#FF4444', strokeWidth: 0, r: 8 }}
-                    />
-                    <defs>
-                      <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor="#FF4444" />
-                        <stop offset="100%" stopColor="#00D9FF" />
-                      </linearGradient>
-                    </defs>
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </motion.div>
-          )}
 
           {/* Transfer History - chỉ hiện khi đã đăng nhập và có data */}
           {(transfers.length > 0 || transfersLoading) && localStorage.getItem('accessToken') && (
