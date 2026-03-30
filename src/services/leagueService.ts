@@ -446,8 +446,8 @@ export interface SofascoreTeamMatch {
   id: number;
   homeTeam: { id: number; name: string; };
   awayTeam: { id: number; name: string; };
-  homeScore: { current: number; display?: number; };
-  awayScore: { current: number; display?: number; };
+  homeScore: { current: number; display?: number; penalties?: number | null; };
+  awayScore: { current: number; display?: number; penalties?: number | null; };
   startTimestamp: number;
   status: { type: string; };
   roundInfo?: { round: number; name?: string; cupRoundType?: number; };
@@ -521,9 +521,16 @@ export const leagueService = {
   },
 
   async getTournamentCupTrees(uniqueTournamentId: number, seasonId: number): Promise<any> {
-    return await apiClient.get<any>(
-      `/api/Sofascore/tournament/cuptrees?uniqueTournamentId=${uniqueTournamentId}&seasonId=${seasonId}`
-    );
+    // Try DB first (fast), fallback to Sofascore scraper
+    try {
+      return await apiClient.get<any>(
+        `/api/SofascoreHybrid/cuptree?tournamentId=${uniqueTournamentId}&seasonId=${seasonId}`
+      );
+    } catch {
+      return await apiClient.get<any>(
+        `/api/Sofascore/tournament/cuptrees?uniqueTournamentId=${uniqueTournamentId}&seasonId=${seasonId}`
+      );
+    }
   },
 
   async getTournamentRoundMatches(uniqueTournamentId: number, seasonId: number, round: number): Promise<SofascoreTeamMatch[]> {

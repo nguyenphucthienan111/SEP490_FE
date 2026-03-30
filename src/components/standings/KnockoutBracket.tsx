@@ -1,4 +1,5 @@
 ﻿import React from "react";
+import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { leagueService, SofascoreTeamMatch } from "@/services/leagueService";
 
@@ -18,10 +19,11 @@ function teamLogo(id: number) {
 }
 
 function MatchCard({ h, a, matchId, empty }: {
-  h?: { id?: number; name?: string; score?: number | null; win: boolean };
-  a?: { id?: number; name?: string; score?: number | null; win: boolean };
+  h?: { id?: number; name?: string; score?: number | null; pen?: number | null; win: boolean };
+  a?: { id?: number; name?: string; score?: number | null; pen?: number | null; win: boolean };
   matchId?: number; empty?: boolean;
 }) {
+  const navigate = useNavigate();
   if (empty) {
     return <div className="rounded-lg border border-dashed border-slate-300 dark:border-white/15 opacity-40" style={{ height: CARD_H }} />;
   }
@@ -31,8 +33,10 @@ function MatchCard({ h, a, matchId, empty }: {
         ? <img src={teamLogo(t!.id)} alt="" className="w-5 h-5 object-contain flex-shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
         : <div className="w-5 h-5 flex-shrink-0" />}
       <span className={cn("text-xs flex-1 truncate", t!.win ? "font-bold text-slate-900 dark:text-white" : "text-slate-500 dark:text-[#A8A29E]")}>{t!.name ?? "TBD"}</span>
-      <span className={cn("font-mono text-sm w-5 text-right font-bold", t!.win ? "text-slate-900 dark:text-white" : "text-slate-400")}>
-        {t!.score != null ? t!.score : (t!.name ? "-" : "")}
+      <span className={cn("font-mono text-sm text-right font-bold whitespace-nowrap", t!.win ? "text-slate-900 dark:text-white" : "text-slate-400")}>
+        {t!.score != null
+          ? t!.pen != null ? `${t!.score} (${t!.pen})` : `${t!.score}`
+          : (t!.name ? "-" : "")}
       </span>
     </div>
   );
@@ -42,16 +46,16 @@ function MatchCard({ h, a, matchId, empty }: {
     </div>
   );
   return matchId
-    ? <a href={`https://www.sofascore.com/football/match/${matchId}`} target="_blank" rel="noopener noreferrer">{card}</a>
+    ? <div onClick={() => navigate(`/matches/${matchId}`)} className="cursor-pointer">{card}</div>
     : card;
 }
 
 const ROUND_LABELS: Record<string, string> = {
   "Round 1": "Vong 1",
-  "Round of 16": "Vong 1/8",
-  "Quarterfinal": "Tu ket",
-  "Semifinal": "Ban ket",
-  "Final": "Chung ket",
+  "Round of 16": "Vòng 1/8",
+  "Quarterfinal": "Tứ kết",
+  "Semifinal": "Bán kết",
+  "Final": "Chung kết",
 };
 
 function parseCupTrees(data: any, allMatches: SofascoreTeamMatch[]): Column[] {
@@ -63,12 +67,16 @@ function parseCupTrees(data: any, allMatches: SofascoreTeamMatch[]): Column[] {
 
   const sortedRounds = [...rounds].sort((a: any, b: any) => (a.order ?? 0) - (b.order ?? 0));
 
-  // Sort each round's blocks by order initially
+  // Build match lookup from allMatches by event id
+  const matchById = new Map<number, SofascoreTeamMatch>();
+  allMatches.forEach(m => matchById.set(m.id, m));
+
+  // Sort each round's blocks by order
   const orderedBlocks: any[][] = sortedRounds.map((round: any) =>
     [...(round.blocks ?? [])].sort((a: any, b: any) => (a.order ?? 0) - (b.order ?? 0))
   );
 
-  // Reorder earlier rounds to match the sourceBlockId chain from later rounds (working backwards)
+  // Reorder earlier rounds to match the sourceBlockId chain from later rounds
   for (let ri = sortedRounds.length - 2; ri >= 0; ri--) {
     const nextBlocks = orderedBlocks[ri + 1];
     const sourceOrder: number[] = [];
@@ -93,21 +101,61 @@ function parseCupTrees(data: any, allMatches: SofascoreTeamMatch[]): Column[] {
     }
   }
 
-  // Build columns
+  // Build columns — use block data directly (teams + scores from participants)
   const columns: Column[] = sortedRounds.map((round: any, ri: number) => {
     const slots: Slot[] = orderedBlocks[ri].map((block: any) => {
       const participants: any[] = block.participants ?? [];
-      const teamIds = new Set(participants.map((p: any) => p.team?.id).filter(Boolean));
-      if (teamIds.size < 2) return null;
-      return allMatches.find((m) => teamIds.has(m.homeTeam.id) && teamIds.has(m.awayTeam.id)) ?? null;
+      if (participants.length < 2) return null;
+
+      const p0 = participants.find((p: any) => p.order === 1) ?? participants[0];
+      const p1 = participants.find((p: any) => p.order === 2) ?? participants[1];
+
+      // Try to find the actual match event from DB
+      const eventIds: number[] = block.events ?? [];
+      const foundMatch = eventIds.map(id => matchById.get(id)).find(Boolean);
+
+      // Extract scores from cuptrees block — homeTeamScore/awayTeamScore format: "1" or "1 (3)" (score + penalty)
+      const parseScore = (s: string | null | undefined): { score: number | null; pen: number | null } => {
+        if (s == null) return { score: null, pen: null };
+        const m = String(s).match(/^(\d+)(?:\s*\((\d+)\))?/);
+        if (!m) return { score: null, pen: null };
+        return { score: parseInt(m[1]), pen: m[2] != null ? parseInt(m[2]) : null };
+      };
+      const h0 = parseScore(block.homeTeamScore);
+      const h1 = parseScore(block.awayTeamScore);
+      const p0Score = h0.score;
+      const p1Score = h1.score;
+      const p0Pen = h0.pen;
+      const p1Pen = h1.pen;
+
+      const eventId = eventIds[0] ?? block.id;
+      const baseMatch = foundMatch ?? {
+        id: eventId,
+        homeTeam: { id: p0.team?.id ?? 0, name: p0.team?.name ?? 'TBD' },
+        awayTeam: { id: p1.team?.id ?? 0, name: p1.team?.name ?? 'TBD' },
+        homeScore: { current: p0Score ?? 0 },
+        awayScore: { current: p1Score ?? 0 },
+        startTimestamp: block.seriesStartDateTimestamp ?? 0,
+        status: { type: block.finished ? 'finished' : 'notstarted' },
+        roundInfo: { round: round.order ?? 0 },
+      } as SofascoreTeamMatch;
+
+      // Override with cuptrees scores (more accurate — separates penalty)
+      return {
+        ...baseMatch,
+        homeScore: { current: p0Score ?? baseMatch.homeScore.current, display: p0Score ?? undefined, penalties: p0Pen },
+        awayScore: { current: p1Score ?? baseMatch.awayScore.current, display: p1Score ?? undefined, penalties: p1Pen },
+      } as SofascoreTeamMatch;
     });
     const desc: string = round.description ?? `Round ${round.order}`;
     return { label: ROUND_LABELS[desc] ?? desc, slots };
   });
 
-  // Sofascore displays the bracket rotated by N/2 (bottom half first, then top half).
-  // Apply this rotation consistently to all columns so visual order and connector lines match.
-  columns.forEach((col) => {
+  // Filter out early rounds — only keep from Round of 16 (8 slots) onwards
+  const filtered = columns.filter(col => col.slots.length <= 8);
+
+  // Rotate columns so visual order matches Sofascore widget
+  filtered.forEach((col) => {
     const n = col.slots.length;
     const half = Math.floor(n / 2);
     if (half > 0) {
@@ -115,7 +163,7 @@ function parseCupTrees(data: any, allMatches: SofascoreTeamMatch[]): Column[] {
     }
   });
 
-  return columns;
+  return filtered;
 }
 
 export function KnockoutBracket({ tournamentId, seasonId }: Props) {
@@ -124,34 +172,53 @@ export function KnockoutBracket({ tournamentId, seasonId }: Props) {
 
   React.useEffect(() => {
     setLoading(true);
-    Promise.allSettled([
-      leagueService.getTournamentCupTrees(tournamentId, seasonId),
-      leagueService.getTournamentLastMatches(tournamentId, seasonId, 0),
-      leagueService.getTournamentLastMatches(tournamentId, seasonId, 1),
-      leagueService.getTournamentNextMatches(tournamentId, seasonId, 0),
-    ]).then(([cupTreesResult, ...matchResults]) => {
-      const allMatches: SofascoreTeamMatch[] = [];
-      matchResults.forEach((r) => {
-        if (r.status === "fulfilled") {
-          const val = r.value as any;
-          const arr: SofascoreTeamMatch[] = Array.isArray(val) ? val : (val?.events ?? []);
-          allMatches.push(...arr);
-        }
-      });
-      if (cupTreesResult.status === "fulfilled" && cupTreesResult.value) {
-        const parsed = parseCupTrees(cupTreesResult.value, allMatches);
-        if (parsed.length > 0) { setColumns(parsed); return; }
+
+    const cacheKey = `cuptrees-${tournamentId}-${seasonId}`;
+
+    const load = async () => {
+      // 1. Load matches from DB (fast)
+      const dbMatches = await leagueService.getAllMatchesFromDb(tournamentId, seasonId).catch(() => [] as any[]);
+      const allMatches: SofascoreTeamMatch[] = dbMatches.map((m: any) => ({
+        id: m.apiFixtureId,
+        homeTeam: { id: m.homeTeam?.apiTeamId ?? 0, name: m.homeTeam?.teamName ?? '' },
+        awayTeam: { id: m.awayTeam?.apiTeamId ?? 0, name: m.awayTeam?.teamName ?? '' },
+        homeScore: { current: m.homeGoals ?? 0 },
+        awayScore: { current: m.awayGoals ?? 0 },
+        startTimestamp: m.matchDate ? new Date(m.matchDate).getTime() / 1000 : 0,
+        status: { type: m.status === 'FT' || m.status === 'finished' ? 'finished' : 'notstarted' },
+        roundInfo: { round: parseInt(m.round) || 0 },
+      }));
+
+      // 2. Load cuptrees — try sessionStorage cache first
+      let cupTreesData: any = null;
+      try {
+        const cached = sessionStorage.getItem(cacheKey);
+        if (cached) cupTreesData = JSON.parse(cached);
+      } catch { /* ignore */ }
+
+      if (!cupTreesData) {
+        try {
+          cupTreesData = await leagueService.getTournamentCupTrees(tournamentId, seasonId);
+          sessionStorage.setItem(cacheKey, JSON.stringify(cupTreesData));
+        } catch { /* ignore */ }
       }
-      // Fallback: build from round numbers
+
+      // 3. Parse bracket
+      if (cupTreesData) {
+        const parsed = parseCupTrees(cupTreesData, allMatches);
+        if (parsed.length > 0) { setColumns(parsed); setLoading(false); return; }
+      }
+
+      // 4. Fallback: build from DB matches by round
       const byRound: Record<number, SofascoreTeamMatch[]> = {};
       allMatches.forEach((m) => {
-        const rn = (m as any).roundInfo?.round ?? 0;
+        const rn = m.roundInfo?.round ?? 0;
         if (rn > 0) { if (!byRound[rn]) byRound[rn] = []; if (!byRound[rn].find((x) => x.id === m.id)) byRound[rn].push(m); }
       });
       const roundNums = Object.keys(byRound).map(Number).sort((a, b) => a - b);
-      const LABELS: Record<number, string> = { 1: "Vong 1", 5: "Vong 1/8", 27: "Tu ket", 28: "Ban ket", 29: "Chung ket" };
+      const LABELS: Record<number, string> = { 5: "Vòng 1/8", 27: "Tứ kết", 28: "Bán kết", 29: "Chung kết" };
       const cols: Column[] = [];
-      roundNums.forEach((rn, idx) => {
+      roundNums.filter(rn => rn >= 5).forEach((rn, idx) => {
         const matches = byRound[rn].sort((a, b) => a.id - b.id);
         const totalSlots = idx === 0 ? matches.length : Math.ceil(cols[idx - 1].slots.length / 2);
         const slots: Slot[] = Array(totalSlots).fill(null);
@@ -159,7 +226,10 @@ export function KnockoutBracket({ tournamentId, seasonId }: Props) {
         cols.push({ label: LABELS[rn] ?? `Round ${rn}`, slots });
       });
       setColumns(cols);
-    }).finally(() => setLoading(false));
+      setLoading(false);
+    };
+
+    load().catch(() => setLoading(false));
   }, [tournamentId, seasonId]);
 
   if (loading) return (
@@ -195,16 +265,20 @@ export function KnockoutBracket({ tournamentId, seasonId }: Props) {
                     if (!match) return (
                       <div key={`tbd-${i}`} className="absolute w-full px-1" style={{ top }}><MatchCard empty /></div>
                     );
+                    // Use display score (excludes penalties) if available, fallback to current
+                    const hs = match.homeScore?.display ?? match.homeScore?.current ?? null;
+                    const as_ = match.awayScore?.display ?? match.awayScore?.current ?? null;
+                    const hpen = match.homeScore?.penalties ?? null;
+                    const apen = match.awayScore?.penalties ?? null;
                     const fin = match.status?.type === "finished";
-                    const hs = match.homeScore?.current ?? null;
-                    const as_ = match.awayScore?.current ?? null;
-                    const hw = fin && hs !== null && as_ !== null && hs > as_;
-                    const aw = fin && hs !== null && as_ !== null && as_ > hs;
+                    // Winner determined by penalties if scores are equal
+                    const hw = fin && hs !== null && as_ !== null && (hs > as_ || (hs === as_ && hpen !== null && apen !== null && hpen > apen));
+                    const aw = fin && hs !== null && as_ !== null && (as_ > hs || (hs === as_ && hpen !== null && apen !== null && apen > hpen));
                     return (
                       <div key={match.id} className="absolute w-full px-1" style={{ top }}>
                         <MatchCard matchId={match.id}
-                          h={{ id: match.homeTeam.id, name: match.homeTeam.name, score: hs, win: hw }}
-                          a={{ id: match.awayTeam.id, name: match.awayTeam.name, score: as_, win: aw }} />
+                          h={{ id: match.homeTeam.id, name: match.homeTeam.name, score: hs, pen: hpen, win: hw }}
+                          a={{ id: match.awayTeam.id, name: match.awayTeam.name, score: as_, pen: apen, win: aw }} />
                       </div>
                     );
                   })}

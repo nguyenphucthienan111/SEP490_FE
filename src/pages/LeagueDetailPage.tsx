@@ -5,6 +5,7 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import React from 'react';
 import { leagueService, SofascoreLeague, Team, SofascoreTeamMatch } from '@/services/leagueService';
 import { cn } from '@/lib/utils';
+import { KnockoutBracket } from '@/components/standings/KnockoutBracket';
 
 const SEASONS: Record<number, { label: string; seasonId: number; cupTreeId?: number }[]> = {
   626: [
@@ -149,28 +150,43 @@ export default function LeagueDetailPage() {
         position: r.position,
       })));
     } else {
-      const teamMap = new Map<number, TeamCard>();
-      const addTeams = (matches: SofascoreTeamMatch[]) => {
-        matches.forEach(m => {
-          [m.homeTeam, m.awayTeam].forEach(t => {
-            if (!teamMap.has(t.id)) teamMap.set(t.id, {
-              sofaId: t.id,
-              dbTeamId: getDbTeamId(t.id, allDbTeams),
-              name: t.name,
-              logo: `https://api.sofascore.app/api/v1/team/${t.id}/image`,
+      // For cup tournaments — use DB teams directly (fast, no scraping)
+      try {
+        const dbMatches = await leagueService.getAllMatchesFromDb(tournamentId, seasonId);
+        const teamMap = new Map<number, TeamCard>();
+        dbMatches.forEach((m: any) => {
+          [m.homeTeam, m.awayTeam].forEach((t: any) => {
+            if (!t) return;
+            const sofaId = t.apiTeamId ?? t.id;
+            if (!teamMap.has(sofaId)) teamMap.set(sofaId, {
+              sofaId,
+              dbTeamId: t.teamId ?? getDbTeamId(sofaId, allDbTeams),
+              name: t.teamName ?? t.name,
+              logo: t.logoUrl ?? `https://api.sofascore.app/api/v1/team/${sofaId}/image`,
             });
           });
         });
-      };
-      for (let page = 0; page <= 5; page++) {
-        try {
-          const res = await leagueService.getTournamentLastMatches(tournamentId, seasonId, page);
-          if (!res.events.length) break;
-          addTeams(res.events);
-          if (!res.hasNextPage) break;
-        } catch { break; }
+        setTeams(Array.from(teamMap.values()).sort((a, b) => a.name.localeCompare(b.name)));
+      } catch {
+        // Fallback to Sofascore if DB empty
+        const teamMap = new Map<number, TeamCard>();
+        for (let page = 0; page <= 5; page++) {
+          try {
+            const res = await leagueService.getTournamentLastMatches(tournamentId, seasonId, page);
+            if (!res.events.length) break;
+            res.events.forEach(m => {
+              [m.homeTeam, m.awayTeam].forEach(t => {
+                if (!teamMap.has(t.id)) teamMap.set(t.id, {
+                  sofaId: t.id, dbTeamId: getDbTeamId(t.id, allDbTeams),
+                  name: t.name, logo: `https://api.sofascore.app/api/v1/team/${t.id}/image`,
+                });
+              });
+            });
+            if (!res.hasNextPage) break;
+          } catch { break; }
+        }
+        setTeams(Array.from(teamMap.values()).sort((a, b) => a.name.localeCompare(b.name)));
       }
-      setTeams(Array.from(teamMap.values()).sort((a, b) => a.name.localeCompare(b.name)));
     }
   }
 
@@ -270,12 +286,8 @@ export default function LeagueDetailPage() {
                     ))}
                   </div>
 
-                  <div className="rounded-2xl border border-slate-200 dark:border-white/10 overflow-hidden" style={{ height: 740 }}>
-                    <iframe
-                      src={`https://widgets.sofascore.com/embed/unique-tournament/${tournamentId}/season/${selectedSeason.seasonId}/cuptree/${selectedSeason.cupTreeId}?widgetTitle=Vietnam+Cup+${encodeURIComponent(selectedSeason.label)}&showCompetitionLogo=true&widgetTheme=light`}
-                      style={{ width: '100%', display: 'block', border: 0, minHeight: 872 }}
-                      title="Vietnam Cup Bracket"
-                    />
+                  <div className="glass-card rounded-2xl overflow-hidden">
+                    <KnockoutBracket tournamentId={tournamentId} seasonId={selectedSeason.seasonId} />
                   </div>
                 </div>
               )}
