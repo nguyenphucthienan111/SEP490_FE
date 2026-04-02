@@ -13,6 +13,8 @@ export default function PaymentPage() {
   const [payment, setPayment] = useState<PaymentInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState(0);
+  const [timerStarted, setTimerStarted] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -29,66 +31,54 @@ export default function PaymentPage() {
 
   useEffect(() => {
     if (!paymentCode) return;
-    const token = localStorage.getItem('accessToken');
+
+    // Clear any existing intervals first (handles StrictMode double-mount)
+    clearInterval(pollRef.current!);
+    clearInterval(timerRef.current!);
+    pollRef.current = null;
+    timerRef.current = null;
+
+    let cancelled = false;
 
     fetchPayment().then(data => {
+      if (cancelled) return;
       setLoading(false);
       if (!data || data.status !== 'Pending') return;
 
       // Countdown timer
-      const expires = new Date(data.expiresAt).getTime();
+      const expStr = data.expiresAt.endsWith('Z') ? data.expiresAt : data.expiresAt + 'Z';
+      const expires = new Date(expStr).getTime();
       const updateTimer = () => setTimeLeft(Math.max(0, Math.floor((expires - Date.now()) / 1000)));
       updateTimer();
+      setTimerStarted(true);
       timerRef.current = setInterval(updateTimer, 1000);
 
-      // SSE for realtime payment status
-      const apiBase = import.meta.env.VITE_API_BASE_URL || '';
-      const sseUrl = `${apiBase}/api/subscriptions/payments/${paymentCode}/events`;
-      const es = new EventSource(
-        token ? `${sseUrl}?access_token=${encodeURIComponent(token)}` : sseUrl
-      );
-
-      es.onmessage = (e) => {
+      // Poll every 10s
+      pollRef.current = setInterval(async () => {
+        if (cancelled) return;
         try {
-          const event = JSON.parse(e.data);
-          const status = event?.status ?? event?.Status;
-          if (status) {
-            setPayment(prev => prev ? { ...prev, status, paidAt: event?.paidAt ?? prev.paidAt } : prev);
-            if (status === 'Paid') {
-              clearInterval(timerRef.current!);
-              es.close();
-              toast.success('Thanh toán thành công! Gói Premium đã được kích hoạt.');
-            }
-            if (status === 'Expired' || status === 'Cancelled') {
-              clearInterval(timerRef.current!);
-              es.close();
-            }
+          const updated = await subscriptionService.pollPayment(paymentCode);
+          if (!updated || cancelled) return;
+          setPayment(updated);
+          if (updated.status === 'Paid') {
+            clearInterval(pollRef.current!);
+            clearInterval(timerRef.current!);
+            toast.success('Thanh toán thành công! Gói Premium đã được kích hoạt.');
           }
-        } catch { /* ignore parse errors */ }
-      };
-
-      es.onerror = () => {
-        // SSE failed — fallback to polling
-        es.close();
-        if (!pollRef.current) {
-          pollRef.current = setInterval(async () => {
-            const updated = await fetchPayment();
-            if (updated && (updated.status === 'Paid' || updated.status === 'Expired' || updated.status === 'Cancelled')) {
-              clearInterval(pollRef.current!);
-              clearInterval(timerRef.current!);
-              if (updated.status === 'Paid') toast.success('Thanh toán thành công! Gói Premium đã được kích hoạt.');
-            }
-          }, 3000);
-        }
-      };
-
-      pollRef.current = null; // SSE active, no polling needed
-      return () => { es.close(); };
+          if (updated.status === 'Expired' || updated.status === 'Cancelled') {
+            clearInterval(pollRef.current!);
+            clearInterval(timerRef.current!);
+          }
+        } catch { /* ignore */ }
+      }, 5000);
     });
 
     return () => {
+      cancelled = true;
       clearInterval(pollRef.current!);
       clearInterval(timerRef.current!);
+      pollRef.current = null;
+      timerRef.current = null;
     };
   }, [paymentCode]);
 
@@ -240,6 +230,83 @@ export default function PaymentPage() {
                 <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                 Đang tự động kiểm tra thanh toán...
               </div>
+
+              {/* Expiry countdown */}
+              {payment?.expiresAt && (() => {
+                const expStr = payment.expiresAt.endsWith('Z') ? payment.expiresAt : payment.expiresAt + 'Z';
+                const exp = new Date(expStr).getTime();
+                const isExpired = exp < Date.now();
+                return isExpired ? (
+                  <p className="text-center text-sm text-red-500 font-semibold">Mã QR đã hết hạn</p>
+                ) : timeLeft > 0 ? (
+                  <div className={cn(
+                    'flex items-center justify-center gap-1.5 text-sm font-semibold',
+                    timeLeft < 120 ? 'text-red-500' : 'text-slate-500 dark:text-[#A8A29E]'
+                  )}>
+                    <Clock className="w-4 h-4" />
+                    Hết hạn sau <span className="font-mono-data">{fmtTime(timeLeft)}</span>
+                  </div>
+                ) : null;
+              })()}
+
+              {/* Cancel button */}
+              <div className="flex justify-center">
+                <button
+                  onClick={() => setShowCancelModal(true)}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 text-sm font-semibold hover:bg-red-100 dark:hover:bg-red-500/20 transition-all"
+                >
+                  <XCircle className="w-4 h-4" />
+                  Huỷ thanh toán
+                </button>
+              </div>
+
+              {/* Cancel confirmation modal */}
+              {showCancelModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+                  onClick={() => setShowCancelModal(false)}>
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.92 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="glass-card rounded-2xl p-6 w-full max-w-sm"
+                    onClick={e => e.stopPropagation()}
+                  >
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-500/15 flex items-center justify-center flex-shrink-0">
+                        <XCircle className="w-5 h-5 text-red-500" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-slate-900 dark:text-foreground">Huỷ thanh toán?</h3>
+                        <p className="text-sm text-slate-500 dark:text-[#A8A29E]">Đơn thanh toán sẽ bị huỷ và bạn cần tạo lại.</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => setShowCancelModal(false)}
+                        className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 text-sm font-semibold text-slate-600 dark:text-[#A8A29E] hover:bg-slate-50 dark:hover:bg-white/5 transition-all"
+                      >
+                        Giữ lại
+                      </button>
+                      <button
+                        onClick={async () => {
+                          clearInterval(pollRef.current!);
+                          clearInterval(timerRef.current!);
+                          setShowCancelModal(false);
+                          // Mark payment as cancelled in DB
+                          if (paymentCode) {
+                            try {
+                              await subscriptionService.cancelPayment(paymentCode);
+                            } catch { /* ignore */ }
+                          }
+                          navigate('/pricing');
+                        }}
+                        className="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-sm font-semibold hover:bg-red-600 transition-all"
+                      >
+                        Xác nhận huỷ
+                      </button>
+                    </div>
+                  </motion.div>
+                </div>
+              )}
             </motion.div>
           )}
         </div>

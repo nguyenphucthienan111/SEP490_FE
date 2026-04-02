@@ -42,4 +42,15 @@ export const subscriptionService = {
   async getPayment(paymentCode: string): Promise<PaymentInfo> {
     return await apiClient.get<PaymentInfo>(`/api/subscriptions/payments/${paymentCode}`);
   },
+
+  async pollPayment(paymentCode: string): Promise<PaymentInfo | null> {
+    try {
+      const res = await apiClient.post<{ data: PaymentInfo }>(`/api/subscriptions/payments/${paymentCode}/poll`, {});
+      return (res as any)?.data ?? res as any;
+    } catch { return null; }
+  },
+
+  async cancelPayment(paymentCode: string): Promise<void> {
+    await apiClient.post(`/api/subscriptions/payments/${paymentCode}/cancel`, {});
+  },
 };
