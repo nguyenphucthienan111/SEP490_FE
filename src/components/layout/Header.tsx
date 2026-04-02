@@ -23,6 +23,7 @@ const navItems = [
   { label: 'Matches', path: '/matches' },
   { label: 'Predictions', path: '/predictions' },
   { label: 'Analytics', path: '/analytics' },
+  { label: 'Premium', path: '/pricing' },
 ];
 
 export function Header() {
@@ -119,18 +120,33 @@ export function Header() {
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center gap-1">
             {navItems.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={cn(
-                  "px-4 py-2 rounded-lg font-body text-sm font-medium transition-all duration-200",
-                  location.pathname === item.path
-                    ? "bg-slate-700/50 text-white"
-                    : "text-slate-300 hover:text-white hover:bg-slate-700/30"
-                )}
-              >
-                {item.label}
-              </Link>
+              item.path === '/pricing' ? (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={cn(
+                    "px-3 py-1.5 rounded-lg font-body text-xs font-bold transition-all duration-200 flex items-center gap-1",
+                    location.pathname === item.path
+                      ? "bg-gradient-to-r from-[#FF4444] to-[#FF6666] text-white"
+                      : "bg-gradient-to-r from-[#FF4444]/20 to-[#FF6666]/20 text-[#FF6666] hover:from-[#FF4444]/30 hover:to-[#FF6666]/30 border border-[#FF4444]/30"
+                  )}
+                >
+                  ✦ {item.label}
+                </Link>
+              ) : (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={cn(
+                    "px-4 py-2 rounded-lg font-body text-sm font-medium transition-all duration-200",
+                    location.pathname === item.path
+                      ? "bg-slate-700/50 text-white"
+                      : "text-slate-300 hover:text-white hover:bg-slate-700/30"
+                  )}
+                >
+                  {item.label}
+                </Link>
+              )
             ))}
           </nav>
 
