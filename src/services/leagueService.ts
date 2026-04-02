@@ -548,6 +548,12 @@ export const leagueService = {
     return Array.isArray(data) ? data : [];
   },
 
+  async getMatchByFixtureId(apiFixtureId: number): Promise<any | null> {
+    try {
+      return await apiClient.get<any>(`/api/SofascoreHybrid/match-by-fixture?apiFixtureId=${apiFixtureId}`);
+    } catch { return null; }
+  },
+
   async getTeamLastMatchesFromDb(apiTeamId: number, count = 5): Promise<SofascoreTeamMatch[]> {
     const data = await apiClient.get<any[]>(
       `/api/SofascoreHybrid/team-last-matches-db?apiTeamId=${apiTeamId}&count=${count}`

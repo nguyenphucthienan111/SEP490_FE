@@ -857,36 +857,31 @@ export default function MatchDetailPage() {
           if (found) { setMatch(found); setLoading(false); loadMatchStats(found.homeTeam.id, found.awayTeam.id); return; }
         }
 
-        // 2. Try DB first — much faster than scraping Sofascore
+        // 2. Try DB first — query directly by apiFixtureId (works for all seasons)
+        const dbMatch = await leagueService.getMatchByFixtureId(eventId);
+        if (dbMatch) {
+          const normalized: SofascoreTeamMatch = {
+            id: dbMatch.apiFixtureId,
+            homeTeam: { id: dbMatch.homeTeam?.apiTeamId ?? 0, name: dbMatch.homeTeam?.teamName ?? '' },
+            awayTeam: { id: dbMatch.awayTeam?.apiTeamId ?? 0, name: dbMatch.awayTeam?.teamName ?? '' },
+            homeScore: { current: dbMatch.homeGoals ?? 0, penalties: dbMatch.homePenalties ?? null },
+            awayScore: { current: dbMatch.awayGoals ?? 0, penalties: dbMatch.awayPenalties ?? null },
+            startTimestamp: dbMatch.matchDate ? new Date(dbMatch.matchDate).getTime() / 1000 : 0,
+            status: { type: dbMatch.status === 'FT' || dbMatch.status === 'finished' ? 'finished' : dbMatch.status === 'NS' ? 'notstarted' : dbMatch.status ?? 'finished' },
+            roundInfo: { round: parseInt(dbMatch.round) || 0 },
+          };
+          setMatch(normalized);
+          setLoading(false);
+          loadMatchStats(normalized.homeTeam.id, normalized.awayTeam.id);
+          return;
+        }
+
+        // 3. Fallback: fetch from Sofascore if not in DB
         const LEAGUES = [
           { tournamentId: 626, seasonId: 78589 },
           { tournamentId: 771, seasonId: 80926 },
           { tournamentId: 3087, seasonId: 81023 },
         ];
-        for (const league of LEAGUES) {
-          try {
-            const dbMatches = await leagueService.getAllMatchesFromDb(league.tournamentId, league.seasonId);
-            const found = dbMatches.find((m: any) => m.apiFixtureId === eventId);
-            if (found) {
-              const normalized: SofascoreTeamMatch = {
-                id: found.apiFixtureId,
-                homeTeam: { id: found.homeTeam?.apiTeamId ?? 0, name: found.homeTeam?.teamName ?? '' },
-                awayTeam: { id: found.awayTeam?.apiTeamId ?? 0, name: found.awayTeam?.teamName ?? '' },
-                homeScore: { current: found.homeGoals ?? 0 },
-                awayScore: { current: found.awayGoals ?? 0 },
-                startTimestamp: found.matchDate ? new Date(found.matchDate).getTime() / 1000 : 0,
-                status: { type: found.status === 'FT' || found.status === 'finished' ? 'finished' : found.status === 'NS' ? 'notstarted' : found.status ?? 'finished' },
-                roundInfo: { round: found.round ?? 0 },
-              };
-              setMatch(normalized);
-              setLoading(false);
-              loadMatchStats(normalized.homeTeam.id, normalized.awayTeam.id);
-              return;
-            }
-          } catch { /* try next league */ }
-        }
-
-        // 3. Fallback: fetch from Sofascore if not in DB
         const fetchAll = async (fetcher: (page: number) => Promise<{ events: SofascoreTeamMatch[]; hasNextPage: boolean }>) => {
           const all: SofascoreTeamMatch[] = [];
           let page = 0;
@@ -1054,11 +1049,11 @@ export default function MatchDetailPage() {
           >
             {/* Round + status */}
             <div className="flex items-center justify-center gap-3 mb-6 flex-wrap">
-              {match?.roundInfo?.round && (
+              {match?.roundInfo?.round ? (
                 <span className="text-sm text-slate-500 dark:text-[#A8A29E] font-label uppercase tracking-wider font-semibold">
                   Vòng {match.roundInfo.round}
                 </span>
-              )}
+              ) : null}
               {isLive && (
                 <span className="flex items-center gap-1.5 px-3 py-1.5 bg-[#FF4444]/20 rounded-full">
                   <Radio className="w-3 h-3 text-[#FF4444] animate-pulse" />
@@ -1094,10 +1089,19 @@ export default function MatchDetailPage() {
               {/* Score / time */}
               <div className="flex flex-col items-center gap-2">
                 {(isLive || isFinished) && match ? (
-                  <div className="flex items-center gap-3 sm:gap-5">
-                    <span className="font-mono-data text-5xl sm:text-6xl font-bold text-foreground">{match.homeScore.current}</span>
-                    <span className="text-slate-400 text-3xl">-</span>
-                    <span className="font-mono-data text-5xl sm:text-6xl font-bold text-foreground">{match.awayScore.current}</span>
+                  <div className="flex flex-col items-center gap-1">
+                    <div className="flex items-center gap-3 sm:gap-5">
+                      <span className="font-mono-data text-5xl sm:text-6xl font-bold text-foreground">{match.homeScore.current}</span>
+                      <span className="text-slate-400 text-3xl">-</span>
+                      <span className="font-mono-data text-5xl sm:text-6xl font-bold text-foreground">{match.awayScore.current}</span>
+                    </div>
+                    {(match.homeScore.penalties != null || match.awayScore.penalties != null) && (
+                      <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-[#A8A29E]">
+                        <span>({match.homeScore.penalties ?? 0})</span>
+                        <span className="text-xs">pen</span>
+                        <span>({match.awayScore.penalties ?? 0})</span>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <p className="font-mono-data text-2xl sm:text-3xl text-[#00D9FF]">
