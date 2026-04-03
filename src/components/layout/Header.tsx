@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, Menu, X, User, LogIn, LogOut, UserCircle } from 'lucide-react';
+import { Search, Menu, X, LogIn, LogOut, UserCircle, Video } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from './ThemeToggle';
@@ -99,7 +99,8 @@ export function Header() {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-slate-900/95 dark:bg-background/95 backdrop-blur-sm border-b border-slate-700/50 dark:border-white/5">
+    <>
+      <header className="fixed top-0 left-0 right-0 z-50 bg-slate-900/95 dark:bg-background/95 backdrop-blur-sm border-b border-slate-700/50 dark:border-white/5">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
@@ -159,6 +160,22 @@ export function Header() {
             >
               <Search className="w-5 h-5" />
             </Button>
+
+            {/* Video AI Analysis */}
+            {user && (
+            <Link
+              to="/ai-video"
+              className={cn(
+                'hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border',
+                location.pathname === '/ai-video'
+                  ? 'bg-[#FF4444] text-white border-[#FF4444]'
+                  : 'bg-[#FF4444]/20 text-[#FF6666] border-[#FF4444]/40 hover:bg-[#FF4444]/30 hover:text-white'
+              )}
+            >
+              <Video className="w-3.5 h-3.5" />
+              AI Video
+            </Link>
+            )}
 
             {/* Theme Toggle */}
             <ThemeToggle />
@@ -306,5 +323,6 @@ export function Header() {
         </div>
       )}
     </header>
+    </>
   );
 }

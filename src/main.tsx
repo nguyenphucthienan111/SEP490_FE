@@ -4,12 +4,14 @@ import App from "./App.tsx";
 import "./index.css";
 import { BrowserRouter } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
+import { AIChatBubble } from "@/components/ai/AIChatBubble";
 
 const basename = import.meta.env.BASE_URL;
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <BrowserRouter basename={basename}>
     <App />
+    <AIChatBubble />
     <Toaster 
       position="top-right"
       offset="80px"

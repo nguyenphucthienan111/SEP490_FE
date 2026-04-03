@@ -39,8 +39,8 @@ const AdminLeaguesPage = lazy(() => import("@/pages/admin/AdminLeaguesPage"));
 const AdminPredictionsPage = lazy(() => import("@/pages/admin/AdminPredictionsPage"));
 const AdminContentPage = lazy(() => import("@/pages/admin/AdminContentPage"));
 const AdminSettingsPage = lazy(() => import("@/pages/admin/AdminSettingsPage"));
+const VideoAnalysisPage = lazy(() => import("@/pages/VideoAnalysisPage"));
 
-// Loading component
 function PageLoader() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center">
@@ -77,6 +77,7 @@ function App() {
         <Route path="/analytics" element={<AnalyticsPage />} />
         <Route path="/analytics/:articleId" element={<AnalyticsPage />} />
         <Route path="/compare" element={<ComparePage />} />
+        <Route path="/ai-video" element={<VideoAnalysisPage />} />
         <Route path="/predictions" element={<PredictionsPage />} />
         <Route path="/pricing" element={<PricingPage />} />
         <Route path="/payment/:paymentCode" element={<PaymentPage />} />
