@@ -35,6 +35,8 @@ export default function PlayerDetailPage() {
   const [transfersLoading, setTransfersLoading] = useState(false);
   const [selectedSeasonIdx, setSelectedSeasonIdx] = useState(0);
   const [showTrend, setShowTrend] = useState(false);
+  const [compareSeasonA, setCompareSeasonA] = useState(1);
+  const [compareSeasonB, setCompareSeasonB] = useState(0);
   const [activeTab, setActiveTab] = useState<TabKey>('overview');
   const player = getPlayerById(playerId || '');
 
@@ -142,27 +144,17 @@ export default function PlayerDetailPage() {
       <div className="min-h-screen">
         <div className="container mx-auto px-4 py-6 max-w-5xl">
 
-          {/* Back */}
-          <Link
-            to={fromTeamId ? `/teams/${fromTeamId}` : '/players'}
-            className="inline-flex items-center gap-1.5 text-sm text-slate-500 dark:text-[#A8A29E] hover:text-slate-900 dark:hover:text-foreground transition-colors mb-5"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Quay lại
+          <Link to={fromTeamId ? `/teams/${fromTeamId}` : '/players'}
+            className="inline-flex items-center gap-1.5 text-sm text-slate-500 dark:text-[#A8A29E] hover:text-slate-900 dark:hover:text-foreground transition-colors mb-5">
+            <ArrowLeft className="w-4 h-4" />Quay lại
           </Link>
 
           {/* ── HERO CARD ── */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="relative glass-card rounded-2xl overflow-hidden mb-2"
-          >
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
+            className="relative glass-card rounded-2xl overflow-hidden mb-2">
             <div className="absolute inset-0 bg-gradient-to-br from-[#00D9FF]/5 via-transparent to-[#a78bfa]/5 pointer-events-none" />
-
             <div className="relative p-5 sm:p-7">
               <div className="flex flex-col sm:flex-row gap-5 items-start">
-
                 {/* Avatar */}
                 <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden bg-slate-100 dark:bg-white/5 flex-shrink-0 shadow-lg border border-white/10">
                   {playerPhoto
@@ -170,47 +162,27 @@ export default function PlayerDetailPage() {
                     : <div className="w-full h-full flex items-center justify-center"><Users className="w-10 h-10 text-slate-300 dark:text-[#A8A29E]" /></div>
                   }
                 </div>
-
                 {/* Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2 mb-2">
                     {posLabel && (
-                      <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-cyan-500/15 text-cyan-500 border border-cyan-500/20">
-                        {posLabel}
-                      </span>
+                      <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-cyan-500/15 text-cyan-500 border border-cyan-500/20">{posLabel}</span>
                     )}
                     {apiPlayer?.number && (
-                      <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-white/10 text-slate-500 dark:text-[#A8A29E] border border-white/10">
-                        #{apiPlayer.number}
-                      </span>
+                      <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-white/10 text-slate-500 dark:text-[#A8A29E] border border-white/10">#{apiPlayer.number}</span>
                     )}
                   </div>
-
-                  <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-slate-900 dark:text-foreground leading-tight mb-1.5">
-                    {playerName}
-                  </h1>
-
+                  <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-slate-900 dark:text-foreground leading-tight mb-1.5">{playerName}</h1>
                   {(apiPlayer?.team || playerTeam) && (
-                    <Link
-                      to={`/teams/${playerTeam?.teamId ?? apiPlayer?.team?.teamId}`}
-                      state={{ fromPlayerId: playerId }}
-                      className="inline-flex items-center gap-1.5 mb-3 group"
-                    >
+                    <Link to={`/teams/${playerTeam?.teamId ?? apiPlayer?.team?.teamId}`} state={{ fromPlayerId: playerId }} className="inline-flex items-center gap-1.5 mb-3 group">
                       {(playerTeam?.logoUrl ?? apiPlayer?.team?.logoUrl) && (
-                        <img
-                          src={playerTeam?.logoUrl ?? apiPlayer?.team?.logoUrl}
-                          alt={playerTeam?.teamName ?? apiPlayer?.team?.teamName}
-                          className="w-5 h-5 object-contain"
-                          onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                        />
+                        <img src={playerTeam?.logoUrl ?? apiPlayer?.team?.logoUrl} alt={playerTeam?.teamName ?? apiPlayer?.team?.teamName}
+                          className="w-5 h-5 object-contain" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                       )}
-                      <span className="text-sm text-[#00D9FF] font-semibold group-hover:underline">
-                        {playerTeam?.teamName ?? apiPlayer?.team?.teamName}
-                      </span>
+                      <span className="text-sm text-[#00D9FF] font-semibold group-hover:underline">{playerTeam?.teamName ?? apiPlayer?.team?.teamName}</span>
                     </Link>
                   )}
                   {player && !apiPlayer && <p className="text-sm text-slate-500 dark:text-[#A8A29E] mb-3">{player.team}</p>}
-
                   <div className="flex flex-wrap gap-x-4 gap-y-1">
                     {([
                       { label: 'Quốc tịch', value: playerNationality },
@@ -224,7 +196,6 @@ export default function PlayerDetailPage() {
                     ))}
                   </div>
                 </div>
-
                 {/* Rating ring */}
                 {currentRating > 0 && (
                   <div className="flex-shrink-0 flex flex-col items-center gap-1 sm:self-center">
@@ -235,15 +206,12 @@ export default function PlayerDetailPage() {
                           strokeDasharray={`${(currentRating / 10) * 175.9} 175.9`} strokeLinecap="round" />
                         <defs>
                           <linearGradient id="rg" x1="0%" y1="0%" x2="100%" y2="0%">
-                            <stop offset="0%" stopColor="#FF4444" />
-                            <stop offset="100%" stopColor="#00D9FF" />
+                            <stop offset="0%" stopColor="#FF4444" /><stop offset="100%" stopColor="#00D9FF" />
                           </linearGradient>
                         </defs>
                       </svg>
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="font-mono-data text-lg font-black text-slate-900 dark:text-foreground leading-none">
-                          {currentRating.toFixed(1)}
-                        </span>
+                        <span className="font-mono-data text-lg font-black text-slate-900 dark:text-foreground leading-none">{currentRating.toFixed(1)}</span>
                       </div>
                     </div>
                     <span className="text-[10px] uppercase tracking-widest text-slate-400">Rating</span>
@@ -256,29 +224,18 @@ export default function PlayerDetailPage() {
             <div className="border-t border-slate-100 dark:border-white/5 px-5 sm:px-7">
               <div className="flex">
                 {TABS.map(tab => (
-                  <button
-                    key={tab.key}
-                    onClick={() => setActiveTab(tab.key)}
-                    className={cn(
-                      'relative flex items-center gap-1.5 px-4 py-3 text-sm font-semibold transition-colors whitespace-nowrap',
-                      activeTab === tab.key
-                        ? 'text-[#00D9FF]'
-                        : 'text-slate-500 dark:text-[#A8A29E] hover:text-slate-700 dark:hover:text-foreground'
-                    )}
-                  >
+                  <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+                    className={cn('relative flex items-center gap-1.5 px-4 py-3 text-sm font-semibold transition-colors whitespace-nowrap',
+                      activeTab === tab.key ? 'text-[#00D9FF]' : 'text-slate-500 dark:text-[#A8A29E] hover:text-slate-700 dark:hover:text-foreground')}>
                     <span>{tab.icon}</span>
                     <span>{tab.label}</span>
                     {tab.key === 'transfers' && transfers.length > 0 && (
-                      <span className="ml-0.5 text-[10px] font-bold bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-[#A8A29E] px-1.5 py-0.5 rounded-full">
-                        {transfers.length}
-                      </span>
+                      <span className="ml-0.5 text-[10px] font-bold bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-[#A8A29E] px-1.5 py-0.5 rounded-full">{transfers.length}</span>
                     )}
                     {activeTab === tab.key && (
-                      <motion.div
-                        layoutId="tab-underline"
+                      <motion.div layoutId="tab-underline"
                         className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#00D9FF] rounded-full"
-                        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                      />
+                        transition={{ type: 'spring', stiffness: 400, damping: 30 }} />
                     )}
                   </button>
                 ))}
@@ -288,16 +245,12 @@ export default function PlayerDetailPage() {
 
           {/* ── TAB CONTENT ── */}
           <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.18 }}
-            >
-              {/* TỔNG QUAN */}
+            <motion.div key={activeTab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.18 }}>
+
+              {/* ── TỔNG QUAN ── */}
               {activeTab === 'overview' && (
                 <div className="grid lg:grid-cols-3 gap-4 mt-4">
+                  {/* Radar */}
                   <div className="glass-card rounded-2xl p-5">
                     <p className="font-semibold text-sm text-slate-900 dark:text-foreground mb-4">Chỉ số cầu thủ</p>
                     {(() => {
@@ -317,7 +270,7 @@ export default function PlayerDetailPage() {
                       );
                     })()}
                   </div>
-
+                  {/* Career summary */}
                   <div className="lg:col-span-2 glass-card rounded-2xl p-5">
                     <p className="font-semibold text-sm text-slate-900 dark:text-foreground mb-4">Tổng hợp sự nghiệp</p>
                     {playerStats.length > 0 ? (
@@ -330,12 +283,7 @@ export default function PlayerDetailPage() {
                           { label: 'Thẻ vàng',     value: playerStats.reduce((s, x) => s + x.yellowCards, 0) },
                           { label: 'Thẻ đỏ',       value: playerStats.reduce((s, x) => s + x.redCards, 0) },
                           { label: 'Mùa giải',     value: playerStats.length },
-                          {
-                            label: 'Rating TB',
-                            value: playerStats.filter(s => s.rating).length > 0
-                              ? (playerStats.reduce((s, x) => s + (x.rating ?? 0), 0) / playerStats.filter(s => s.rating).length).toFixed(1)
-                              : '—',
-                          },
+                          { label: 'Rating TB',    value: playerStats.filter(s => s.rating).length > 0 ? (playerStats.reduce((s, x) => s + (x.rating ?? 0), 0) / playerStats.filter(s => s.rating).length).toFixed(1) : '—' },
                         ].map(item => (
                           <div key={item.label} className="bg-slate-50 dark:bg-white/5 rounded-xl p-3">
                             <p className="text-[11px] text-slate-400 dark:text-[#A8A29E] mb-1">{item.label}</p>
@@ -359,31 +307,25 @@ export default function PlayerDetailPage() {
                           </div>
                         ))}
                       </div>
-                    ) : (
-                      <p className="text-slate-400 text-sm">Chưa có dữ liệu</p>
-                    )}
+                    ) : <p className="text-slate-400 text-sm">Chưa có dữ liệu</p>}
                   </div>
                 </div>
               )}
 
-              {/* THỐNG KÊ */}
+              {/* ── THỐNG KÊ ── */}
               {activeTab === 'stats' && (
                 <div className="mt-4 space-y-4">
                   {apiPlayer && playerStats.length > 0 ? (() => {
                     const stat = playerStats[selectedSeasonIdx];
                     if (!stat) return null;
                     const pos = playerPosition ?? '';
-                    const ratingColor = stat.rating
-                      ? stat.rating >= 8 ? '#22c55e' : stat.rating >= 7 ? '#84cc16' : stat.rating >= 6 ? '#eab308' : '#ef4444'
-                      : '#6b7280';
+                    const ratingColor = stat.rating ? stat.rating >= 8 ? '#22c55e' : stat.rating >= 7 ? '#84cc16' : stat.rating >= 6 ? '#eab308' : '#ef4444' : '#6b7280';
                     type SI = { label: string; val: number | null | undefined; sub?: string; pct?: number };
-                    const pct = (a?: number | null, b?: number | null) =>
-                      a != null && b != null && b > 0 ? Math.round((a / b) * 100) : undefined;
+                    const pct = (a?: number | null, b?: number | null) => a != null && b != null && b > 0 ? Math.round((a / b) * 100) : undefined;
                     const overview: SI[] = [
                       { label: 'Trận đấu', val: stat.appearances }, { label: 'Đá chính', val: stat.lineups },
                       { label: 'Phút', val: stat.minutes }, { label: 'Vào sân', val: stat.substitutionsIn },
-                      { label: 'Ra sân', val: stat.substitutionsOut }, { label: 'Thẻ vàng', val: stat.yellowCards },
-                      { label: 'Thẻ đỏ', val: stat.redCards },
+                      { label: 'Ra sân', val: stat.substitutionsOut }, { label: 'Thẻ vàng', val: stat.yellowCards }, { label: 'Thẻ đỏ', val: stat.redCards },
                     ];
                     const attacking: SI[] = [
                       { label: 'Bàn thắng', val: stat.goals }, { label: 'Kiến tạo', val: stat.assists },
@@ -403,40 +345,19 @@ export default function PlayerDetailPage() {
                       { label: 'Tranh chấp tổng', val: stat.duelsTotal },
                       { label: 'Phạm lỗi', val: stat.foulsCommitted }, { label: 'Bị phạm lỗi', val: stat.foulsDrawn },
                     ];
-                    const defending: SI[] = [
-                      { label: 'Tắc bóng', val: stat.tackles }, { label: 'Cắt bóng', val: stat.interceptions },
-                    ];
+                    const defending: SI[] = [{ label: 'Tắc bóng', val: stat.tackles }, { label: 'Cắt bóng', val: stat.interceptions }];
                     type G = { title: string; color: string; icon: string; items: SI[] };
-                    const groups: G[] =
-                      pos === 'G' ? [
-                        { title: 'Tổng quan', color: 'text-slate-500', icon: '📋', items: overview },
-                        { title: 'Chuyền bóng', color: 'text-cyan-500', icon: '🎯', items: passing },
-                      ] : pos === 'D' ? [
-                        { title: 'Tổng quan', color: 'text-slate-500', icon: '📋', items: overview },
-                        { title: 'Phòng thủ', color: 'text-amber-500', icon: '🛡️', items: defending },
-                        { title: 'Tranh chấp', color: 'text-orange-500', icon: '⚔️', items: dribbling },
-                        { title: 'Chuyền bóng', color: 'text-cyan-500', icon: '🎯', items: passing },
-                      ] : pos === 'M' ? [
-                        { title: 'Tổng quan', color: 'text-slate-500', icon: '📋', items: overview },
-                        { title: 'Chuyền bóng', color: 'text-cyan-500', icon: '🎯', items: passing },
-                        { title: 'Tấn công', color: 'text-red-500', icon: '⚽', items: attacking },
-                        { title: 'Tranh chấp', color: 'text-orange-500', icon: '⚔️', items: dribbling },
-                        { title: 'Phòng thủ', color: 'text-amber-500', icon: '🛡️', items: defending },
-                      ] : [
-                        { title: 'Tổng quan', color: 'text-slate-500', icon: '📋', items: overview },
-                        { title: 'Tấn công', color: 'text-red-500', icon: '⚽', items: attacking },
-                        { title: 'Chuyền bóng', color: 'text-cyan-500', icon: '🎯', items: passing },
-                        { title: 'Tranh chấp', color: 'text-orange-500', icon: '⚔️', items: dribbling },
-                      ];
+                    const groups: G[] = pos === 'G'
+                      ? [{ title: 'Tổng quan', color: 'text-slate-500', icon: '📋', items: overview }, { title: 'Chuyền bóng', color: 'text-cyan-500', icon: '🎯', items: passing }]
+                      : pos === 'D'
+                      ? [{ title: 'Tổng quan', color: 'text-slate-500', icon: '📋', items: overview }, { title: 'Phòng thủ', color: 'text-amber-500', icon: '🛡️', items: defending }, { title: 'Tranh chấp', color: 'text-orange-500', icon: '⚔️', items: dribbling }, { title: 'Chuyền bóng', color: 'text-cyan-500', icon: '🎯', items: passing }]
+                      : pos === 'M'
+                      ? [{ title: 'Tổng quan', color: 'text-slate-500', icon: '📋', items: overview }, { title: 'Chuyền bóng', color: 'text-cyan-500', icon: '🎯', items: passing }, { title: 'Tấn công', color: 'text-red-500', icon: '⚽', items: attacking }, { title: 'Tranh chấp', color: 'text-orange-500', icon: '⚔️', items: dribbling }, { title: 'Phòng thủ', color: 'text-amber-500', icon: '🛡️', items: defending }]
+                      : [{ title: 'Tổng quan', color: 'text-slate-500', icon: '📋', items: overview }, { title: 'Tấn công', color: 'text-red-500', icon: '⚽', items: attacking }, { title: 'Chuyền bóng', color: 'text-cyan-500', icon: '🎯', items: passing }, { title: 'Tranh chấp', color: 'text-orange-500', icon: '⚔️', items: dribbling }];
 
                     const trendData = [...playerStats].reverse().map(s => {
                       const season = seasons.find(x => x.seasonId === s.seasonId);
-                      return {
-                        name: `${season?.year || s.seasonId}`,
-                        'Bàn thắng': s.goals ?? 0, 'Kiến tạo': s.assists ?? 0,
-                        'Trận đấu': s.appearances ?? 0,
-                        'Đánh giá': s.rating ? parseFloat(s.rating.toFixed(1)) : undefined,
-                      };
+                      return { name: `${season?.year || s.seasonId}`, 'Bàn thắng': s.goals ?? 0, 'Kiến tạo': s.assists ?? 0, 'Trận đấu': s.appearances ?? 0, 'Đánh giá': s.rating ? parseFloat(s.rating.toFixed(1)) : undefined };
                     });
 
                     return (
@@ -451,10 +372,7 @@ export default function PlayerDetailPage() {
                             </button>
                             <select value={selectedSeasonIdx} onChange={e => setSelectedSeasonIdx(Number(e.target.value))}
                               className="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/10 text-sm font-semibold text-slate-900 dark:text-foreground focus:outline-none cursor-pointer">
-                              {playerStats.map((s, i) => {
-                                const season = seasons.find(x => x.seasonId === s.seasonId);
-                                return <option key={i} value={i}>Mùa {season?.year || s.seasonId}</option>;
-                              })}
+                              {playerStats.map((s, i) => { const season = seasons.find(x => x.seasonId === s.seasonId); return <option key={i} value={i}>Mùa {season?.year || s.seasonId}</option>; })}
                             </select>
                             <button onClick={() => setSelectedSeasonIdx(i => Math.min(playerStats.length - 1, i + 1))} disabled={selectedSeasonIdx === playerStats.length - 1}
                               className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-white/5 flex items-center justify-center disabled:opacity-30 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors">
@@ -503,14 +421,14 @@ export default function PlayerDetailPage() {
                           </div>
                         </div>
 
-                        {/* Season trend */}
+                        {/* Trend + Season comparison — chỉ hiện khi ≥2 mùa */}
                         {playerStats.length >= 2 && (
                           <div className="glass-card rounded-2xl overflow-hidden">
                             <button onClick={() => setShowTrend(v => !v)}
                               className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
                               <div className="flex items-center gap-2">
                                 <TrendingUp className="w-4 h-4 text-[#00D9FF]" />
-                                <span className="font-medium text-sm text-slate-900 dark:text-foreground">Phong độ qua các mùa</span>
+                                <span className="font-medium text-sm text-slate-900 dark:text-foreground">Phân tích phong độ qua các mùa</span>
                                 <span className="text-xs text-slate-400">{playerStats.length} mùa</span>
                               </div>
                               <ChevronDown className={cn('w-4 h-4 text-slate-400 transition-transform duration-200', showTrend && 'rotate-180')} />
@@ -519,19 +437,16 @@ export default function PlayerDetailPage() {
                               {showTrend && (
                                 <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }}
                                   className="overflow-hidden border-t border-slate-100 dark:border-white/5">
-                                  <div className="p-5 space-y-5">
+                                  <div className="p-5 space-y-6">
+                                    {/* Goals + Assists */}
                                     <div>
                                       <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Bàn thắng & Kiến tạo</p>
                                       <div className="h-44">
                                         <ResponsiveContainer width="100%" height="100%">
                                           <AreaChart data={trendData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
                                             <defs>
-                                              <linearGradient id="gG" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#FF4444" stopOpacity={0.3} /><stop offset="95%" stopColor="#FF4444" stopOpacity={0} />
-                                              </linearGradient>
-                                              <linearGradient id="aG" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#00D9FF" stopOpacity={0.3} /><stop offset="95%" stopColor="#00D9FF" stopOpacity={0} />
-                                              </linearGradient>
+                                              <linearGradient id="gG" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#FF4444" stopOpacity={0.3} /><stop offset="95%" stopColor="#FF4444" stopOpacity={0} /></linearGradient>
+                                              <linearGradient id="aG" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#00D9FF" stopOpacity={0.3} /><stop offset="95%" stopColor="#00D9FF" stopOpacity={0} /></linearGradient>
                                             </defs>
                                             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" vertical={false} />
                                             <XAxis dataKey="name" tick={{ fill: '#A8A29E', fontSize: 11 }} axisLine={false} tickLine={false} />
@@ -543,6 +458,7 @@ export default function PlayerDetailPage() {
                                         </ResponsiveContainer>
                                       </div>
                                     </div>
+                                    {/* Rating */}
                                     {trendData.some(d => d['Đánh giá'] != null) && (
                                       <div>
                                         <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Đánh giá trung bình</p>
@@ -559,6 +475,7 @@ export default function PlayerDetailPage() {
                                         </div>
                                       </div>
                                     )}
+                                    {/* Appearances */}
                                     <div>
                                       <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Số trận thi đấu</p>
                                       <div className="h-32">
@@ -573,6 +490,77 @@ export default function PlayerDetailPage() {
                                         </ResponsiveContainer>
                                       </div>
                                     </div>
+
+                                    {/* ── SO SÁNH MÙA ── */}
+                                    {(() => {
+                                      const sorted = [...playerStats].sort((a, b) => (a.seasonId ?? 99) - (b.seasonId ?? 99));
+                                      if (sorted.length < 2) return null;
+                                      const idxA = Math.min(compareSeasonA, sorted.length - 1);
+                                      const idxB = Math.min(compareSeasonB, sorted.length - 1);
+                                      const prev = sorted[idxA];
+                                      const curr = sorted[idxB];
+                                      const currSeason = seasons.find(s => s.seasonId === curr.seasonId);
+                                      const prevSeason = seasons.find(s => s.seasonId === prev.seasonId);
+                                      type CR = { label: string; curr: number | null; prev: number | null; lowerBetter?: boolean; isPercent?: boolean };
+                                      const rows: CR[] = [
+                                        { label: 'Đánh giá', curr: curr.rating ? parseFloat(curr.rating.toFixed(2)) : null, prev: prev.rating ? parseFloat(prev.rating.toFixed(2)) : null },
+                                        { label: 'Bàn thắng', curr: curr.goals, prev: prev.goals },
+                                        { label: 'Kiến tạo', curr: curr.assists, prev: prev.assists },
+                                        { label: 'Trận đấu', curr: curr.appearances, prev: prev.appearances },
+                                        { label: 'Phút thi đấu', curr: curr.minutes, prev: prev.minutes },
+                                        { label: 'Sút trúng đích', curr: curr.shotsOnTarget, prev: prev.shotsOnTarget },
+                                        { label: 'Chuyền chính xác', curr: curr.passesAccuracy != null && curr.passesTotal ? Math.round((curr.passesAccuracy / curr.passesTotal) * 100) : null, prev: prev.passesAccuracy != null && prev.passesTotal ? Math.round((prev.passesAccuracy / prev.passesTotal) * 100) : null, isPercent: true },
+                                        { label: 'Rê bóng thành công', curr: curr.dribblesSuccess, prev: prev.dribblesSuccess },
+                                        { label: 'Thẻ vàng', curr: curr.yellowCards, prev: prev.yellowCards, lowerBetter: true },
+                                      ].filter(r => r.curr != null || r.prev != null);
+                                      return (
+                                        <div>
+                                          <div className="flex items-center gap-2 mb-3 flex-wrap">
+                                            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">So sánh mùa</p>
+                                            <select value={idxA} onChange={e => setCompareSeasonA(Number(e.target.value))}
+                                              className="px-2 py-1 rounded-lg bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/10 text-xs font-semibold text-slate-900 dark:text-foreground focus:outline-none cursor-pointer">
+                                              {sorted.map((s, i) => { const sea = seasons.find(x => x.seasonId === s.seasonId); return <option key={i} value={i} disabled={i === idxB}>Mùa {sea?.year ?? s.seasonId}</option>; })}
+                                            </select>
+                                            <span className="text-xs text-slate-400">vs</span>
+                                            <select value={idxB} onChange={e => setCompareSeasonB(Number(e.target.value))}
+                                              className="px-2 py-1 rounded-lg bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/10 text-xs font-semibold text-slate-900 dark:text-foreground focus:outline-none cursor-pointer">
+                                              {sorted.map((s, i) => { const sea = seasons.find(x => x.seasonId === s.seasonId); return <option key={i} value={i} disabled={i === idxA}>Mùa {sea?.year ?? s.seasonId}</option>; })}
+                                            </select>
+                                          </div>
+                                          <div className="rounded-xl border border-slate-200 dark:border-white/10 overflow-hidden">
+                                            <div className="grid grid-cols-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 px-4 py-2 bg-slate-50 dark:bg-white/5 border-b border-slate-200 dark:border-white/10">
+                                              <span>Mùa {prevSeason?.year ?? prev.seasonId}</span>
+                                              <span className="text-center">Chỉ số</span>
+                                              <span className="text-right">Mùa {currSeason?.year ?? curr.seasonId}</span>
+                                            </div>
+                                            {rows.map(row => {
+                                              const c = row.curr ?? 0;
+                                              const p = row.prev ?? 0;
+                                              const improved = row.lowerBetter ? c < p : c > p;
+                                              const declined = row.lowerBetter ? c > p : c < p;
+                                              const diff = c - p;
+                                              const fmt = (v: number | null) => v == null ? '—' : row.isPercent ? `${v.toFixed(0)}%` : Number.isInteger(v) ? v.toString() : v.toFixed(1);
+                                              return (
+                                                <div key={row.label} className="grid grid-cols-3 items-center px-4 py-2.5 border-b border-slate-100 dark:border-white/5 last:border-0 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                                                  <span className="font-mono-data text-sm text-slate-500 dark:text-[#A8A29E]">{fmt(row.prev)}</span>
+                                                  <div className="text-center">
+                                                    <p className="text-[11px] text-slate-500 dark:text-[#A8A29E]">{row.label}</p>
+                                                    {row.curr != null && row.prev != null && diff !== 0 && (
+                                                      <span className={`text-[10px] font-bold ${improved ? 'text-green-400' : declined ? 'text-red-400' : 'text-slate-400'}`}>
+                                                        {diff > 0 ? '+' : ''}{row.isPercent ? `${diff.toFixed(0)}%` : Number.isInteger(diff) ? diff : diff.toFixed(1)}
+                                                      </span>
+                                                    )}
+                                                  </div>
+                                                  <span className={`font-mono-data text-sm font-bold text-right ${improved ? 'text-green-400' : declined ? 'text-red-400' : 'text-slate-900 dark:text-foreground'}`}>
+                                                    {fmt(row.curr)}
+                                                  </span>
+                                                </div>
+                                              );
+                                            })}
+                                          </div>
+                                        </div>
+                                      );
+                                    })()}
                                   </div>
                                 </motion.div>
                               )}
@@ -582,24 +570,18 @@ export default function PlayerDetailPage() {
                       </>
                     );
                   })() : (
-                    <div className="glass-card rounded-2xl p-8 text-center text-slate-400 text-sm">
-                      Chưa có thống kê cho cầu thủ này
-                    </div>
+                    <div className="glass-card rounded-2xl p-8 text-center text-slate-400 text-sm">Chưa có thống kê cho cầu thủ này</div>
                   )}
                 </div>
               )}
 
-              {/* CHUYỂN NHƯỢNG */}
+              {/* ── CHUYỂN NHƯỢNG ── */}
               {activeTab === 'transfers' && (
                 <div className="mt-4">
                   {transfersLoading ? (
-                    <div className="glass-card rounded-2xl flex items-center justify-center py-16">
-                      <Loader2 className="w-6 h-6 text-[#00D9FF] animate-spin" />
-                    </div>
+                    <div className="glass-card rounded-2xl flex items-center justify-center py-16"><Loader2 className="w-6 h-6 text-[#00D9FF] animate-spin" /></div>
                   ) : transfers.length === 0 ? (
-                    <div className="glass-card rounded-2xl p-8 text-center text-slate-400 text-sm">
-                      Không có dữ liệu chuyển nhượng
-                    </div>
+                    <div className="glass-card rounded-2xl p-8 text-center text-slate-400 text-sm">Không có dữ liệu chuyển nhượng</div>
                   ) : (
                     <div className="glass-card rounded-2xl overflow-hidden">
                       <div className="px-5 py-3.5 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
@@ -615,10 +597,7 @@ export default function PlayerDetailPage() {
                             const date = rawDate ? new Date(rawDate).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
                             const fee = (t.transferFee && t.transferFee !== '') ? t.transferFee : null;
                             let cachedTeams: any[] = [];
-                            try {
-                              const raw = JSON.parse(localStorage.getItem('teams') || '[]');
-                              cachedTeams = Array.isArray(raw) ? raw : (raw?.data ?? raw?.teams ?? []);
-                            } catch {}
+                            try { const raw = JSON.parse(localStorage.getItem('teams') || '[]'); cachedTeams = Array.isArray(raw) ? raw : (raw?.data ?? raw?.teams ?? []); } catch {}
                             const getTeamName = (id: number) => cachedTeams.find((x: any) => x.teamId === id)?.teamName ?? (id ? `Đội #${id}` : '—');
                             const fromTeamName = (typeof t.fromTeam === 'string' ? t.fromTeam : null) ?? t.fromTeamName ?? getTeamName(t.fromTeamId);
                             const toTeamName   = (typeof t.toTeam   === 'string' ? t.toTeam   : null) ?? t.toTeamName   ?? getTeamName(t.toTeamId);
@@ -633,9 +612,7 @@ export default function PlayerDetailPage() {
                             return (
                               <div key={i} className="flex items-center gap-4 px-5 py-4 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
                                 <div className="flex-shrink-0 w-10 text-center">
-                                  <span className="text-xs font-bold text-slate-400 dark:text-[#A8A29E]">
-                                    {rawDate ? new Date(rawDate).getFullYear() : '—'}
-                                  </span>
+                                  <span className="text-xs font-bold text-slate-400 dark:text-[#A8A29E]">{rawDate ? new Date(rawDate).getFullYear() : '—'}</span>
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2">
