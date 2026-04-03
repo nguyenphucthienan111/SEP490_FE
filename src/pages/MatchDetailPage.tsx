@@ -849,12 +849,27 @@ export default function MatchDetailPage() {
     const load = async () => {
       setLoading(true);
       try {
-        // 1. Try sessionStorage cache first
+        // 1. Try sessionStorage cache first (for quick display), but still fetch DB for penalties
         const cached = sessionStorage.getItem('sofascore-matches');
         if (cached) {
           const all: SofascoreTeamMatch[] = JSON.parse(cached);
           const found = all.find(m => m.id === eventId);
-          if (found) { setMatch(found); setLoading(false); loadMatchStats(found.homeTeam.id, found.awayTeam.id); return; }
+          if (found) {
+            setMatch(found);
+            setLoading(false);
+            loadMatchStats(found.homeTeam.id, found.awayTeam.id);
+            // Fetch DB in background to get penalties
+            leagueService.getMatchByFixtureId(eventId).then(dbMatch => {
+              if (dbMatch && (dbMatch.homePenalties != null || dbMatch.awayPenalties != null)) {
+                setMatch(prev => prev ? {
+                  ...prev,
+                  homeScore: { ...prev.homeScore, penalties: dbMatch.homePenalties ?? null },
+                  awayScore: { ...prev.awayScore, penalties: dbMatch.awayPenalties ?? null },
+                } : prev);
+              }
+            }).catch(() => {});
+            return;
+          }
         }
 
         // 2. Try DB first — query directly by apiFixtureId (works for all seasons)

@@ -85,9 +85,16 @@ function MatchRow({ match, sofaId, dbTeams }: { match: SofascoreTeamMatch; sofaI
       {/* Score / Time */}
       <div className="flex-shrink-0 text-right">
         {finished ? (
-          <p className="font-mono-data font-bold text-sm text-slate-900 dark:text-foreground">
-            {isHome ? `${my} - ${op}` : `${op} - ${my}`}
-          </p>
+          <>
+            <p className="font-mono-data font-bold text-sm text-slate-900 dark:text-foreground">
+              {isHome ? `${my} - ${op}` : `${op} - ${my}`}
+            </p>
+            {(match.homeScore.penalties != null || match.awayScore.penalties != null) && (
+              <p className="text-[10px] text-slate-400 dark:text-[#A8A29E]">
+                ({isHome ? match.homeScore.penalties ?? 0 : match.awayScore.penalties ?? 0}) pen ({isHome ? match.awayScore.penalties ?? 0 : match.homeScore.penalties ?? 0})
+              </p>
+            )}
+          </>
         ) : postponed ? (
           <span className="text-xs font-semibold text-amber-500">Hoãn</span>
         ) : (

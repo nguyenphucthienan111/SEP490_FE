@@ -72,10 +72,19 @@ function MatchCard({ match, index }: { match: SofascoreTeamMatch; index: number 
           {/* Score / Time */}
           <div className="flex flex-col items-center min-w-[80px]">
             {(isFinished || isLive) ? (
-              <div className="flex items-center gap-3">
-                <span className="font-mono-data text-4xl font-bold text-foreground">{match.homeScore.current}</span>
-                <span className="text-slate-400 text-2xl">-</span>
-                <span className="font-mono-data text-4xl font-bold text-foreground">{match.awayScore.current}</span>
+              <div className="flex flex-col items-center gap-0.5">
+                <div className="flex items-center gap-3">
+                  <span className="font-mono-data text-4xl font-bold text-foreground">{match.homeScore.current}</span>
+                  <span className="text-slate-400 text-2xl">-</span>
+                  <span className="font-mono-data text-4xl font-bold text-foreground">{match.awayScore.current}</span>
+                </div>
+                {(match.homeScore.penalties != null || match.awayScore.penalties != null) && (
+                  <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-[#A8A29E]">
+                    <span className="font-mono-data font-semibold">({match.homeScore.penalties ?? 0})</span>
+                    <span>pen</span>
+                    <span className="font-mono-data font-semibold">({match.awayScore.penalties ?? 0})</span>
+                  </div>
+                )}
               </div>
             ) : (
               <p className="font-mono-data text-xl text-[#00D9FF]">
@@ -83,7 +92,7 @@ function MatchCard({ match, index }: { match: SofascoreTeamMatch; index: number 
               </p>
             )}
             <p className="text-xs text-slate-500 dark:text-[#A8A29E] mt-1">
-              {date.toLocaleDateString('vi-VN', { day: 'numeric', month: 'short' })}
+              {date.toLocaleDateString('vi-VN', { day: 'numeric', month: 'short', year: 'numeric' })}
             </p>
           </div>
 
@@ -131,8 +140,8 @@ export default function MatchesPage() {
         id: m.apiFixtureId ?? m.matchId,
         homeTeam: { id: m.homeTeam?.apiTeamId ?? 0, name: m.homeTeam?.teamName ?? '' },
         awayTeam: { id: m.awayTeam?.apiTeamId ?? 0, name: m.awayTeam?.teamName ?? '' },
-        homeScore: { current: m.homeGoals ?? 0 },
-        awayScore: { current: m.awayGoals ?? 0 },
+        homeScore: { current: m.homeGoals ?? 0, penalties: m.homePenalties ?? null },
+        awayScore: { current: m.awayGoals ?? 0, penalties: m.awayPenalties ?? null },
         startTimestamp: m.matchDate ? Math.floor(new Date(m.matchDate).getTime() / 1000) : 0,
         status: { type: m.status ?? 'notstarted' },
         roundInfo: m.round ? { round: Number(m.round) } : undefined,

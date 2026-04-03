@@ -563,8 +563,8 @@ export const leagueService = {
       id: x.apiFixtureId ?? x.matchId,
       homeTeam: { id: x.homeTeam?.apiTeamId ?? 0, name: x.homeTeam?.teamName ?? '' },
       awayTeam: { id: x.awayTeam?.apiTeamId ?? 0, name: x.awayTeam?.teamName ?? '' },
-      homeScore: { current: x.homeGoals ?? 0 },
-      awayScore: { current: x.awayGoals ?? 0 },
+      homeScore: { current: x.homeGoals ?? 0, penalties: x.homePenalties ?? null },
+      awayScore: { current: x.awayGoals ?? 0, penalties: x.awayPenalties ?? null },
       startTimestamp: x.matchDate ? Math.floor(new Date(x.matchDate).getTime() / 1000) : 0,
       status: { type: x.status ?? 'finished' },
     }));
@@ -782,6 +782,78 @@ export const leagueService = {
 
   async getPlayerStats(playerId: number, seasonId: number): Promise<PlayerStats[]> {
     return await apiClient.get<PlayerStats[]>(`/api/Football/player-stats?playerId=${playerId}&seasonId=${seasonId}`);
+  },
+
+  async comparePlayers(player1Id: number, player2Id: number): Promise<{ player1: any; player2: any }> {
+    const raw = await apiClient.get<any>(`/api/Football/players/compare-stats?player1Id=${player1Id}&player2Id=${player2Id}`);
+    const mapStats = (stats: any[]): PlayerStats[] =>
+      (stats ?? []).map((x: any) => ({
+        playerStatisticsId: x.playerStatisticsId ?? x.PlayerStatisticsId,
+        playerId: x.playerId ?? x.PlayerId,
+        teamId: x.teamId ?? x.TeamId,
+        leagueId: x.leagueId ?? x.LeagueId,
+        seasonId: x.seasonId ?? x.SeasonId,
+        appearances: x.appearances ?? x.Appearances ?? 0,
+        lineups: x.lineups ?? x.Lineups ?? 0,
+        minutes: x.minutes ?? x.Minutes ?? 0,
+        goals: x.goals ?? x.Goals ?? 0,
+        assists: x.assists ?? x.Assists ?? 0,
+        yellowCards: x.yellowCards ?? x.YellowCards ?? 0,
+        redCards: x.redCards ?? x.RedCards ?? 0,
+        rating: x.rating ?? x.Rating ?? null,
+        substitutionsIn: x.substitutionsIn ?? x.SubstitutionsIn ?? null,
+        substitutionsOut: x.substitutionsOut ?? x.SubstitutionsOut ?? null,
+        shotsTotal: x.shotsTotal ?? x.ShotsTotal ?? null,
+        shotsOnTarget: x.shotsOnTarget ?? x.ShotsOnTarget ?? null,
+        passesTotal: x.passesTotal ?? x.PassesTotal ?? null,
+        passesKey: x.passesKey ?? x.PassesKey ?? null,
+        passesAccuracy: x.passesAccuracy ?? x.PassesAccuracy ?? null,
+        dribblesAttempted: x.dribblesAttempted ?? x.DribblesAttempted ?? null,
+        dribblesSuccess: x.dribblesSuccess ?? x.DribblesSuccess ?? null,
+        dribblesSuccessRate: x.dribblesSuccessRate ?? x.DribblesSuccessRate ?? null,
+        duelsWon: x.duelsWon ?? x.DuelsWon ?? null,
+        duelsTotal: x.duelsTotal ?? x.DuelsTotal ?? null,
+        duelsWonRate: x.duelsWonRate ?? x.DuelsWonRate ?? null,
+        tackles: x.tackles ?? x.Tackles ?? null,
+        interceptions: x.interceptions ?? x.Interceptions ?? null,
+        foulsDrawn: x.foulsDrawn ?? x.FoulsDrawn ?? null,
+        foulsCommitted: x.foulsCommitted ?? x.FoulsCommitted ?? null,
+        penaltiesScored: x.penaltiesScored ?? x.PenaltiesScored ?? null,
+        penaltiesMissed: x.penaltiesMissed ?? x.PenaltiesMissed ?? null,
+        saves: x.saves ?? x.Saves ?? null,
+        savesInsideBox: x.savesInsideBox ?? x.SavesInsideBox ?? null,
+        cleanSheets: x.cleanSheets ?? x.CleanSheets ?? null,
+        goalsConceded: x.goalsConceded ?? x.GoalsConceded ?? null,
+        penaltiesSaved: x.penaltiesSaved ?? x.PenaltiesSaved ?? null,
+        punches: x.punches ?? x.Punches ?? null,
+        runsOut: x.runsOut ?? x.RunsOut ?? null,
+        runsOutSuccessful: x.runsOutSuccessful ?? x.RunsOutSuccessful ?? null,
+        highClaims: x.highClaims ?? x.HighClaims ?? null,
+      }));
+    const mapPlayer = (p: any): PlayerFromAPI & { statistics: PlayerStats[] } => ({
+      playerId: p.playerId ?? p.PlayerId,
+      apiPlayerId: p.apiPlayerId ?? p.ApiPlayerId ?? 0,
+      firstName: p.firstName ?? p.FirstName ?? '',
+      lastName: p.lastName ?? p.LastName ?? '',
+      fullName: p.fullName ?? p.FullName ?? '',
+      dateOfBirth: p.dateOfBirth ?? p.DateOfBirth ?? '',
+      age: p.age ?? p.Age ?? null,
+      nationality: p.nationality ?? p.Nationality ?? '',
+      birthPlace: p.birthPlace ?? p.BirthPlace ?? null,
+      birthCountry: p.birthCountry ?? p.BirthCountry ?? '',
+      heightCm: p.heightCm ?? p.HeightCm ?? null,
+      weightKg: p.weightKg ?? p.WeightKg ?? null,
+      photoUrl: p.photoUrl ?? p.PhotoUrl ?? '',
+      isInjured: p.isInjured ?? p.IsInjured ?? false,
+      teamId: p.teamId ?? p.TeamId ?? null,
+      position: p.position ?? p.Position ?? '',
+      number: p.number ?? p.Number ?? null,
+      statistics: mapStats(p.statistics ?? p.Statistics ?? []),
+    });
+    return {
+      player1: mapPlayer(raw.player1 ?? raw.Player1),
+      player2: mapPlayer(raw.player2 ?? raw.Player2),
+    };
   },
 
   async getMatches(leagueId: number, seasonId: number): Promise<Match[]> {

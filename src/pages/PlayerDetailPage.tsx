@@ -51,6 +51,8 @@ export default function PlayerDetailPage() {
   const [transfersLoading, setTransfersLoading] = useState(false);
   const [selectedSeasonIdx, setSelectedSeasonIdx] = useState(0);
   const [showTrend, setShowTrend] = useState(false);
+  const [compareSeasonA, setCompareSeasonA] = useState(1); // index vào playerStats (mùa trước)
+  const [compareSeasonB, setCompareSeasonB] = useState(0); // index vào playerStats (mùa hiện tại)
   const player = getPlayerById(playerId || '');
   const [expandedContribution, setExpandedContribution] = useState<string | null>(null);
 
@@ -638,6 +640,91 @@ export default function PlayerDetailPage() {
                                   </ResponsiveContainer>
                                 </div>
                               </div>
+
+                              {/* Season-over-season comparison: selectable */}
+                              {(() => {
+                                const sorted = [...playerStats].sort((a, b) => (a.seasonId ?? 99) - (b.seasonId ?? 99));
+                                if (sorted.length < 2) return null;
+                                // Clamp indices in case playerStats changed
+                                const idxA = Math.min(compareSeasonA, sorted.length - 1);
+                                const idxB = Math.min(compareSeasonB, sorted.length - 1);
+                                const prev = sorted[idxA];
+                                const curr = sorted[idxB];
+                                const currSeason = seasons.find(s => s.seasonId === curr.seasonId);
+                                const prevSeason = seasons.find(s => s.seasonId === prev.seasonId);
+                                type CompRow = { label: string; curr: number | null; prev: number | null; lowerBetter?: boolean; isPercent?: boolean };
+                                const rows: CompRow[] = [
+                                  { label: 'Đánh giá', curr: curr.rating ? parseFloat(curr.rating.toFixed(2)) : null, prev: prev.rating ? parseFloat(prev.rating.toFixed(2)) : null },
+                                  { label: 'Bàn thắng', curr: curr.goals, prev: prev.goals },
+                                  { label: 'Kiến tạo', curr: curr.assists, prev: prev.assists },
+                                  { label: 'Trận đấu', curr: curr.appearances, prev: prev.appearances },
+                                  { label: 'Phút thi đấu', curr: curr.minutes, prev: prev.minutes },
+                                  { label: 'Sút trúng đích', curr: curr.shotsOnTarget, prev: prev.shotsOnTarget },
+                                  { label: 'Chuyền chính xác', curr: curr.passesAccuracy != null && curr.passesTotal ? Math.round((curr.passesAccuracy / curr.passesTotal) * 100) : null, prev: prev.passesAccuracy != null && prev.passesTotal ? Math.round((prev.passesAccuracy / prev.passesTotal) * 100) : null, isPercent: true },
+                                  { label: 'Rê bóng thành công', curr: curr.dribblesSuccess, prev: prev.dribblesSuccess },
+                                  { label: 'Thẻ vàng', curr: curr.yellowCards, prev: prev.yellowCards, lowerBetter: true },
+                                ].filter(r => r.curr != null || r.prev != null);
+                                return (
+                                  <div>
+                                    {/* Header + season selectors */}
+                                    <div className="flex items-center gap-2 mb-3 flex-wrap">
+                                      <p className="text-xs font-semibold text-slate-500 dark:text-[#A8A29E] uppercase tracking-wider">So sánh mùa</p>
+                                      <select
+                                        value={idxA}
+                                        onChange={e => setCompareSeasonA(Number(e.target.value))}
+                                        className="px-2 py-1 rounded-lg bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/10 text-xs font-semibold text-slate-900 dark:text-foreground focus:outline-none cursor-pointer"
+                                      >
+                                        {sorted.map((s, i) => {
+                                          const sea = seasons.find(x => x.seasonId === s.seasonId);
+                                          return <option key={i} value={i} disabled={i === idxB}>Mùa {sea?.year ?? s.seasonId}</option>;
+                                        })}
+                                      </select>
+                                      <span className="text-xs text-slate-400">vs</span>
+                                      <select
+                                        value={idxB}
+                                        onChange={e => setCompareSeasonB(Number(e.target.value))}
+                                        className="px-2 py-1 rounded-lg bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/10 text-xs font-semibold text-slate-900 dark:text-foreground focus:outline-none cursor-pointer"
+                                      >
+                                        {sorted.map((s, i) => {
+                                          const sea = seasons.find(x => x.seasonId === s.seasonId);
+                                          return <option key={i} value={i} disabled={i === idxA}>Mùa {sea?.year ?? s.seasonId}</option>;
+                                        })}
+                                      </select>
+                                    </div>
+                                    <div className="rounded-xl border border-slate-200 dark:border-white/10 overflow-hidden">
+                                      <div className="grid grid-cols-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 px-4 py-2 bg-slate-50 dark:bg-white/5 border-b border-slate-200 dark:border-white/10">
+                                        <span>Mùa {prevSeason?.year ?? prev.seasonId}</span>
+                                        <span className="text-center">Chỉ số</span>
+                                        <span className="text-right">Mùa {currSeason?.year ?? curr.seasonId}</span>
+                                      </div>
+                                      {rows.map(row => {
+                                        const c = row.curr ?? 0;
+                                        const p = row.prev ?? 0;
+                                        const improved = row.lowerBetter ? c < p : c > p;
+                                        const declined = row.lowerBetter ? c > p : c < p;
+                                        const diff = c - p;
+                                        const fmt = (v: number | null) => v == null ? '—' : row.isPercent ? `${v.toFixed(0)}%` : Number.isInteger(v) ? v.toString() : v.toFixed(1);
+                                        return (
+                                          <div key={row.label} className="grid grid-cols-3 items-center px-4 py-2.5 border-b border-slate-100 dark:border-white/5 last:border-0 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                                            <span className="font-mono-data text-sm text-slate-500 dark:text-[#A8A29E]">{fmt(row.prev)}</span>
+                                            <div className="text-center">
+                                              <p className="text-[11px] text-slate-500 dark:text-[#A8A29E]">{row.label}</p>
+                                              {row.curr != null && row.prev != null && diff !== 0 && (
+                                                <span className={`text-[10px] font-bold ${improved ? 'text-green-400' : declined ? 'text-red-400' : 'text-slate-400'}`}>
+                                                  {diff > 0 ? '+' : ''}{row.isPercent ? `${diff.toFixed(0)}%` : Number.isInteger(diff) ? diff : diff.toFixed(1)}
+                                                </span>
+                                              )}
+                                            </div>
+                                            <span className={`font-mono-data text-sm font-bold text-right ${improved ? 'text-green-400' : declined ? 'text-red-400' : 'text-slate-900 dark:text-foreground'}`}>
+                                              {fmt(row.curr)}
+                                            </span>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                );
+                              })()}
                             </div>
                           </motion.div>
                         )}
