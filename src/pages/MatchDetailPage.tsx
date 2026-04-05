@@ -6,6 +6,8 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { cn } from '@/lib/utils';
 import { leagueService, SofascoreTeamMatch, MatchLineups, LineupPlayer, MatchStat } from '@/services/leagueService';
 import { toast } from 'sonner';
+import { useLiveMatch } from '@/hooks/useLiveMatch';
+import { formatMinute } from '@/lib/utils';
 
 function teamLogo(id: number) {
   return `https://api.sofascore.app/api/v1/team/${id}/image`;
@@ -993,8 +995,8 @@ export default function MatchDetailPage() {
     }
   };
 
-  const loadIncidents = async () => {
-    if (incidents) return;
+  const loadIncidents = async (force = false) => {
+    if (incidents && !force) return;
     setIncidentsLoading(true);
     try {
       const data = await leagueService.getIncidents(eventId);
@@ -1023,8 +1025,34 @@ export default function MatchDetailPage() {
     if (match && activeTab === 'info') loadIncidents();
   }, [match]);
 
-  const isLive = match?.status.type === 'inprogress';
-  const isFinished = match?.status.type === 'finished';
+  const { updates: liveUpdates } = useLiveMatch();
+  const liveUpdate = liveUpdates[eventId];
+
+  // Reload incidents when SignalR pushes a new update for this match
+  useEffect(() => {
+    if (liveUpdate && activeTab === 'info') {
+      loadIncidents(true);
+    }
+    // Khi trận kết thúc, cập nhật match state với score mới nhất
+    if (liveUpdate?.status === 'finished' && match) {
+      setMatch(prev => prev ? {
+        ...prev,
+        homeScore: { ...prev.homeScore, current: liveUpdate.homeScore ?? prev.homeScore.current },
+        awayScore: { ...prev.awayScore, current: liveUpdate.awayScore ?? prev.awayScore.current },
+        status: { type: 'finished' },
+      } : prev);
+    }
+  }, [liveUpdate]);
+
+  const isLive = liveUpdate
+    ? liveUpdate.status !== 'finished'
+    : match?.status.type === 'inprogress';
+  const isFinished = liveUpdate?.status === 'finished' || match?.status.type === 'finished';
+
+  const displayHomeScore = liveUpdate?.homeScore ?? match?.homeScore.current ?? 0;
+  const displayAwayScore = liveUpdate?.awayScore ?? match?.awayScore.current ?? 0;
+  const currentMinute = liveUpdate?.currentMinute;
+
   const date = match ? new Date(match.startTimestamp * 1000) : null;
 
   const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
@@ -1106,10 +1134,13 @@ export default function MatchDetailPage() {
                 {(isLive || isFinished) && match ? (
                   <div className="flex flex-col items-center gap-1">
                     <div className="flex items-center gap-3 sm:gap-5">
-                      <span className="font-mono-data text-5xl sm:text-6xl font-bold text-foreground">{match.homeScore.current}</span>
+                      <span className="font-mono-data text-5xl sm:text-6xl font-bold text-foreground">{displayHomeScore}</span>
                       <span className="text-slate-400 text-3xl">-</span>
-                      <span className="font-mono-data text-5xl sm:text-6xl font-bold text-foreground">{match.awayScore.current}</span>
+                      <span className="font-mono-data text-5xl sm:text-6xl font-bold text-foreground">{displayAwayScore}</span>
                     </div>
+                    {isLive && currentMinute && (
+                      <span className="text-sm font-bold text-[#FF4444] animate-pulse">{formatMinute(currentMinute)}'</span>
+                    )}
                     {(match.homeScore.penalties != null || match.awayScore.penalties != null) && (
                       <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-[#A8A29E]">
                         <span>({match.homeScore.penalties ?? 0})</span>

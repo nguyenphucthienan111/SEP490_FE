@@ -1,10 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Calendar, Radio, Loader2, Trophy, ChevronLeft, ChevronRight } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { cn } from '@/lib/utils';
 import { leagueService, SofascoreTeamMatch } from '@/services/leagueService';
+import { useLiveMatch, LiveMatchUpdate } from '@/hooks/useLiveMatch';
+import { formatMinute } from '@/lib/utils';
 
 const LEAGUES = [
   { name: 'V-League 1', tournamentId: 626, seasonId: 78589 },
@@ -23,10 +25,17 @@ function statusLabel(status: string) {
   return { text: 'Sắp diễn ra', cls: 'bg-blue-100 dark:bg-[#00D9FF]/10 text-[#00D9FF]' };
 }
 
-function MatchCard({ match, index }: { match: SofascoreTeamMatch; index: number }) {
-  const st = match.status.type;
-  const isLive = st === 'inprogress';
-  const isFinished = st === 'finished';
+function MatchCard({ match, index, liveUpdate }: { match: SofascoreTeamMatch; index: number; liveUpdate?: LiveMatchUpdate }) {
+  // Merge live update nếu có
+  const homeScore = liveUpdate?.homeScore ?? match.homeScore.current;
+  const awayScore = liveUpdate?.awayScore ?? match.awayScore.current;
+  const isLive = liveUpdate ? liveUpdate.status !== 'finished' : match.status.type === 'inprogress';
+  const isFinished = liveUpdate?.status === 'finished' || match.status.type === 'finished';
+  const currentMinute = liveUpdate?.currentMinute;
+  // Ưu tiên status từ liveUpdate, fallback về match.status.type
+  const st = liveUpdate?.status === 'finished' ? 'finished'
+    : isLive ? 'inprogress'
+    : match.status.type;
   const label = statusLabel(st);
   const date = new Date(match.startTimestamp * 1000);
 
@@ -74,10 +83,13 @@ function MatchCard({ match, index }: { match: SofascoreTeamMatch; index: number 
             {(isFinished || isLive) ? (
               <div className="flex flex-col items-center gap-0.5">
                 <div className="flex items-center gap-3">
-                  <span className="font-mono-data text-4xl font-bold text-foreground">{match.homeScore.current}</span>
+                  <span className={cn('font-mono-data text-4xl font-bold', isLive ? 'text-[#FF4444]' : 'text-foreground')}>{homeScore}</span>
                   <span className="text-slate-400 text-2xl">-</span>
-                  <span className="font-mono-data text-4xl font-bold text-foreground">{match.awayScore.current}</span>
+                  <span className={cn('font-mono-data text-4xl font-bold', isLive ? 'text-[#FF4444]' : 'text-foreground')}>{awayScore}</span>
                 </div>
+                {isLive && currentMinute && (
+                  <span className="text-xs font-bold text-[#FF4444] animate-pulse">{formatMinute(currentMinute)}'</span>
+                )}
                 {(match.homeScore.penalties != null || match.awayScore.penalties != null) && (
                   <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-[#A8A29E]">
                     <span className="font-mono-data font-semibold">({match.homeScore.penalties ?? 0})</span>
@@ -123,6 +135,19 @@ export default function MatchesPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<'all' | 'finished' | 'inprogress' | 'notstarted'>('all');
   const [selectedRound, setSelectedRound] = useState<number | null>(null);
+  const { updates: liveUpdates, connected: liveConnected } = useLiveMatch();
+
+  // Force reload matches khi nhận live update để cập nhật status từ DB
+  const prevLiveCount = useRef(0);
+  useEffect(() => {
+    const count = Object.keys(liveUpdates).length;
+    if (count > prevLiveCount.current) {
+      prevLiveCount.current = count;
+      // Clear cache và force reload để lấy status mới nhất từ DB
+      sessionStorage.removeItem('sofascore-matches');
+      loadMatches(activeLeague, true);
+    }
+  }, [liveUpdates]);
   const [teamSearch, setTeamSearch] = useState('');
   const [showAllFinished, setShowAllFinished] = useState(false);
   const [finishedPage, setFinishedPage] = useState(0); // for "Kết thúc" tab pagination
@@ -171,13 +196,44 @@ export default function MatchesPage() {
 
   const currentMatches = matchesByLeague[activeLeague.tournamentId] ?? [];
 
+  // Inject live/finished matches từ SignalR nếu chưa có trong DB
+  const allMatches = useMemo(() => {
+    const existing = new Set(currentMatches.map(m => m.id));
+    const injected: SofascoreTeamMatch[] = Object.values(liveUpdates)
+      .filter(u => !existing.has(u.eventId))
+      .map(u => ({
+        id: u.eventId,
+        homeTeam: { id: 0, name: u.homeTeam ?? 'Home' },
+        awayTeam: { id: 0, name: u.awayTeam ?? 'Away' },
+        homeScore: { current: u.homeScore ?? 0 },
+        awayScore: { current: u.awayScore ?? 0 },
+        startTimestamp: Date.now() / 1000,
+        status: { type: u.status === 'finished' ? 'finished' : 'inprogress' },
+      }));
+
+    // Merge live score vào trận đã có trong DB
+    const merged = currentMatches.map(m => {
+      const live = liveUpdates[m.id];
+      if (!live) return m;
+      return {
+        ...m,
+        homeScore: { ...m.homeScore, current: live.homeScore ?? m.homeScore.current },
+        awayScore: { ...m.awayScore, current: live.awayScore ?? m.awayScore.current },
+        status: { type: live.status === 'finished' ? 'finished' : 'inprogress' },
+        _currentMinute: live.currentMinute,
+      } as SofascoreTeamMatch & { _currentMinute?: number };
+    });
+
+    return [...injected, ...merged];
+  }, [liveUpdates, currentMatches]);
+
   // Extract unique teams from current league matches
   const teamsInLeague = [...new Map(
-    currentMatches.flatMap(m => [m.homeTeam, m.awayTeam]).map(t => [t.id, t])
+    allMatches.flatMap(m => [m.homeTeam, m.awayTeam]).map(t => [t.id, t])
   ).values()].sort((a, b) => a.name.localeCompare(b.name));
-  const rounds = [...new Set(currentMatches.map(m => m.roundInfo?.round).filter((r): r is number => r != null))].sort((a, b) => a - b);
+  const rounds = [...new Set(allMatches.map(m => m.roundInfo?.round).filter((r): r is number => r != null))].sort((a, b) => a - b);
 
-  const filtered = currentMatches.filter(m => {
+  const filtered = allMatches.filter(m => {
     if (selectedStatus !== 'all') {
       const st = m.status.type;
       if (selectedStatus === 'finished' && st !== 'finished') return false;
@@ -187,7 +243,7 @@ export default function MatchesPage() {
     if (selectedRound !== null && m.roundInfo?.round !== selectedRound) return false;
     if (selectedStatus === 'notstarted' && selectedRound === null) {
       const nextRound = Math.min(
-        ...currentMatches
+        ...allMatches
           .filter(x => x.status.type === 'notstarted' && x.roundInfo?.round != null)
           .map(x => x.roundInfo!.round!)
       );
@@ -227,6 +283,12 @@ export default function MatchesPage() {
                 Kết quả và lịch đấu các giải Việt Nam
               </p>
             </div>
+            {liveConnected && (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20">
+                <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                <span className="text-xs font-semibold text-green-400">Live updates</span>
+              </div>
+            )}
           </motion.div>
 
           {/* League Tabs */}
@@ -337,7 +399,7 @@ export default function MatchesPage() {
                     <h2 className="font-display font-bold text-xl text-foreground">Đang diễn ra</h2>
                   </div>
                   <div className="grid md:grid-cols-2 gap-5">
-                    {liveMatches.map((m, i) => <MatchCard key={m.id} match={m} index={i} />)}
+                    {liveMatches.map((m, i) => <MatchCard key={m.id} match={m} index={i} liveUpdate={liveUpdates[m.id]} />)}
                   </div>
                 </motion.div>
               )}
@@ -360,7 +422,7 @@ export default function MatchesPage() {
                       return (
                         <>
                           <div className="grid md:grid-cols-2 gap-5">
-                            {paged.map((m, i) => <MatchCard key={m.id} match={m} index={i} />)}
+                            {paged.map((m, i) => <MatchCard key={m.id} match={m} index={i} liveUpdate={liveUpdates[m.id]} />)}
                           </div>
                           {totalPages > 1 && (
                             <div className="flex items-center justify-center gap-4 mt-6">
@@ -390,7 +452,7 @@ export default function MatchesPage() {
                     // Tất cả / các tab khác: Xem thêm
                     <>
                       <div className="grid md:grid-cols-2 gap-5">
-                        {otherMatches.slice(0, showAllFinished ? otherMatches.length : PAGE_SIZE).map((m, i) => <MatchCard key={m.id} match={m} index={i} />)}
+                        {otherMatches.slice(0, showAllFinished ? otherMatches.length : PAGE_SIZE).map((m, i) => <MatchCard key={m.id} match={m} index={i} liveUpdate={liveUpdates[m.id]} />)}
                       </div>
                       {otherMatches.length > PAGE_SIZE && !showAllFinished && (
                         <div className="flex justify-center mt-6">
