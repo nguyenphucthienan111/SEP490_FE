@@ -883,7 +883,7 @@ export default function MatchDetailPage() {
             awayTeam: { id: dbMatch.awayTeam?.apiTeamId ?? 0, name: dbMatch.awayTeam?.teamName ?? '' },
             homeScore: { current: dbMatch.homeGoals ?? 0, penalties: dbMatch.homePenalties ?? null },
             awayScore: { current: dbMatch.awayGoals ?? 0, penalties: dbMatch.awayPenalties ?? null },
-            startTimestamp: dbMatch.matchDate ? new Date(dbMatch.matchDate).getTime() / 1000 : 0,
+            startTimestamp: dbMatch.matchDate ? new Date(dbMatch.matchDate.endsWith('Z') ? dbMatch.matchDate : dbMatch.matchDate + 'Z').getTime() / 1000 : 0,
             status: { type: dbMatch.status === 'FT' || dbMatch.status === 'finished' ? 'finished' : dbMatch.status === 'NS' ? 'notstarted' : dbMatch.status ?? 'finished' },
             roundInfo: { round: parseInt(dbMatch.round) || 0 },
           };
@@ -1151,12 +1151,12 @@ export default function MatchDetailPage() {
                   </div>
                 ) : (
                   <p className="font-mono-data text-2xl sm:text-3xl text-[#00D9FF]">
-                    {date?.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) ?? '--:--'}
+                    {date?.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Ho_Chi_Minh' }) ?? '--:--'}
                   </p>
                 )}
                 {date && (
                   <p className="text-sm text-slate-500 dark:text-[#A8A29E]">
-                    {date.toLocaleDateString('vi-VN', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    {date.toLocaleDateString('vi-VN', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Ho_Chi_Minh' })}
                   </p>
                 )}
               </div>

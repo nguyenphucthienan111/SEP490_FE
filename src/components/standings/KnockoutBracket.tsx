@@ -184,7 +184,7 @@ export function KnockoutBracket({ tournamentId, seasonId }: Props) {
         awayTeam: { id: m.awayTeam?.apiTeamId ?? 0, name: m.awayTeam?.teamName ?? '' },
         homeScore: { current: m.homeGoals ?? 0, penalties: m.homePenalties ?? null },
         awayScore: { current: m.awayGoals ?? 0, penalties: m.awayPenalties ?? null },
-        startTimestamp: m.matchDate ? new Date(m.matchDate).getTime() / 1000 : 0,
+        startTimestamp: m.matchDate ? new Date(m.matchDate.endsWith('Z') ? m.matchDate : m.matchDate + 'Z').getTime() / 1000 : 0,
         status: { type: m.status === 'FT' || m.status === 'finished' ? 'finished' : 'notstarted' },
         roundInfo: { round: parseInt(m.round) || 0 },
       }));

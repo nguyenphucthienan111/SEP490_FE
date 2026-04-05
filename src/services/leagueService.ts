@@ -565,7 +565,7 @@ export const leagueService = {
       awayTeam: { id: x.awayTeam?.apiTeamId ?? 0, name: x.awayTeam?.teamName ?? '' },
       homeScore: { current: x.homeGoals ?? 0, penalties: x.homePenalties ?? null },
       awayScore: { current: x.awayGoals ?? 0, penalties: x.awayPenalties ?? null },
-      startTimestamp: x.matchDate ? Math.floor(new Date(x.matchDate).getTime() / 1000) : 0,
+      startTimestamp: x.matchDate ? Math.floor(new Date(x.matchDate.endsWith('Z') ? x.matchDate : x.matchDate + 'Z').getTime() / 1000) : 0,
       status: { type: x.status ?? 'finished' },
     }));
   },

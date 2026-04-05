@@ -100,11 +100,11 @@ function MatchCard({ match, index, liveUpdate }: { match: SofascoreTeamMatch; in
               </div>
             ) : (
               <p className="font-mono-data text-xl text-[#00D9FF]">
-                {date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                {date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Ho_Chi_Minh' })}
               </p>
             )}
             <p className="text-xs text-slate-500 dark:text-[#A8A29E] mt-1">
-              {date.toLocaleDateString('vi-VN', { day: 'numeric', month: 'short', year: 'numeric' })}
+              {date.toLocaleDateString('vi-VN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Ho_Chi_Minh' })}
             </p>
           </div>
 
@@ -167,7 +167,7 @@ export default function MatchesPage() {
         awayTeam: { id: m.awayTeam?.apiTeamId ?? 0, name: m.awayTeam?.teamName ?? '' },
         homeScore: { current: m.homeGoals ?? 0, penalties: m.homePenalties ?? null },
         awayScore: { current: m.awayGoals ?? 0, penalties: m.awayPenalties ?? null },
-        startTimestamp: m.matchDate ? Math.floor(new Date(m.matchDate).getTime() / 1000) : 0,
+        startTimestamp: m.matchDate ? Math.floor(new Date(m.matchDate.endsWith('Z') ? m.matchDate : m.matchDate + 'Z').getTime() / 1000) : 0,
         status: { type: m.status ?? 'notstarted' },
         roundInfo: m.round ? { round: Number(m.round) } : undefined,
       }));
