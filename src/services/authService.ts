@@ -59,6 +59,7 @@ export const authService = {
       if (response.user) {
         localStorage.setItem('user', JSON.stringify(response.user));
       }
+      window.dispatchEvent(new CustomEvent('auth:login'));
     }
     
     return response;

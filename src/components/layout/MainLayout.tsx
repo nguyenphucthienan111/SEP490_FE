@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { Header } from './Header';
 import { Footer } from './Footer';
+import CheckInPopup from '@/components/predictions/CheckInPopup';
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -14,6 +15,7 @@ export function MainLayout({ children }: MainLayoutProps) {
         {children}
       </main>
       <Footer />
+      <CheckInPopup />
     </div>
   );
 }
