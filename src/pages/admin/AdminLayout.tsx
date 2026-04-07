@@ -1,51 +1,59 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
-  LayoutDashboard, 
-  Users, 
-  Trophy, 
-  Calendar, 
-  BarChart3, 
-  Settings,
-  FileText,
-  Menu,
-  X,
-  LogOut,
-  User,
-  ChevronDown
+  LayoutDashboard, Users, Trophy, Calendar, BarChart3,
+  FileText, Menu, LogOut, ChevronDown
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { authService } from '@/services/authService';
+import { userService } from '@/services/userService';
 
 interface AdminLayoutProps {
   children: ReactNode;
 }
 
 const sidebarItems = [
-  { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
-  { icon: Users, label: 'Users', path: '/admin/users' },
-  { icon: Users, label: 'Players', path: '/admin/players' },
-  { icon: Calendar, label: 'Matches', path: '/admin/matches' },
-  { icon: Trophy, label: 'Leagues', path: '/admin/leagues' },
-  { icon: BarChart3, label: 'Predictions', path: '/admin/predictions' },
-  { icon: BarChart3, label: 'Rating Engine', path: '/admin/ratings' },
-  { icon: FileText, label: 'Content', path: '/admin/content' },
+  { icon: LayoutDashboard, label: 'Dashboard',     path: '/admin' },
+  { icon: Users,           label: 'Users',          path: '/admin/users' },
+  { icon: Users,           label: 'Players',        path: '/admin/players' },
+  { icon: Calendar,        label: 'Matches',        path: '/admin/matches' },
+  { icon: Trophy,          label: 'Leagues',        path: '/admin/leagues' },
+  { icon: BarChart3,       label: 'Predictions',    path: '/admin/predictions' },
+  { icon: BarChart3,       label: 'Rating Engine',  path: '/admin/ratings' },
+  { icon: FileText,        label: 'Content',        path: '/admin/content' },
 ];
 
 export function AdminLayout({ children }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [username, setUsername] = useState('Admin');
+  const [email, setEmail] = useState('');
   const location = useLocation();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    // Guard: redirect if not logged in or not admin
+    if (!authService.isAuthenticated()) {
+      navigate('/login', { replace: true });
+      return;
+    }
+    userService.getMe()
+      .then(u => {
+        const isAdmin = u.roles?.some(r => r.toLowerCase() === 'admin');
+        if (!isAdmin) { navigate('/', { replace: true }); return; }
+        setUsername(u.username ?? u.fullName ?? 'Admin');
+        setEmail(u.email ?? '');
+      })
+      .catch(() => navigate('/login', { replace: true }));
+  }, []);
+
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
     navigate('/');
   };
@@ -142,8 +150,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
               <DropdownMenu>
                 <DropdownMenuTrigger className="flex items-center gap-3 hover:opacity-80 transition-opacity">
                   <div className="text-right hidden sm:block">
-                    <p className="text-sm font-medium text-foreground">Admin User</p>
-                    <p className="text-xs text-slate-600 dark:text-[#A8A29E]">admin@vleague.vn</p>
+                    <p className="text-sm font-medium text-foreground">{username}</p>
+                    <p className="text-xs text-slate-600 dark:text-[#A8A29E]">{email}</p>
                   </div>
                   <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF4444] to-[#FF6666] flex items-center justify-center">
                     <span className="font-display font-bold text-white">A</span>
@@ -152,8 +160,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
                   <div className="px-2 py-1.5 text-sm">
-                    <p className="font-medium text-foreground">Admin User</p>
-                    <p className="text-xs text-slate-600 dark:text-[#A8A29E]">admin@vleague.vn</p>
+                    <p className="font-medium text-foreground">{username}</p>
+                    <p className="text-xs text-slate-600 dark:text-[#A8A29E]">{email}</p>
                   </div>
                   <DropdownMenuSeparator />
                   <DropdownMenuSeparator />

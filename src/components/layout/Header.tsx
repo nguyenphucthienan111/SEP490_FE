@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, Menu, X, LogIn, LogOut, UserCircle, Video } from 'lucide-react';
+import { Search, Menu, X, LogIn, LogOut, UserCircle, Video, LayoutDashboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from './ThemeToggle';
@@ -207,6 +207,17 @@ export function Header() {
                           Hồ sơ
                         </Link>
                       </DropdownMenuItem>
+                      {user.roles?.some(r => r.toLowerCase() === 'admin') && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem asChild>
+                            <Link to="/admin" className="cursor-pointer">
+                              <LayoutDashboard className="w-4 h-4 mr-2" />
+                              Trang quản trị
+                            </Link>
+                          </DropdownMenuItem>
+                        </>
+                      )}
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600 focus:text-red-600">
                         <LogOut className="w-4 h-4 mr-2" />
