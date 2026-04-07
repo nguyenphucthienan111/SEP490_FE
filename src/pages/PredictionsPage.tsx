@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, Target, Award, Star, Check, Lock, Clock, Crown, Loader2, Swords, Plus, Minus, User, BarChart2 } from "lucide-react";
+import { Trophy, Target, Award, Star, Check, Lock, Clock, Crown, Loader2, Swords, Plus, Minus, User, BarChart2, Flame } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { contestService, ContestDto, ContestPickDto, TeamPickerDto, PlayerPickerDto } from "@/services/contestService";
 import { predictionService, PredictionItemDto, UserPredictionStatsDto } from "@/services/predictionService";
+import { checkInService } from "@/services/checkInService";
+import CheckInCalendar from "@/components/predictions/CheckInCalendar";
 import { leagueService, SofascoreTeamMatch } from "@/services/leagueService";
 import { authService } from "@/services/authService";
 import { toast } from "sonner";
@@ -71,6 +73,7 @@ export default function PredictionsPage() {
   const [myStats, setMyStats] = useState<UserPredictionStatsDto | null>(null);
   const [myStatsLoading, setMyStatsLoading] = useState(false);
   const [myHistoryLoading, setMyHistoryLoading] = useState(false);
+  const [showPointsBreakdown, setShowPointsBreakdown] = useState(false);
 
   useEffect(() => {
     contestService.getOpen()
@@ -461,10 +464,12 @@ export default function PredictionsPage() {
                         <p className="text-2xl font-bold text-slate-900 dark:text-white">{myStats.exactScorePredictions}</p>
                         <p className="text-xs text-slate-500 mt-0.5">Đúng tỉ số</p>
                       </div>
-                      <div className="bg-white dark:bg-card border border-slate-200 dark:border-border rounded-xl p-4 text-center">
+                      <div className="bg-white dark:bg-card border border-slate-200 dark:border-border rounded-xl p-4 text-center cursor-pointer hover:border-[#00D9FF] transition-colors group relative"
+                        onClick={() => setShowPointsBreakdown(true)}>
                         <Trophy className="w-5 h-5 mx-auto mb-1 text-amber-500" />
                         <p className="text-2xl font-bold text-[#00D9FF]">{myStats.points}</p>
                         <p className="text-xs text-slate-500 mt-0.5">Tổng điểm</p>
+                        <span className="absolute top-1 right-1.5 text-[10px] text-slate-400 group-hover:text-[#00D9FF]">chi tiết</span>
                       </div>
                     </div>
                   )
@@ -710,6 +715,41 @@ export default function PredictionsPage() {
               {matchSubmitting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}Xác nhận
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+      {/* Points Breakdown Modal */}
+      <Dialog open={showPointsBreakdown} onOpenChange={setShowPointsBreakdown}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle className="font-display text-lg flex items-center gap-2"><Trophy className="w-5 h-5 text-amber-500" />Chi tiết điểm</DialogTitle></DialogHeader>
+          {myStats && (
+            <div className="space-y-3 mt-2">
+              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800">
+                <div className="flex items-center gap-2">
+                  <Target className="w-4 h-4 text-green-500" />
+                  <span className="text-sm text-slate-700 dark:text-slate-300">Dự đoán trận đấu</span>
+                </div>
+                <span className="font-bold text-slate-900 dark:text-white">+{myStats.matchPredictionPoints}đ</span>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800">
+                <div className="flex items-center gap-2">
+                  <Trophy className="w-4 h-4 text-amber-500" />
+                  <span className="text-sm text-slate-700 dark:text-slate-300">Dự đoán đặc biệt</span>
+                </div>
+                <span className="font-bold text-slate-900 dark:text-white">+{myStats.contestPoints}đ</span>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800">
+                <div className="flex items-center gap-2">
+                  <Flame className="w-4 h-4 text-orange-400" />
+                  <span className="text-sm text-slate-700 dark:text-slate-300">Điểm danh hàng ngày</span>
+                </div>
+                <span className="font-bold text-slate-900 dark:text-white">+{myStats.checkInPoints}đ</span>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-xl bg-[#00D9FF]/10 border border-[#00D9FF]/20">
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Tổng cộng</span>
+                <span className="font-bold text-xl text-[#00D9FF]">{myStats.points}đ</span>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </MainLayout>

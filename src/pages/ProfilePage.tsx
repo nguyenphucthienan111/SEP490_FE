@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   User,
   Mail,
@@ -13,6 +13,7 @@ import {
   Camera,
   LogOut,
   ArrowLeft,
+  Flame,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +22,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { userService, UserResponse } from "@/services/userService";
 import { authService } from "@/services/authService";
+import CheckInCalendar from "@/components/predictions/CheckInCalendar";
 import { toast } from "sonner";
 
 // Mock user data
@@ -46,6 +48,7 @@ const mockUser = {
 
 export default function ProfilePage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [user, setUser] = useState<UserResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -438,6 +441,8 @@ export default function ProfilePage() {
               </div>
             </div>
           </TabsContent>
+
+          {/* Check-in Tab removed - accessible via header dropdown */}
         </Tabs>
       </div>
     </div>

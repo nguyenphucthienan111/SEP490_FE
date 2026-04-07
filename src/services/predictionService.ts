@@ -22,6 +22,9 @@ export interface UserPredictionStatsDto {
   exactScorePredictions: number;
   points: number;
   lastUpdated?: string;
+  matchPredictionPoints: number;
+  contestPoints: number;
+  checkInPoints: number;
 }
 
 export const predictionService = {

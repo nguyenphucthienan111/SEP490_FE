@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, Menu, X, LogIn, LogOut, UserCircle, Video, LayoutDashboard } from 'lucide-react';
+import { Search, Menu, X, LogIn, LogOut, UserCircle, Video, LayoutDashboard, Flame } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from './ThemeToggle';
@@ -206,6 +206,13 @@ export function Header() {
                           <UserCircle className="w-4 h-4 mr-2" />
                           Hồ sơ
                         </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="cursor-pointer"
+                        onClick={() => window.dispatchEvent(new CustomEvent("checkin:open"))}
+                      >
+                        <Flame className="w-4 h-4 mr-2 text-orange-400" />
+                        Điểm danh
                       </DropdownMenuItem>
                       {user.roles?.some(r => r.toLowerCase() === 'admin') && (
                         <>
