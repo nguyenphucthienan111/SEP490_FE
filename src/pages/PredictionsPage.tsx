@@ -10,6 +10,7 @@ import { checkInService } from "@/services/checkInService";
 import CheckInCalendar from "@/components/predictions/CheckInCalendar";
 import { leagueService, SofascoreTeamMatch } from "@/services/leagueService";
 import { authService } from "@/services/authService";
+import { userService } from "@/services/userService";
 import { toast } from "sonner";
 
 const LEAGUES_CONFIG = [
@@ -45,6 +46,15 @@ type MatchWithDbId = SofascoreTeamMatch & { _leagueName?: string; _dbMatchId?: n
 export default function PredictionsPage() {
   const [tab, setTab] = useState<"special" | "match" | "mine">("special");
   const isLoggedIn = authService.isAuthenticated();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      userService.getMe().then(u => {
+        setIsAdmin(u.roles?.some(r => r.toLowerCase() === 'admin') ?? false);
+      }).catch(() => {});
+    }
+  }, [isLoggedIn]);
 
   const [contests, setContests] = useState<ContestDto[]>([]);
   const [contestsLoading, setContestsLoading] = useState(true);
@@ -185,6 +195,7 @@ export default function PredictionsPage() {
 
   const openContest = async (c: ContestDto) => {
     if (!isLoggedIn) { toast.error("Vui lòng đăng nhập để dự đoán"); return; }
+    if (isAdmin) { toast.error("Admin không thể tham gia dự đoán"); return; }
     if (c.hasEntered) { toast.error("Bạn đã dự đoán rồi, không thể thay đổi."); return; }
     setActiveContest(c);
     setTop4Picks([null, null, null, null]);
@@ -277,6 +288,7 @@ export default function PredictionsPage() {
 
   const openMatchPrediction = (match: MatchWithDbId) => {
     if (!isLoggedIn) { toast.error("Vui lòng đăng nhập"); return; }
+    if (isAdmin) { toast.error("Admin không thể tham gia dự đoán"); return; }
     const dbId = (match as any)._dbMatchId ?? match.id;
     const ex = myPredictions.find((p) => p.matchId === dbId);
     setHomeGoals(ex?.predictedHomeGoals ?? 0);
@@ -320,7 +332,7 @@ export default function PredictionsPage() {
           <button onClick={() => setTab("match")} className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold border-b-2 transition-colors ${tab === "match" ? "border-[#FF4444] text-[#FF4444]" : "border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"}`}>
             <Swords className="w-4 h-4" /> Dự đoán trận đấu
           </button>
-          {isLoggedIn && (
+          {isLoggedIn && !isAdmin && (
             <button onClick={() => setTab("mine")} className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold border-b-2 transition-colors ${tab === "mine" ? "border-[#FF4444] text-[#FF4444]" : "border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"}`}>
               <User className="w-4 h-4" /> Dự đoán của tôi
             </button>

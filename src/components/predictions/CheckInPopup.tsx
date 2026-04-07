@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { checkInService } from "@/services/checkInService";
 import { authService } from "@/services/authService";
+import { userService } from "@/services/userService";
 import CheckInCalendar from "./CheckInCalendar";
 
 const STORAGE_KEY = "checkin_popup_shown";
@@ -14,21 +15,26 @@ export default function CheckInPopup() {
     const tryShow = () => {
       if (!authService.isAuthenticated()) return;
 
-      const today = new Date().toISOString().slice(0, 10);
-      const shown = localStorage.getItem(STORAGE_KEY);
-      if (shown === today) return;
+      // Admin không điểm danh
+      userService.getMe().then(u => {
+        if (u.roles?.some(r => r.toLowerCase() === 'admin')) return;
 
-      setTimeout(() => {
-        checkInService.getStatus()
-          .then(status => {
-            if (!status.checkedInToday) setOpen(true);
-            localStorage.setItem(STORAGE_KEY, today);
-          })
-          .catch(() => {
-            setOpen(true);
-            localStorage.setItem(STORAGE_KEY, today);
-          });
-      }, 500);
+        const today = new Date().toISOString().slice(0, 10);
+        const shown = localStorage.getItem(STORAGE_KEY);
+        if (shown === today) return;
+
+        setTimeout(() => {
+          checkInService.getStatus()
+            .then(status => {
+              if (!status.checkedInToday) setOpen(true);
+              localStorage.setItem(STORAGE_KEY, today);
+            })
+            .catch(() => {
+              setOpen(true);
+              localStorage.setItem(STORAGE_KEY, today);
+            });
+        }, 500);
+      }).catch(() => {});
     };
 
     // Run on mount (if already logged in)
