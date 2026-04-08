@@ -52,7 +52,7 @@ export default function AdminPlayersPage() {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-600 dark:text-[#A8A29E]" />
             <input
               type="text"
-              placeholder="Search players..."
+              placeholder="Tìm kiếm cầu thủ..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full h-11 pl-12 pr-4 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-foreground placeholder-[#A8A29E] focus:outline-none focus:border-[#00D9FF]/50 transition-colors"
@@ -87,13 +87,13 @@ export default function AdminPlayersPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-slate-200 dark:border-white/10">
-                  <th className="text-left py-4 px-6 font-label text-xs text-slate-600 dark:text-[#A8A29E] uppercase tracking-wider">Player</th>
-                  <th className="text-left py-4 px-6 font-label text-xs text-slate-600 dark:text-[#A8A29E] uppercase tracking-wider">Team</th>
-                  <th className="text-center py-4 px-6 font-label text-xs text-slate-600 dark:text-[#A8A29E] uppercase tracking-wider">Position</th>
-                  <th className="text-center py-4 px-6 font-label text-xs text-slate-600 dark:text-[#A8A29E] uppercase tracking-wider">Rating</th>
-                  <th className="text-center py-4 px-6 font-label text-xs text-slate-600 dark:text-[#A8A29E] uppercase tracking-wider">Matches</th>
-                  <th className="text-center py-4 px-6 font-label text-xs text-slate-600 dark:text-[#A8A29E] uppercase tracking-wider">Goals</th>
-                  <th className="text-right py-4 px-6 font-label text-xs text-slate-600 dark:text-[#A8A29E] uppercase tracking-wider">Actions</th>
+                  <th className="text-left py-4 px-6 font-label text-xs text-slate-600 dark:text-[#A8A29E] uppercase tracking-wider">Cầu thủ</th>
+                  <th className="text-left py-4 px-6 font-label text-xs text-slate-600 dark:text-[#A8A29E] uppercase tracking-wider">Đội</th>
+                  <th className="text-center py-4 px-6 font-label text-xs text-slate-600 dark:text-[#A8A29E] uppercase tracking-wider">Vị trí</th>
+                  <th className="text-center py-4 px-6 font-label text-xs text-slate-600 dark:text-[#A8A29E] uppercase tracking-wider">Đánh giá</th>
+                  <th className="text-center py-4 px-6 font-label text-xs text-slate-600 dark:text-[#A8A29E] uppercase tracking-wider">Trận</th>
+                  <th className="text-center py-4 px-6 font-label text-xs text-slate-600 dark:text-[#A8A29E] uppercase tracking-wider">Bàn thắng</th>
+                  <th className="text-right py-4 px-6 font-label text-xs text-slate-600 dark:text-[#A8A29E] uppercase tracking-wider">Thao tác</th>
                 </tr>
               </thead>
               <tbody>

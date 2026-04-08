@@ -519,10 +519,10 @@ export default function ProfilePage() {
               : Object.entries({
                   frameItemId: { label: "Khung avatar", cat: "frame" },
                   nameColorItemId: { label: "Màu tên", cat: "nameColor" },
-                  bannerItemId: { label: "Banner profile", cat: "banner" },
-                  badgeItemId: { label: "Badge", cat: "badge" },
+                  bannerItemId: { label: "Banner hồ sơ", cat: "banner" },
+                  badgeItemId: { label: "Huy hiệu", cat: "badge" },
                   effectItemId: { label: "Hiệu ứng", cat: "effect" },
-                  cardItemId: { label: "Card profile", cat: "card" },
+                  cardItemId: { label: "Card hồ sơ", cat: "card" },
                 } as Record<keyof LoadoutDto, { label: string; cat: string }>).map(([slot, { label, cat }]) => {
                   const slotItems = inventory.filter(i => i.category === cat);
                   if (slotItems.length === 0) return null;

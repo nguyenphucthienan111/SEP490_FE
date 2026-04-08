@@ -230,7 +230,7 @@ export default function PlayerDetailPage() {
                         <span className="font-mono-data text-lg font-black text-slate-900 dark:text-foreground leading-none">{currentRating.toFixed(1)}</span>
                       </div>
                     </div>
-                    <span className="text-[10px] uppercase tracking-widest text-slate-400">Rating</span>
+                    <span className="text-[10px] uppercase tracking-widest text-slate-400">Đánh giá</span>
                   </div>
                 )}
               </div>

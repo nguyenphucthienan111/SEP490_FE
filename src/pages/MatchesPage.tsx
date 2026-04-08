@@ -11,7 +11,7 @@ import { formatMinute } from '@/lib/utils';
 const LEAGUES = [
   { name: 'V-League 1', tournamentId: 626, seasonId: 78589 },
   { name: 'V-League 2', tournamentId: 771, seasonId: 80926 },
-  { name: 'Vietnam Cup', tournamentId: 3087, seasonId: 81023 },
+  { name: 'Cúp Quốc gia', tournamentId: 3087, seasonId: 81023 },
 ];
 
 const PAGE_SIZE = 10;
@@ -63,7 +63,7 @@ function MatchCard({ match, liveUpdate, index }: { match: SofascoreTeamMatch; li
               </div>
             ) : isFinished ? (
               <div className="flex flex-col items-center gap-0.5">
-                <span className="text-[11px] font-bold text-slate-400 dark:text-[#A8A29E]">FT</span>
+                <span className="text-[11px] font-bold text-slate-400 dark:text-[#A8A29E]">KT</span>
                 <span className="text-[10px] text-slate-400 dark:text-[#A8A29E]/70">{fmtDate(match.startTimestamp)}</span>
               </div>
             ) : (
@@ -265,7 +265,7 @@ export default function MatchesPage() {
                 {liveConnected && (
                   <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-500/10 border border-green-500/20">
                     <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                    <span className="text-[11px] font-semibold text-green-400">Live</span>
+                    <span className="text-[11px] font-semibold text-green-400">Trực tiếp</span>
                   </div>
                 )}
               </div>

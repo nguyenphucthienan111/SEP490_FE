@@ -204,7 +204,7 @@ function PlayerModal({ p, eventId, matchStatsMap, onClose }: { p: LineupPlayer; 
             {rating != null && (
               <div className="flex flex-col items-center flex-shrink-0">
                 <span className="font-mono-data text-2xl font-black leading-none" style={{ color: ratingColor }}>{rating.toFixed(1)}</span>
-                <span className="text-[9px] text-slate-400 mt-0.5 uppercase tracking-wide">Rating</span>
+                <span className="text-[9px] text-slate-400 mt-0.5 uppercase tracking-wide">Đánh giá</span>
               </div>
             )}
             <button onClick={onClose} className="ml-1 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 transition-colors flex-shrink-0">

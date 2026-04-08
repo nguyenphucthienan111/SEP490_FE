@@ -133,7 +133,7 @@ export function FeaturedPlayers() {
                           {/* Rating */}
                           <div className="flex-shrink-0 text-right">
                             <p className="font-mono-data text-2xl font-black text-foreground">{player.rating.toFixed(1)}</p>
-                            <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Rating</p>
+                            <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Đánh giá</p>
                           </div>
                         </div>
 

@@ -19,12 +19,12 @@ import {
 import { toast } from 'sonner';
 
 const navItems = [
-  { label: 'Home', path: '/' },
-  { label: 'Leagues', path: '/leagues' },
-  { label: 'Players', path: '/players' },
-  { label: 'Matches', path: '/matches' },
-  { label: 'Predictions', path: '/predictions' },
-  { label: 'Analytics', path: '/analytics' },
+  { label: 'Trang chủ', path: '/' },
+  { label: 'Giải đấu', path: '/leagues' },
+  { label: 'Cầu thủ', path: '/players' },
+  { label: 'Trận đấu', path: '/matches' },
+  { label: 'Dự đoán', path: '/predictions' },
+  { label: 'Phân tích', path: '/analytics' },
   { label: 'Premium', path: '/pricing' },
 ];
 
@@ -116,7 +116,7 @@ export function Header() {
                 Player Rating
               </h1>
               <p className="text-xs text-slate-400 font-label uppercase tracking-wider">
-                Vietnamese Football
+                Bóng đá Việt Nam
               </p>
             </div>
           </Link>
@@ -168,7 +168,7 @@ export function Header() {
               )}
             >
               <Video className="w-3.5 h-3.5" />
-              AI Video
+              AI Phân tích
             </Link>
             )}
 

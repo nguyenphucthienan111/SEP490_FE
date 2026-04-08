@@ -191,7 +191,7 @@ export function HeroSection() {
                       <div className="flex-shrink-0 text-center">
                         <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#FF4444] to-[#ff6b6b] flex flex-col items-center justify-center shadow-lg shadow-[#FF4444]/30">
                           <span className="font-mono-data text-2xl font-black text-white leading-none">{player.rating.toFixed(1)}</span>
-                          <span className="text-[9px] text-white/70 uppercase tracking-wider mt-0.5">Rating</span>
+                          <span className="text-[9px] text-white/70 uppercase tracking-wider mt-0.5">Đánh giá</span>
                         </div>
                       </div>
                     </div>

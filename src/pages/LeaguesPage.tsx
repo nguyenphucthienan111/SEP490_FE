@@ -159,7 +159,7 @@ export default function LeaguesPage() {
                     <h3 className="font-display font-bold text-2xl mb-2 text-slate-900 dark:text-foreground group-hover:text-[#FF4444] transition-colors">
                       {league.leagueName}
                     </h3>
-                    <p className="text-slate-600 dark:text-[#A8A29E] mb-6">Vietnam</p>
+                    <p className="text-slate-600 dark:text-[#A8A29E] mb-6">Việt Nam</p>
 
                     <div className="grid grid-cols-2 gap-4 pt-6 border-t border-slate-200 dark:border-white/5">
                       {tournamentId !== 3087 ? (
@@ -286,7 +286,7 @@ export default function LeaguesPage() {
                     <table className="w-full">
                       <thead>
                         <tr className="border-b-2 border-slate-300 dark:border-white/10">
-                          {['POS', 'ĐỘI', 'P', 'W', 'D', 'L', 'GF', 'GA', 'GD', 'PTS', 'LAST 5'].map((h) => (
+                          {['#', 'ĐỘI', 'P', 'T', 'H', 'B', 'BT', 'BB', 'HS', 'Đ', '5 TRẬN'].map((h) => (
                             <th
                               key={h}
                               className={cn(
@@ -397,7 +397,7 @@ export default function LeaguesPage() {
                       <TrendingDown className="w-3.5 h-3.5 text-red-500" />
                       <span>Xuống hạng</span>
                     </div>
-                    <span className="ml-auto">P: Trận | W: Thắng | D: Hòa | L: Thua | GF/GA: Bàn thắng/thua | GD: Hiệu số | PTS: Điểm</span>
+                    <span className="ml-auto">P: Trận | T: Thắng | H: Hòa | B: Thua | BT/BB: Bàn thắng/thua | HS: Hiệu số | Đ: Điểm</span>
                   </div>
                 </motion.div>
               )}
