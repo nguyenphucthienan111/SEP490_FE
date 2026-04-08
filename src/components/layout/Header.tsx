@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, Menu, X, LogIn, LogOut, UserCircle, Video, LayoutDashboard, Flame } from 'lucide-react';
+import { Search, Menu, X, LogIn, LogOut, UserCircle, Video, LayoutDashboard, Flame, ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from './ThemeToggle';
 import { authService } from '@/services/authService';
 import { userService, UserResponse } from '@/services/userService';
+import { useMyLoadout } from '@/hooks/useMyLoadout';
+import { UserAvatar, UserDisplayName } from '@/components/cosmetics/UserAvatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,6 +34,7 @@ export function Header() {
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   const location = useLocation();
   const navigate = useNavigate();
+  const { loadout } = useMyLoadout();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -188,16 +191,17 @@ export function Header() {
                     <DropdownMenuTrigger asChild>
                       <Button 
                         variant="ghost"
-                        className="text-slate-300 hover:text-white hover:bg-slate-700/40 font-body text-sm gap-2 hidden sm:flex"
+                        className="text-slate-300 hover:text-white hover:bg-slate-700/40 font-body text-sm gap-2 hidden sm:flex items-center"
                       >
-                        <UserCircle className="w-5 h-5" />
-                        {user.username}
+                        <UserAvatar avatarUrl={user.avatarUrl} username={user.username} size={28} loadout={loadout} />
+                        <UserDisplayName username={user.username} loadout={loadout} />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-56">
                       <DropdownMenuLabel>
-                        <div className="flex flex-col">
-                          <span className="font-semibold">{user.username}</span>
+                        <div className="flex items-center gap-2">
+                          <UserAvatar avatarUrl={user.avatarUrl} username={user.username} size={32} loadout={loadout} />
+                          <UserDisplayName username={user.username} loadout={loadout} className="font-semibold" />
                         </div>
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator />
@@ -214,6 +218,14 @@ export function Header() {
                         >
                           <Flame className="w-4 h-4 mr-2 text-orange-400" />
                           Điểm danh
+                        </DropdownMenuItem>
+                      )}
+                      {!user.roles?.some(r => r.toLowerCase() === 'admin') && (
+                        <DropdownMenuItem asChild>
+                          <Link to="/shop" className="cursor-pointer">
+                            <ShoppingBag className="w-4 h-4 mr-2 text-purple-400" />
+                            Shop đổi điểm
+                          </Link>
                         </DropdownMenuItem>
                       )}
                       {user.roles?.some(r => r.toLowerCase() === 'admin') && (
