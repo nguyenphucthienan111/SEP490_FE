@@ -33,6 +33,9 @@ function PlayerCard({ player, rating }: { player: PlayerFromAPI & { teamName?: s
   const pos = player.position ?? '';
   const posLabel = POS_LABEL[pos] ?? pos;
   const posColor = POS_COLOR[pos] ?? 'bg-slate-500 text-white';
+  const ratingColor = rating
+    ? rating >= 8 ? '#22c55e' : rating >= 7 ? '#84cc16' : rating >= 6 ? '#eab308' : '#ef4444'
+    : '#6b7280';
 
   return (
     <Link to={`/players/${player.playerId}`}>
@@ -99,11 +102,13 @@ function PlayerCard({ player, rating }: { player: PlayerFromAPI & { teamName?: s
           {rating != null ? (
             <div className="relative w-11 h-11">
               <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
-                <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(0,217,255,0.15)" strokeWidth="3" />
-                <circle cx="18" cy="18" r="15" fill="none" stroke="#00D9FF" strokeWidth="3"
+                <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(0,0,0,0.06)" strokeWidth="3" className="dark:stroke-white/10" />
+                <circle cx="18" cy="18" r="15" fill="none" strokeWidth="3"
+                  stroke={ratingColor}
                   strokeDasharray={`${(rating / 10) * 94.2} 94.2`} strokeLinecap="round" />
               </svg>
-              <span className="absolute inset-0 flex items-center justify-center font-mono-data font-bold text-[11px] text-[#00D9FF]">
+              <span className="absolute inset-0 flex items-center justify-center font-mono-data font-bold text-[11px]"
+                style={{ color: ratingColor }}>
                 {rating.toFixed(1)}
               </span>
             </div>

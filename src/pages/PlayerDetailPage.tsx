@@ -121,7 +121,23 @@ export default function PlayerDetailPage() {
   const playerHeight      = apiPlayer?.heightCm ?? player?.height;
   const playerPosition    = apiPlayer?.position ?? player?.position;
   const playerAge         = apiPlayer?.age ?? player?.age;
-  const currentRating     = playerStats[0]?.rating ?? (player as any)?.rating ?? 0;
+  const currentRating = (() => {
+    if (playerStats.length === 0) return (player as any)?.rating ?? 0;
+    const withRating = playerStats.filter(s => s.rating != null && s.rating > 0);
+    if (withRating.length === 0) return (player as any)?.rating ?? 0;
+    // Ưu tiên mùa current, fallback về seasonId nhỏ nhất, rồi mùa gần nhất có rating
+    const currentSeason = seasons.find(s => s.current);
+    if (currentSeason) {
+      const cur = withRating.find(s => s.seasonId === currentSeason.seasonId);
+      if (cur?.rating) return cur.rating;
+    }
+    // Fallback: seasonId nhỏ nhất có rating (mùa hiện tại theo DB)
+    const minSid = Math.min(...withRating.map(s => s.seasonId ?? 999));
+    const minSeason = withRating.find(s => s.seasonId === minSid);
+    if (minSeason?.rating) return minSeason.rating;
+    // Cuối cùng: mùa gần nhất có rating
+    return withRating.reduce((best, s) => (s.seasonId ?? 0) > (best.seasonId ?? 0) ? s : best).rating ?? 0;
+  })();
   const posLabel = ({'F':'Tiền đạo','M':'Tiền vệ','D':'Hậu vệ','G':'Thủ môn'} as Record<string,string>)[playerPosition ?? ''] ?? playerPosition;
 
   const getRadarData = () => {

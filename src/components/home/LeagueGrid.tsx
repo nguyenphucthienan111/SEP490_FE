@@ -46,23 +46,40 @@ export function LeagueGrid() {
               // Cup không có standings — lấy data từ DB matches
               try {
                 const matches = await leagueService.getAllMatchesFromDb(l.tournamentId, seasonId);
-                const finished = matches.filter((m: any) => m.status === 'finished' || (m.homeGoals != null && m.awayGoals != null));
+                // Chỉ lấy vòng knockout (loại bỏ vòng loại sơ bộ — round có số nhỏ hoặc null)
+                const knockoutKeywords = ['16', '8', 'quarter', 'semi', 'final', 'tứ', 'bán', 'chung'];
+                const knockoutMatches = matches.filter((m: any) => {
+                  const r = (m.round ?? '').toString().toLowerCase();
+                  return knockoutKeywords.some(k => r.includes(k));
+                });
+                // Nếu không detect được keyword thì lấy tất cả finished
+                const relevantMatches = knockoutMatches.length > 0 ? knockoutMatches : matches;
+                const finished = relevantMatches.filter((m: any) =>
+                  m.status === 'finished' || (m.homeGoals != null && m.awayGoals != null)
+                );
                 const teamIds = new Set<number>();
-                matches.forEach((m: any) => {
+                relevantMatches.forEach((m: any) => {
                   if (m.homeTeam?.teamId) teamIds.add(m.homeTeam.teamId);
                   if (m.awayTeam?.teamId) teamIds.add(m.awayTeam.teamId);
                 });
-                const totalGoals = finished.reduce((s: number, m: any) => s + (m.homeGoals ?? 0) + (m.awayGoals ?? 0), 0);
+                const totalGoals = finished.reduce((s: number, m: any) =>
+                  s + (m.homeGoals ?? 0) + (m.awayGoals ?? 0), 0
+                );
                 return {
                   tournamentId: l.tournamentId,
                   name: l.name, color: l.color, gradient: l.gradient, tier: l.tier,
                   teamCount: teamIds.size,
                   matchesPlayed: finished.length,
                   totalGoals,
-                  leader: undefined,
+                  // Placeholder leader để card bằng chiều cao với V-League
+                  leader: { name: 'Knockout · Loại trực tiếp', points: 0, logo: '', wins: finished.length },
                 } as LeagueInfo;
               } catch {
-                return { tournamentId: l.tournamentId, name: l.name, color: l.color, gradient: l.gradient, tier: l.tier, teamCount: 0, matchesPlayed: 0, totalGoals: 0 } as LeagueInfo;
+                return {
+                  tournamentId: l.tournamentId, name: l.name, color: l.color, gradient: l.gradient, tier: l.tier,
+                  teamCount: 0, matchesPlayed: 0, totalGoals: 0,
+                  leader: { name: 'Knockout · Loại trực tiếp', points: 0, logo: '', wins: 0 },
+                } as LeagueInfo;
               }
             }
 
@@ -144,24 +161,35 @@ export function LeagueGrid() {
                         </div>
                       </div>
 
-                      {/* Leader */}
+                      {/* Leader / Cup format */}
                       {league.leader && (
                         <div className="flex items-center gap-3 p-3 rounded-2xl mb-5 bg-muted border border-border">
-                          <div className="w-8 h-8 rounded-xl bg-background flex items-center justify-center overflow-hidden flex-shrink-0 border border-border">
-                            <img src={league.leader.logo} alt="" className="w-6 h-6 object-contain"
-                              onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                          </div>
+                          {league.leader.logo ? (
+                            <div className="w-8 h-8 rounded-xl bg-background flex items-center justify-center overflow-hidden flex-shrink-0 border border-border">
+                              <img src={league.leader.logo} alt="" className="w-6 h-6 object-contain"
+                                onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                            </div>
+                          ) : (
+                            <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 border"
+                              style={{ backgroundColor: `${league.color}15`, borderColor: `${league.color}30` }}>
+                              <Trophy className="w-4 h-4" style={{ color: league.color }} />
+                            </div>
+                          )}
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-semibold text-foreground truncate">{league.leader.name}</p>
-                            <p className="text-[10px] text-muted-foreground">{league.leader.wins} thắng</p>
+                            <p className="text-[10px] text-muted-foreground">
+                              {league.leader.points > 0 ? `${league.leader.wins} thắng` : `${league.leader.wins} trận đã đấu`}
+                            </p>
                           </div>
-                          <div className="flex items-center gap-1">
-                            <TrendingUp className="w-3 h-3" style={{ color: league.color }} />
-                            <span className="font-mono-data text-sm font-black" style={{ color: league.color }}>
-                              {league.leader.points}
-                            </span>
-                            <span className="text-[10px] text-muted-foreground">pts</span>
-                          </div>
+                          {league.leader.points > 0 && (
+                            <div className="flex items-center gap-1">
+                              <TrendingUp className="w-3 h-3" style={{ color: league.color }} />
+                              <span className="font-mono-data text-sm font-black" style={{ color: league.color }}>
+                                {league.leader.points}
+                              </span>
+                              <span className="text-[10px] text-muted-foreground">pts</span>
+                            </div>
+                          )}
                         </div>
                       )}
 

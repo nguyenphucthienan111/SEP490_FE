@@ -317,8 +317,9 @@ export default function LeagueDetailPage() {
                         <tbody>
                           {standingsRows.map((row, index) => {
                             const total = standingsRows.length;
-                            const isTop = row.position <= 3;
-                            const isRel = row.position > total - 2;
+                            const pos = index + 1;
+                            const isTop = pos <= 3;
+                            const isRel = pos > total - 2;
                             const gd = row.scoresFor - row.scoresAgainst;
                             const dbId = getDbTeamId(row.team.id, dbTeams);
                             return (
@@ -336,7 +337,7 @@ export default function LeagueDetailPage() {
                                       isTop && "text-green-600 dark:text-green-400",
                                       isRel && "text-red-600 dark:text-red-400",
                                       !isTop && !isRel && "text-slate-700 dark:text-slate-400"
-                                    )}>{row.position}</span>
+                                    )}>{pos}</span>
                                   </div>
                                 </td>
                                 <td className="py-3 px-3">

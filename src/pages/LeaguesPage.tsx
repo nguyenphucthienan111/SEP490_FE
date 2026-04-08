@@ -302,8 +302,9 @@ export default function LeaguesPage() {
                       <tbody>
                         {currentRows.map((row, index) => {
                           const total = currentRows.length;
-                          const isTop = row.position <= 3;
-                          const isRel = row.position > total - 2;
+                          const pos = index + 1;
+                          const isTop = pos <= 3;
+                          const isRel = pos > total - 2;
                           const gd = row.scoresFor - row.scoresAgainst;
                           return (
                             <motion.tr
@@ -326,7 +327,7 @@ export default function LeaguesPage() {
                                     isRel && 'text-red-600 dark:text-red-400',
                                     !isTop && !isRel && 'text-slate-700 dark:text-slate-400'
                                   )}>
-                                    {row.position}
+                                    {pos}
                                   </span>
                                   {isTop && <TrendingUp className="w-3.5 h-3.5 text-green-500" />}
                                   {isRel && <TrendingDown className="w-3.5 h-3.5 text-red-500" />}
