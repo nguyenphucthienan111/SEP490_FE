@@ -26,6 +26,7 @@ const sidebarItems = [
   { icon: BarChart3,       label: 'Predictions',    path: '/admin/predictions' },
   { icon: BarChart3,       label: 'Rating Engine',  path: '/admin/ratings' },
   { icon: FileText,        label: 'Content',        path: '/admin/content' },
+  { icon: FileText,        label: 'Diễn đàn',       path: '/admin/forum' },
 ];
 
 export function AdminLayout({ children }: AdminLayoutProps) {

@@ -8,6 +8,8 @@ export interface SubscriptionStatus {
   startedAt: string | null;
   expiresAt: string | null;
   lastPaymentAt: string | null;
+  aiVideoCreditsRemaining: number;
+  forumPostCreditsRemaining: number;
 }
 
 export interface PaymentInfo {

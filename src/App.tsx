@@ -41,6 +41,9 @@ const AdminContentPage = lazy(() => import("@/pages/admin/AdminContentPage"));
 const AdminSettingsPage = lazy(() => import("@/pages/admin/AdminSettingsPage"));
 const VideoAnalysisPage = lazy(() => import("@/pages/VideoAnalysisPage"));
 const ShopPage = lazy(() => import("@/pages/ShopPage"));
+const ForumPage = lazy(() => import("@/pages/ForumPage"));
+const ForumPostPage = lazy(() => import("@/pages/ForumPostPage"));
+const AdminForumPage = lazy(() => import("@/pages/admin/AdminForumPage"));
 
 function PageLoader() {
   return (
@@ -93,6 +96,8 @@ function App() {
         {/* User Routes */}
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/shop" element={<ShopPage />} />
+        <Route path="/forum" element={<ForumPage />} />
+        <Route path="/forum/:id" element={<ForumPostPage />} />
 
         {/* Admin Routes */}
         <Route path="/admin" element={<AdminDashboard />} />
@@ -105,6 +110,7 @@ function App() {
         <Route path="/admin/ratings" element={<AdminRatingsPage />} />
         <Route path="/admin/content" element={<AdminContentPage />} />
         <Route path="/admin/settings" element={<AdminSettingsPage />} />
+        <Route path="/admin/forum" element={<AdminForumPage />} />
 
         {/* 404 Not Found */}
         <Route path="*" element={<NotFoundPage />} />

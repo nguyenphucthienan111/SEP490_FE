@@ -24,16 +24,32 @@ const PLAN_META: Record<string, {
   features: string[];
   popular?: boolean;
 }> = {
+  TRIAL: {
+    icon: <Star className="w-5 h-5" />,
+    color: 'from-slate-500/10 to-transparent',
+    border: 'border-slate-400/40',
+    features: [
+      'Xem thống kê chi tiết cầu thủ',
+      'Lịch sử chuyển nhượng',
+      'Phân tích phong độ qua các mùa',
+      'So sánh cầu thủ đầy đủ',
+      '1 lượt AI Video Analysis',
+      '2 bài đăng diễn đàn',
+      '10 lượt AI Chat/ngày',
+    ],
+  },
   MONTHLY: {
     icon: <Zap className="w-5 h-5" />,
     color: 'from-[#00D9FF]/20 to-transparent',
     border: 'border-[#00D9FF]/30',
     features: [
-      'Xem thống kê chi tiết cầu thủ',
-      'Lịch sử chuyển nhượng',
+      'Tất cả tính năng Trial',
+      '15 lượt AI Video Analysis',
+      '15 bài đăng diễn đàn',
+      '25 lượt AI Chat/ngày',
+      'So sánh chi tiết cầu thủ',
       'Phân tích phong độ qua các mùa',
-      'Dự đoán kết quả trận đấu',
-      'Không quảng cáo',
+      'Lịch sử chuyển nhượng',
     ],
   },
   QUARTERLY: {
@@ -44,11 +60,12 @@ const PLAN_META: Record<string, {
     popular: true,
     features: [
       'Tất cả tính năng Monthly',
-      'Ưu tiên hỗ trợ',
+      '45 lượt AI Video Analysis',
+      '50 bài đăng diễn đàn',
+      '50 lượt AI Chat/ngày',
+      'So sánh chi tiết cầu thủ',
       'Truy cập sớm tính năng mới',
-      'Xuất dữ liệu thống kê',
-      'So sánh không giới hạn cầu thủ',
-      'Tiết kiệm ~16% so với Monthly',
+      'Tiết kiệm ~16% so với Gói Tháng',
     ],
   },
 };
@@ -100,7 +117,7 @@ export default function PricingPage() {
   return (
     <MainLayout>
       <div className="min-h-screen py-16">
-        <div className="container mx-auto px-4 max-w-4xl">
+        <div className="container mx-auto px-4 max-w-6xl">
 
           {/* Hero */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-14">
@@ -122,7 +139,7 @@ export default function PricingPage() {
               <Loader2 className="w-10 h-10 text-[#00D9FF] animate-spin" />
             </div>
           ) : (
-            <div className="grid sm:grid-cols-2 gap-6 mb-12">
+            <div className="grid sm:grid-cols-3 gap-6 mb-12">
               {plans.map((plan, i) => {
                 const meta = PLAN_META[plan.code] ?? {
                   icon: <Zap className="w-5 h-5" />,
@@ -141,7 +158,7 @@ export default function PricingPage() {
                     transition={{ delay: i * 0.1 }}
                     onClick={() => setSelectedPlan(plan.code)}
                     className={cn(
-                      'relative glass-card rounded-3xl p-7 cursor-pointer transition-all duration-300 border-2',
+                      'relative glass-card rounded-3xl p-7 cursor-pointer transition-all duration-300 border-2 flex flex-col',
                       isSelected ? meta.border + ' scale-[1.02] shadow-xl' : 'border-transparent hover:border-white/20',
                       meta.popular && !isSelected && 'ring-1 ring-[#FF4444]/30'
                     )}
@@ -168,7 +185,7 @@ export default function PricingPage() {
                         </div>
                         <div>
                           <p className="font-bold text-slate-900 dark:text-foreground text-base">
-                            {plan.code === 'MONTHLY' ? 'Hàng tháng' : 'Hàng quý'}
+                            {plan.code === 'TRIAL' ? 'Dùng thử' : plan.code === 'MONTHLY' ? 'Hàng tháng' : 'Hàng quý'}
                           </p>
                           <p className="text-xs text-slate-400">{plan.durationDays} ngày</p>
                         </div>
@@ -185,7 +202,7 @@ export default function PricingPage() {
                       </div>
 
                       {/* Features */}
-                      <ul className="space-y-2.5 mb-7">
+                      <ul className="space-y-2.5 mb-7 flex-1">
                         {meta.features.map(f => (
                           <li key={f} className="flex items-start gap-2.5 text-sm text-slate-600 dark:text-[#A8A29E]">
                             <Check className={cn('w-4 h-4 mt-0.5 flex-shrink-0',

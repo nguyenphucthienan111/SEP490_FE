@@ -5,6 +5,8 @@ import { ArrowLeft, Search, ChevronDown, Loader2, TrendingUp, TrendingDown, Minu
 import { MainLayout } from '@/components/layout/MainLayout';
 import { cn } from '@/lib/utils';
 import { PlayerFromAPI, PlayerStats, Team, leagueService } from '@/services/leagueService';
+import { useSubscription } from '@/hooks/useSubscription';
+import { PremiumGate } from '@/components/subscription/PremiumGate';
 
 type PlayerWithStats = PlayerFromAPI & { statistics: PlayerStats[]; teamName?: string };
 
@@ -83,7 +85,7 @@ function getStatRows(pos1: string, pos2: string): { section: string; rows: StatR
     { label: 'Đánh giá', key: 'rating', max: 10 },
     { label: 'Trận đấu', key: 'appearances', max: 30 },
     { label: 'Phút thi đấu', key: 'minutes', max: 2700 },
-    { label: 'Thẻ vàng', key: 'yellowCards', lowerBetter: true, max: 10 },
+    { label: 'Bàn thắng', key: 'goals', max: 20 },
   ];
   const attacking: StatRow[] = [
     { label: 'Bàn thắng', key: 'goals', max: 20 },
@@ -343,6 +345,7 @@ function StatCompRow({ row, s1, s2, color1, color2 }: {
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function ComparePage() {
   const [searchParams] = useSearchParams();
+  const { isPremium } = useSubscription();
   const [allPlayers, setAllPlayers] = useState<PlayerWithStats[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [playersLoading, setPlayersLoading] = useState(true);
@@ -510,11 +513,12 @@ export default function ComparePage() {
 
               {/* Stat sections */}
               <div className="space-y-4">
-                {statGroups.map(group => {
+                {/* First section (Tổng quan) is free */}
+                {statGroups[0] && (() => {
+                  const group = statGroups[0];
                   const winner = (s1 && s2) ? getWinner(group.rows) : 0;
                   return (
                     <div key={group.section} className="glass-card rounded-2xl overflow-hidden">
-                      {/* Section header */}
                       <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-white/3">
                         <span className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-[#A8A29E]">{group.section}</span>
                         {winner !== 0 && (
@@ -531,7 +535,36 @@ export default function ComparePage() {
                       </div>
                     </div>
                   );
-                })}
+                })()}
+
+                {/* Remaining sections require premium - wrapped in single gate */}
+                {statGroups.length > 1 && (
+                  <PremiumGate locked={!isPremium} message="Đăng ký Premium để xem so sánh chi tiết theo từng chỉ số.">
+                    <div className="space-y-4">
+                      {statGroups.slice(1).map(group => {
+                        const winner = (s1 && s2) ? getWinner(group.rows) : 0;
+                        return (
+                          <div key={group.section} className="glass-card rounded-2xl overflow-hidden">
+                            <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-white/3">
+                              <span className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-[#A8A29E]">{group.section}</span>
+                              {winner !== 0 && (
+                                <div className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: winner === 1 ? COLOR1 : COLOR2 }}>
+                                  {winner === 1 ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingUp className="w-3.5 h-3.5" />}
+                                  {winner === 1 ? player1.fullName.split(' ').slice(-1)[0] : player2.fullName.split(' ').slice(-1)[0]} nhỉnh hơn
+                                </div>
+                              )}
+                            </div>
+                            <div className="px-5 py-1">
+                              {group.rows.map(row => (
+                                <StatCompRow key={row.key as string} row={row} s1={s1} s2={s2} color1={COLOR1} color2={COLOR2} />
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </PremiumGate>
+                )}
               </div>
             </motion.div>
           )}

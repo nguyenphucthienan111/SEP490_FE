@@ -49,14 +49,14 @@ function renderContent(text: string) {
 }
 
 export function AIChatBubble() {
-  if (!authService.isAuthenticated()) return null;
-
+  const [isLoggedIn, setIsLoggedIn] = useState(() => authService.isAuthenticated());
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [historyLoaded, setHistoryLoaded] = useState(false);
+  const [chatLimit, setChatLimit] = useState<{ limit: number; used: number; remaining: number } | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -65,10 +65,26 @@ export function AIChatBubble() {
     return user?.userId ?? user?.id ?? null;
   };
 
+  // Track auth state changes
+  useEffect(() => {
+    const onLogin = () => { setIsLoggedIn(true); };
+    const onLogout = () => { setIsLoggedIn(false); setIsOpen(false); };
+    window.addEventListener('auth:login', onLogin);
+    window.addEventListener('auth:logout', onLogout);
+    return () => {
+      window.removeEventListener('auth:login', onLogin);
+      window.removeEventListener('auth:logout', onLogout);
+    };
+  }, []);
+
   // Load lịch sử chat từ DB ngay khi component mount
   useEffect(() => {
     const userId = getUserId();
     if (!userId) return;
+
+    // Load chat limit
+    apiClient.get<{ limit: number; used: number; remaining: number }>('/api/Chat/chat-limit')
+      .then(setChatLimit).catch(() => {});
 
     (async () => {
       try {
@@ -107,6 +123,16 @@ export function AIChatBubble() {
   const send = async () => {
     const msg = input.trim();
     if (!msg || loading) return;
+
+    // Check limit before sending
+    if (chatLimit && chatLimit.remaining <= 0) {
+      setMessages(prev => [...prev, {
+        role: 'model',
+        content: `⚠️ Bạn đã dùng hết ${chatLimit.limit} lượt chat hôm nay. Vui lòng quay lại vào ngày mai hoặc [nâng cấp gói](/pricing) để có thêm lượt.`
+      }]);
+      return;
+    }
+
     setInput('');
     setMessages(prev => [...prev, { role: 'user', content: msg }]);
     setLoading(true);
@@ -117,10 +143,26 @@ export function AIChatBubble() {
         SessionId: sessionId || undefined,
         Message: msg,
       });
-      setMessages(prev => [...prev, { role: 'model', content: data.response }]);
+      const responseText = data.response;
+      // Filter raw API error messages
+      const isApiError = responseText?.includes('Lỗi API:') || responseText?.includes('"error"') || responseText?.includes('ServiceUnavailable') || responseText?.includes('UNAVAILABLE');
+      const displayText = isApiError
+        ? '⚠️ AI đang bận, vui lòng thử lại sau ít phút.'
+        : responseText;
+      setMessages(prev => [...prev, { role: 'model', content: displayText }]);
       if (data.sessionId) setSessionId(data.sessionId);
-    } catch {
-      setMessages(prev => [...prev, { role: 'model', content: 'Xin lỗi, có lỗi xảy ra. Vui lòng thử lại.' }]);
+      // Only count if not an error response
+      if (!isApiError) {
+        setChatLimit(prev => prev ? { ...prev, used: prev.used + 1, remaining: Math.max(0, prev.remaining - 1) } : prev);
+      }
+    } catch (e: any) {
+      const errMsg = e?.message ?? '';
+      if (errMsg.includes('hết') || errMsg.includes('lượt')) {
+        setMessages(prev => [...prev, { role: 'model', content: `⚠️ ${errMsg} [Nâng cấp gói](/pricing)` }]);
+        setChatLimit(prev => prev ? { ...prev, remaining: 0 } : prev);
+      } else {
+        setMessages(prev => [...prev, { role: 'model', content: 'Xin lỗi, có lỗi xảy ra. Vui lòng thử lại.' }]);
+      }
     } finally {
       setLoading(false);
     }
@@ -128,6 +170,8 @@ export function AIChatBubble() {
 
   return (
     <>
+      {!isLoggedIn ? null : (
+      <>
       <motion.button
         onClick={() => setIsOpen(v => !v)}
         className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-gradient-to-br from-[#00D9FF] to-[#0099BB] shadow-lg shadow-[#00D9FF]/30 flex items-center justify-center hover:scale-110 transition-transform"
@@ -208,6 +252,13 @@ export function AIChatBubble() {
 
             {/* Input */}
             <div className="p-3 border-t border-slate-200 dark:border-white/10">
+              {/* Limit indicator */}
+              {chatLimit && (
+                <div className={`flex items-center justify-between text-xs mb-2 px-1 ${chatLimit.remaining <= 1 ? 'text-red-500' : 'text-slate-400'}`}>
+                  <span>Còn <span className="font-bold">{chatLimit.remaining}</span>/{chatLimit.limit} lượt hôm nay</span>
+                  {chatLimit.remaining === 0 && <a href="/pricing" className="text-[#00D9FF] hover:underline font-medium">Nâng cấp</a>}
+                </div>
+              )}
               <div className="flex gap-2">
                 <input
                   ref={inputRef}
@@ -215,12 +266,13 @@ export function AIChatBubble() {
                   value={input}
                   onChange={e => setInput(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()}
-                  placeholder="Hỏi về cầu thủ, trận đấu..."
-                  className="flex-1 h-9 px-3 rounded-xl bg-slate-100 dark:bg-white/5 text-sm text-foreground placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#00D9FF]/30 border border-slate-200 dark:border-white/10"
+                  placeholder={chatLimit?.remaining === 0 ? 'Hết lượt hôm nay...' : 'Hỏi về cầu thủ, trận đấu...'}
+                  disabled={chatLimit?.remaining === 0}
+                  className="flex-1 h-9 px-3 rounded-xl bg-slate-100 dark:bg-white/5 text-sm text-foreground placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#00D9FF]/30 border border-slate-200 dark:border-white/10 disabled:opacity-50"
                 />
                 <button
                   onClick={send}
-                  disabled={!input.trim() || loading}
+                  disabled={!input.trim() || loading || chatLimit?.remaining === 0}
                   className="w-9 h-9 rounded-xl bg-[#00D9FF] flex items-center justify-center disabled:opacity-40 hover:bg-[#00E8FF] transition-colors flex-shrink-0"
                 >
                   {loading ? <Loader2 className="w-4 h-4 text-white animate-spin" /> : <Send className="w-4 h-4 text-white" />}
@@ -230,6 +282,8 @@ export function AIChatBubble() {
           </motion.div>
         )}
       </AnimatePresence>
+      </>
+      )}
     </>
   );
 }

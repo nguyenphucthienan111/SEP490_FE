@@ -8,6 +8,8 @@ import { getPlayerById } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 import { PlayerFromAPI, PlayerStats, leagueService } from '@/services/leagueService';
 import { toast } from 'sonner';
+import { useSubscription } from '@/hooks/useSubscription';
+import { PremiumGate } from '@/components/subscription/PremiumGate';
 import {
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
   ResponsiveContainer, LineChart, Line, BarChart, Bar,
@@ -25,6 +27,7 @@ const TABS: { key: TabKey; label: string; icon: string }[] = [
 export default function PlayerDetailPage() {
   const { playerId } = useParams<{ playerId: string }>();
   const location = useLocation();
+  const { isPremium } = useSubscription();
   const [playerTeam, setPlayerTeam] = useState<any>(null);
   const [apiPlayer, setApiPlayer] = useState<PlayerFromAPI | null>(null);
   const [playerStats, setPlayerStats] = useState<PlayerStats[]>([]);
@@ -245,6 +248,9 @@ export default function PlayerDetailPage() {
                       activeTab === tab.key ? 'text-[#00D9FF]' : 'text-slate-500 dark:text-[#A8A29E] hover:text-slate-700 dark:hover:text-foreground')}>
                     <span>{tab.icon}</span>
                     <span>{tab.label}</span>
+                    {(tab.key === 'stats' || tab.key === 'transfers') && !isPremium && (
+                      <span className="ml-0.5 text-[10px]">🔒</span>
+                    )}
                     {tab.key === 'transfers' && transfers.length > 0 && (
                       <span className="ml-0.5 text-[10px] font-bold bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-[#A8A29E] px-1.5 py-0.5 rounded-full">{transfers.length}</span>
                     )}
@@ -330,6 +336,7 @@ export default function PlayerDetailPage() {
 
               {/* ── THỐNG KÊ ── */}
               {activeTab === 'stats' && (
+                <PremiumGate locked={!isPremium} message="Đăng ký Premium để xem thống kê chi tiết theo mùa và phân tích phong độ.">
                 <div className="mt-4 space-y-4">
                   {apiPlayer && playerStats.length > 0 ? (() => {
                     const stat = playerStats[selectedSeasonIdx];
@@ -589,10 +596,12 @@ export default function PlayerDetailPage() {
                     <div className="glass-card rounded-2xl p-8 text-center text-slate-400 text-sm">Chưa có thống kê cho cầu thủ này</div>
                   )}
                 </div>
+                </PremiumGate>
               )}
 
               {/* ── CHUYỂN NHƯỢNG ── */}
               {activeTab === 'transfers' && (
+                <PremiumGate locked={!isPremium} message="Đăng ký Premium để xem lịch sử chuyển nhượng.">
                 <div className="mt-4">
                   {transfersLoading ? (
                     <div className="glass-card rounded-2xl flex items-center justify-center py-16"><Loader2 className="w-6 h-6 text-[#00D9FF] animate-spin" /></div>
@@ -650,6 +659,7 @@ export default function PlayerDetailPage() {
                     </div>
                   )}
                 </div>
+                </PremiumGate>
               )}
 
             </motion.div>

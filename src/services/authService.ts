@@ -72,6 +72,7 @@ export const authService = {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
+    window.dispatchEvent(new CustomEvent('auth:logout'));
   },
 
   async refreshToken(refreshToken: string): Promise<AuthResponse> {
