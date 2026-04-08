@@ -40,6 +40,7 @@ const AdminPredictionsPage = lazy(() => import("@/pages/admin/AdminPredictionsPa
 const AdminContentPage = lazy(() => import("@/pages/admin/AdminContentPage"));
 const AdminSettingsPage = lazy(() => import("@/pages/admin/AdminSettingsPage"));
 const VideoAnalysisPage = lazy(() => import("@/pages/VideoAnalysisPage"));
+const ShopPage = lazy(() => import("@/pages/ShopPage"));
 
 function PageLoader() {
   return (
@@ -91,6 +92,7 @@ function App() {
 
         {/* User Routes */}
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/shop" element={<ShopPage />} />
 
         {/* Admin Routes */}
         <Route path="/admin" element={<AdminDashboard />} />

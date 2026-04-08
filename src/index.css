@@ -288,3 +288,14 @@
     to { opacity: 1; transform: scale(1); }
   }
 }
+
+/* Cosmetic effect animations */
+@keyframes bounce {
+  0%   { transform: translateY(0) scale(1); opacity: 0.9; }
+  100% { transform: translateY(-6px) scale(1.15); opacity: 1; }
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}

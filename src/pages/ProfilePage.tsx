@@ -14,6 +14,8 @@ import {
   LogOut,
   ArrowLeft,
   Flame,
+  Package,
+  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,7 +24,10 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { userService, UserResponse } from "@/services/userService";
 import { authService } from "@/services/authService";
-import CheckInCalendar from "@/components/predictions/CheckInCalendar";
+import { cosmeticService, CosmeticItemDto, LoadoutDto } from "@/services/cosmeticService";
+import { CosmeticPreview } from "@/components/cosmetics/CosmeticPreview";
+import { UserAvatar, UserDisplayName } from "@/components/cosmetics/UserAvatar";
+import { invalidateLoadoutCache } from "@/hooks/useMyLoadout";
 import { toast } from "sonner";
 
 // Mock user data
@@ -53,11 +58,17 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState("profile");
+  const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [formData, setFormData] = useState({
     username: "",
     email: "",
     fullName: "",
   });
+  const [inventory, setInventory] = useState<CosmeticItemDto[]>([]);
+  const [loadout, setLoadout] = useState<LoadoutDto>({});
+  const [fullLoadout, setFullLoadout] = useState<any>(null);
+  const [equipping, setEquipping] = useState(false);
   const [notifications, setNotifications] = useState({
     matchResults: true,
     playerUpdates: true,
@@ -75,6 +86,9 @@ export default function ProfilePage() {
           email: userData.email,
           fullName: userData.fullName,
         });
+        // Load loadout
+        cosmeticService.getLoadout(userData.userId).then(setLoadout).catch(() => {});
+        cosmeticService.getFullLoadout(userData.userId).then(setFullLoadout).catch(() => {});
       } catch (error) {
         console.error('Failed to fetch user:', error);
         toast.error('Không thể tải thông tin người dùng');
@@ -86,15 +100,56 @@ export default function ProfilePage() {
 
     if (authService.isAuthenticated()) {
       fetchUser();
+      cosmeticService.getInventory().then(setInventory).catch(() => {});
     } else {
       navigate('/login');
     }
   }, [navigate]);
 
-  const handleSave = () => {
-    // TODO: Call API to update user profile
-    toast.success('Cập nhật thông tin thành công!');
-    setIsEditing(false);
+  const handleSave = async () => {
+    if (!formData.fullName.trim()) { toast.error('Họ tên không được để trống'); return; }
+    setIsSaving(true);
+    try {
+      const updated = await userService.updateProfile({ fullName: formData.fullName });
+      setUser(prev => prev ? { ...prev, fullName: updated.fullName } : prev);
+      toast.success('Cập nhật thông tin thành công!');
+      setIsEditing(false);
+    } catch (e: any) {
+      toast.error(e.message || 'Cập nhật thất bại');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleEquip = async (slot: keyof LoadoutDto, itemId: number | null) => {
+    const newLoadout = { ...loadout, [slot]: itemId };
+    setLoadout(newLoadout);
+    setEquipping(true);
+    try {
+      await cosmeticService.equip(newLoadout);
+      invalidateLoadoutCache();
+      if (user) {
+        const fl = await cosmeticService.getFullLoadout(user.userId);
+        setFullLoadout(fl);
+      }
+      toast.success("Đã cập nhật trang phục!");
+    } catch (e: any) { toast.error(e.message || "Lỗi"); }
+    finally { setEquipping(false); }
+  };
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingAvatar(true);
+    try {
+      const result = await userService.uploadAvatar(file);
+      setUser(prev => prev ? { ...prev, avatarUrl: result.avatarUrl } : prev);
+      toast.success('Cập nhật ảnh đại diện thành công!');
+    } catch (err: any) {
+      toast.error(err.message || 'Upload thất bại');
+    } finally {
+      setIsUploadingAvatar(false);
+    }
   };
 
   const handleLogout = async () => {
@@ -167,20 +222,22 @@ export default function ProfilePage() {
           <div className="flex flex-col md:flex-row items-center gap-6">
             {/* Avatar */}
             <div className="relative group">
-              <div className="w-32 h-32 rounded-2xl overflow-hidden border-4 border-[#00D9FF]/30 bg-gradient-to-br from-[#00D9FF]/20 to-[#00D9FF]/5 flex items-center justify-center">
-                <User className="w-16 h-16 text-[#00D9FF]" />
-              </div>
-              <button className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl">
-                <Camera className="w-6 h-6 text-white" />
-              </button>
+              <UserAvatar avatarUrl={user.avatarUrl} username={user.username} size={128} loadout={fullLoadout} className="rounded-2xl" />
+              <label className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl cursor-pointer">
+                {isUploadingAvatar
+                  ? <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  : <Camera className="w-6 h-6 text-white" />
+                }
+                <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} disabled={isUploadingAvatar} />
+              </label>
             </div>
 
             {/* User Info */}
             <div className="flex-1 text-center md:text-left">
               <h1 className="font-display font-extrabold text-3xl text-foreground mb-2">
-                {user.fullName}
+                <UserDisplayName username={user.fullName} loadout={fullLoadout} />
               </h1>
-              <p className="text-slate-600 dark:text-[#A8A29E] font-body mb-4">@{user.username}</p>
+              <p className="text-slate-600 dark:text-[#A8A29E] font-body mb-4">@<UserDisplayName username={user.username} loadout={fullLoadout} /></p>
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-4">
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-100 dark:bg-[#00D9FF]/10 text-[#00D9FF]">
                   <Mail className="w-4 h-4" />
@@ -237,6 +294,13 @@ export default function ProfilePage() {
               <Bell className="w-4 h-4 mr-2" />
               Cài đặt
             </TabsTrigger>
+            <TabsTrigger
+              value="wardrobe"
+              className="data-[state=active]:bg-blue-100 dark:bg-[#00D9FF]/10 data-[state=active]:text-[#00D9FF] rounded-lg px-6"
+            >
+              <Package className="w-4 h-4 mr-2" />
+              Tủ đồ
+            </TabsTrigger>
           </TabsList>
 
           {/* Profile Tab */}
@@ -292,9 +356,10 @@ export default function ProfilePage() {
                   </Button>
                   <Button
                     onClick={handleSave}
+                    disabled={isSaving}
                     className="bg-gradient-to-r from-[#FF4444] to-[#FF6666] text-slate-900 dark:text-white"
                   >
-                    Lưu thay đổi
+                    {isSaving ? 'Đang lưu...' : 'Lưu thay đổi'}
                   </Button>
                 </div>
               )}
@@ -443,6 +508,53 @@ export default function ProfilePage() {
           </TabsContent>
 
           {/* Check-in Tab removed - accessible via header dropdown */}
+
+          {/* Wardrobe Tab */}
+          <TabsContent value="wardrobe" className="space-y-6">
+            {inventory.length === 0
+              ? <div className="text-center py-16 text-slate-500">
+                  <Package className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                  <p>Tủ đồ trống. <a href="/shop" className="text-[#00D9FF] hover:underline">Ghé shop</a> để đổi vật phẩm trang trí!</p>
+                </div>
+              : Object.entries({
+                  frameItemId: { label: "Khung avatar", cat: "frame" },
+                  nameColorItemId: { label: "Màu tên", cat: "nameColor" },
+                  bannerItemId: { label: "Banner profile", cat: "banner" },
+                  badgeItemId: { label: "Badge", cat: "badge" },
+                  effectItemId: { label: "Hiệu ứng", cat: "effect" },
+                  cardItemId: { label: "Card profile", cat: "card" },
+                } as Record<keyof LoadoutDto, { label: string; cat: string }>).map(([slot, { label, cat }]) => {
+                  const slotItems = inventory.filter(i => i.category === cat);
+                  if (slotItems.length === 0) return null;
+                  const equipped = loadout[slot as keyof LoadoutDto];
+                  return (
+                    <div key={slot} className="bg-card border border-slate-200 dark:border-white/[0.08] rounded-2xl p-5">
+                      <h3 className="font-semibold text-slate-900 dark:text-white mb-3">{label}</h3>
+                      <div className="flex gap-3 flex-wrap">
+                        {/* None option */}
+                        <button onClick={() => handleEquip(slot as keyof LoadoutDto, null)}
+                          className={`w-16 h-16 rounded-xl border-2 flex items-center justify-center text-xs text-slate-400 transition-all ${!equipped ? "border-[#FF4444] bg-red-50 dark:bg-red-500/10" : "border-slate-200 dark:border-slate-700 hover:border-slate-400"}`}>
+                          Bỏ
+                        </button>
+                        {slotItems.map(item => (
+                          <button key={item.itemId} onClick={() => handleEquip(slot as keyof LoadoutDto, item.itemId)}
+                            className={`relative w-16 h-16 rounded-xl border-2 flex items-center justify-center transition-all ${equipped === item.itemId ? "border-[#FF4444] bg-red-50 dark:bg-red-500/10" : "border-slate-200 dark:border-slate-700 hover:border-slate-400"}`}
+                            title={item.name}>
+                            <CosmeticPreview item={item} size="sm" />
+                            {equipped === item.itemId && (
+                              <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#FF4444] flex items-center justify-center">
+                                <Check className="w-3 h-3 text-white" />
+                              </div>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })
+            }
+            {equipping && <p className="text-xs text-center text-slate-400">Đang lưu...</p>}
+          </TabsContent>
         </Tabs>
       </div>
     </div>
