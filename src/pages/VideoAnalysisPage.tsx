@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, Video, Loader2, Sparkles, AlertCircle, CheckCircle2, ArrowLeft, Trash2, History, ChevronDown, ChevronUp, Play } from 'lucide-react';
+import { Upload, Video, Loader2, Sparkles, AlertCircle, CheckCircle2, ArrowLeft, Trash2, History, ChevronDown, ChevronUp, Play, Lock, Crown } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { cn } from '@/lib/utils';
 import { apiClient } from '@/services/api';
 import { Link } from 'react-router-dom';
 import { authService } from '@/services/authService';
+import { useSubscription } from '@/hooks/useSubscription';
 
 const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME ?? 'your_cloud_name';
 const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET ?? 'football_videos';
@@ -28,6 +29,7 @@ export default function VideoAnalysisPage() {
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const { isPremium, aiCredits, refresh: refreshSub } = useSubscription();
   const [analyzing, setAnalyzing] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [result, setResult] = useState('');
@@ -112,6 +114,8 @@ export default function VideoAnalysisPage() {
         UserId: getUserId() || undefined,
       });
       setResult(data.response);
+      // Refresh subscription credits
+      refreshSub();
       // Refresh history
       const userId = getUserId();
       if (userId) {
@@ -288,14 +292,23 @@ export default function VideoAnalysisPage() {
 
             {/* Analyze button */}
             {!result && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="flex justify-end">
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="flex items-center justify-between">
+                {/* Credits display */}
+                <div className="text-sm">
+                  {isPremium
+                    ? <span className="text-slate-500">Còn <span className="font-bold text-[#FF4444]">{aiCredits}</span> lượt phân tích</span>
+                    : <Link to="/pricing" className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-medium hover:underline">
+                        <Crown className="w-4 h-4" />Nâng cấp để dùng AI Video
+                      </Link>
+                  }
+                </div>
                 <button
                   onClick={analyze}
-                  disabled={!file || isProcessing}
+                  disabled={!file || isProcessing || !isPremium || aiCredits <= 0}
                   className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm bg-gradient-to-r from-[#FF4444] to-[#FF6666] text-white disabled:opacity-40 hover:opacity-90 transition-opacity shadow-lg shadow-[#FF4444]/20"
                 >
-                  {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                  {uploading ? 'Đang upload...' : analyzing ? 'Đang phân tích...' : 'Phân tích video'}
+                  {!isPremium || aiCredits <= 0 ? <Lock className="w-4 h-4" /> : isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                  {uploading ? 'Đang upload...' : analyzing ? 'Đang phân tích...' : !isPremium ? 'Cần Premium' : aiCredits <= 0 ? 'Hết lượt' : 'Phân tích video'}
                 </button>
               </motion.div>
             )}

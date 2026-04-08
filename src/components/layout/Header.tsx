@@ -24,6 +24,7 @@ const navItems = [
   { label: 'Players', path: '/players' },
   { label: 'Matches', path: '/matches' },
   { label: 'Predictions', path: '/predictions' },
+  { label: 'Forum', path: '/forum' },
   { label: 'Analytics', path: '/analytics' },
   { label: 'Premium', path: '/pricing' },
 ];
@@ -88,6 +89,7 @@ export function Header() {
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('user');
       setUser(null);
+      window.dispatchEvent(new CustomEvent('auth:logout'));
       toast.success('Đăng xuất thành công!');
       navigate('/');
     } catch (error) {
