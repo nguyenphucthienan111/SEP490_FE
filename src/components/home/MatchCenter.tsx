@@ -1,186 +1,238 @@
-import { motion } from 'framer-motion';
-import { ArrowRight, Calendar, MapPin, Clock, Radio } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowRight, Radio, Calendar } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { getRecentMatches, getLiveMatches } from '@/data/mockData';
-import { Match } from '@/types';
+import { leagueService, SofascoreTeamMatch } from '@/services/leagueService';
 import { cn } from '@/lib/utils';
 
-function MatchCard({ match, featured = false }: { match: Match; featured?: boolean }) {
-  const isLive = match.status === 'live';
-  const isCompleted = match.status === 'completed';
+const LEAGUES = [
+  { tournamentId: 626, seasonId: 78589, name: 'V-League 1', color: '#FF4444' },
+  { tournamentId: 771, seasonId: 80926, name: 'V-League 2', color: '#00D9FF' },
+];
+
+function teamLogo(id: number) {
+  return `https://api.sofascore.app/api/v1/team/${id}/image`;
+}
+
+function MatchRow({ match, index }: { match: SofascoreTeamMatch; index: number }) {
+  const isLive = match.status.type === 'inprogress';
+  const isFinished = match.status.type === 'finished';
+  const date = new Date(match.startTimestamp * 1000);
+  const homeWin = isFinished && match.homeScore.current > match.awayScore.current;
+  const awayWin = isFinished && match.awayScore.current > match.homeScore.current;
+
+  const dateStr = date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const timeStr = date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+  const shortDate = date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
   return (
-    <Link to={`/matches/${match.id}`}>
-      <div className={cn(
-        "group glass-card rounded-2xl p-5 hover:translate-y-[-4px] hover:shadow-xl transition-all duration-300 cursor-pointer border border-transparent",
-        isLive ? "border-[#FF4444]/30 hover:border-[#FF4444]/50" : "hover:border-[#00D9FF]/20",
-        featured && "lg:p-6"
-      )}>
-        {/* Match Header */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-600 dark:text-[#A8A29E] font-label uppercase tracking-wider">
-              {match.league}
-            </span>
-          </div>
-          {isLive && (
-            <span className="flex items-center gap-1.5 px-2.5 py-1 bg-[#FF4444]/20 rounded-full">
-              <Radio className="w-3 h-3 text-[#FF4444] animate-pulse" />
-              <span className="text-xs font-label font-semibold text-[#FF4444] uppercase">Live</span>
-            </span>
-          )}
-          {isCompleted && (
-            <span className="px-2.5 py-1 bg-slate-100 dark:bg-white/5 rounded-full text-xs font-label text-slate-600 dark:text-[#A8A29E]">
-              FT
-            </span>
-          )}
-          {match.status === 'scheduled' && (
-            <span className="px-2.5 py-1 bg-[#00D9FF]/10 rounded-full text-xs font-label text-[#00D9FF]">
-              Upcoming
-            </span>
-          )}
-        </div>
-
-        {/* Teams */}
-        <div className="flex items-center justify-between gap-4 mb-4">
-          {/* Home Team */}
-          <div className="flex-1 text-left">
-            <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-white/5 flex items-center justify-center mb-2 mx-0">
-              <span className="font-display font-bold text-lg text-slate-800 dark:text-white">
-                {match.homeTeam.name.charAt(0)}
-              </span>
-            </div>
-            <h4 className="font-body font-semibold text-slate-800 dark:text-white text-sm truncate">
-              {match.homeTeam.name}
-            </h4>
-          </div>
-
-          {/* Score */}
-          <div className="flex items-center gap-3">
-            {(isLive || isCompleted) ? (
-              <>
-                <span className="font-mono-data text-3xl font-bold text-slate-900 dark:text-white">
-                  {match.homeScore}
-                </span>
-                <span className="text-slate-500 dark:text-[#A8A29E] text-lg">-</span>
-                <span className="font-mono-data text-3xl font-bold text-slate-900 dark:text-white">
-                  {match.awayScore}
-                </span>
-              </>
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, delay: index * 0.04 }}>
+      <Link to={`/matches/${match.id}`}>
+        <div className={cn(
+          'group flex items-center gap-3 px-4 py-3.5 rounded-2xl border transition-all duration-200 hover:-translate-y-0.5 cursor-pointer',
+          isLive
+            ? 'border-[#FF4444]/30 bg-[#FF4444]/5 hover:bg-[#FF4444]/8'
+            : 'border-border bg-card hover:bg-muted/50 hover:border-foreground/15'
+        )}>
+          {/* Status / Date */}
+          <div className="w-20 flex-shrink-0 text-center">
+            {isLive ? (
+              <div className="flex flex-col items-center gap-0.5">
+                <Radio className="w-3 h-3 text-[#FF4444] animate-pulse" />
+                <span className="text-[9px] font-black text-[#FF4444] uppercase tracking-wider">Live</span>
+              </div>
+            ) : isFinished ? (
+              <div className="flex flex-col items-center gap-0.5">
+                <span className="text-[9px] text-muted-foreground font-semibold">FT</span>
+                <span className="text-[9px] font-mono-data text-muted-foreground/70">{shortDate}</span>
+              </div>
             ) : (
-              <span className="font-mono-data text-lg text-slate-500 dark:text-[#A8A29E]">VS</span>
+              <div className="flex flex-col items-center gap-0.5">
+                <span className="text-[9px] font-mono-data font-bold text-[#00D9FF]">{timeStr}</span>
+                <span className="text-[9px] text-muted-foreground font-mono-data">{shortDate}</span>
+              </div>
             )}
           </div>
 
-          {/* Away Team */}
-          <div className="flex-1 text-right">
-            <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-white/5 flex items-center justify-center mb-2 ml-auto">
-              <span className="font-display font-bold text-lg text-slate-800 dark:text-white">
-                {match.awayTeam.name.charAt(0)}
-              </span>
+          {/* Home */}
+          <div className="flex-1 flex items-center gap-2.5 justify-end min-w-0">
+            <span className={cn(
+              'text-sm font-semibold truncate text-right transition-colors',
+              isFinished && !homeWin ? 'text-muted-foreground' : 'text-foreground group-hover:text-[#00D9FF]'
+            )}>
+              {match.homeTeam.name}
+            </span>
+            <div className="w-8 h-8 rounded-xl bg-muted border border-border flex items-center justify-center overflow-hidden flex-shrink-0">
+              <img src={teamLogo(match.homeTeam.id)} alt="" className="w-5 h-5 object-contain"
+                onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
             </div>
-            <h4 className="font-body font-semibold text-slate-800 dark:text-white text-sm truncate">
-              {match.awayTeam.name}
-            </h4>
           </div>
-        </div>
 
-        {/* Match Info */}
-        <div className="flex items-center justify-center gap-4 pt-4 border-t border-slate-200 dark:border-white/5 text-xs text-slate-500 dark:text-[#A8A29E]">
-          <div className="flex items-center gap-1.5">
-            <Calendar className="w-3.5 h-3.5" />
-            <span>{new Date(match.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
+          {/* Score */}
+          <div className="flex-shrink-0 w-16 flex flex-col items-center justify-center">
+            {(isFinished || isLive) ? (
+              <div className="flex items-center gap-1">
+                <span className={cn('font-mono-data text-lg font-black',
+                  homeWin ? 'text-foreground' : isLive ? 'text-[#FF4444]' : 'text-muted-foreground')}>
+                  {match.homeScore.current}
+                </span>
+                <span className="text-muted-foreground/30 text-sm font-bold">-</span>
+                <span className={cn('font-mono-data text-lg font-black',
+                  awayWin ? 'text-foreground' : isLive ? 'text-[#FF4444]' : 'text-muted-foreground')}>
+                  {match.awayScore.current}
+                </span>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center">
+                <span className="text-xs font-bold text-muted-foreground/30">vs</span>
+                <span className="text-[9px] text-muted-foreground font-mono-data mt-0.5">{shortDate}</span>
+              </div>
+            )}
           </div>
-          <div className="flex items-center gap-1.5">
-            <Clock className="w-3.5 h-3.5" />
-            <span>{match.time}</span>
+
+          {/* Away */}
+          <div className="flex-1 flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-muted border border-border flex items-center justify-center overflow-hidden flex-shrink-0">
+              <img src={teamLogo(match.awayTeam.id)} alt="" className="w-5 h-5 object-contain"
+                onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+            </div>
+            <span className={cn(
+              'text-sm font-semibold truncate transition-colors',
+              isFinished && !awayWin ? 'text-muted-foreground' : 'text-foreground group-hover:text-[#00D9FF]'
+            )}>
+              {match.awayTeam.name}
+            </span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <MapPin className="w-3.5 h-3.5" />
-            <span className="truncate max-w-[100px]">{match.venue}</span>
+
+          {/* Round */}
+          <div className="w-10 flex-shrink-0 text-right">
+            <span className="text-[9px] text-muted-foreground/60 font-semibold">
+              {match.roundInfo?.round ? `V${match.roundInfo.round}` : ''}
+            </span>
           </div>
         </div>
-      </div>
-    </Link>
+      </Link>
+    </motion.div>
   );
 }
 
+type LeagueMatches = {
+  name: string;
+  color: string;
+  round: number | null;
+  matches: SofascoreTeamMatch[];
+};
+
+function getLatestRoundMatches(all: SofascoreTeamMatch[]): { round: number | null; matches: SofascoreTeamMatch[] } {
+  const live = all.filter(m => m.status.type === 'inprogress');
+  const finished = all.filter(m => m.status.type === 'finished');
+  const latestRound = finished.reduce((max, m) => Math.max(max, m.roundInfo?.round ?? 0), 0);
+  const roundMatches = latestRound > 0
+    ? finished.filter(m => m.roundInfo?.round === latestRound)
+    : finished.sort((a, b) => b.startTimestamp - a.startTimestamp).slice(0, 10);
+  return { round: latestRound || null, matches: [...live, ...roundMatches] };
+}
+
 export function MatchCenter() {
-  const liveMatches = getLiveMatches();
-  const recentMatches = getRecentMatches(4);
+  const [leagueData, setLeagueData] = useState<LeagueMatches[]>([]);
+  const [activeTab, setActiveTab] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      const results: LeagueMatches[] = [];
+      for (const l of LEAGUES) {
+        try {
+          const data = await leagueService.getAllMatchesFromDb(l.tournamentId, l.seasonId);
+          const mapped: SofascoreTeamMatch[] = data.map((m: any) => ({
+            id: m.apiFixtureId ?? m.matchId,
+            homeTeam: { id: m.homeTeam?.apiTeamId ?? 0, name: m.homeTeam?.teamName ?? '' },
+            awayTeam: { id: m.awayTeam?.apiTeamId ?? 0, name: m.awayTeam?.teamName ?? '' },
+            homeScore: { current: m.homeGoals ?? 0 },
+            awayScore: { current: m.awayGoals ?? 0 },
+            startTimestamp: m.matchDate
+              ? Math.floor(new Date(m.matchDate.endsWith('Z') ? m.matchDate : m.matchDate + 'Z').getTime() / 1000)
+              : 0,
+            status: { type: m.status ?? 'notstarted' },
+            roundInfo: m.round ? { round: Number(m.round) } : undefined,
+          }));
+          const { round, matches } = getLatestRoundMatches(mapped);
+          results.push({ name: l.name, color: l.color, round, matches });
+        } catch {
+          results.push({ name: l.name, color: l.color, round: null, matches: [] });
+        }
+      }
+      setLeagueData(results);
+      setLoading(false);
+    };
+    load();
+  }, []);
+
+  const current = leagueData[activeTab];
 
   return (
-    <section className="py-20 relative">
+    <section className="py-24 relative">
       <div className="container mx-auto px-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 mb-12"
-        >
+        {/* Header */}
+        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }} className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 mb-8">
           <div>
-            <h2 className="font-display font-extrabold text-3xl sm:text-4xl text-slate-900 dark:text-white mb-2">
-              Match Center
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-1 h-6 rounded-full bg-gradient-to-b from-[#FF4444] to-[#00D9FF]" />
+              <span className="text-xs font-label font-bold text-[#00D9FF] uppercase tracking-widest">Trận đấu</span>
+            </div>
+            <h2 className="font-display font-extrabold text-4xl sm:text-5xl text-foreground">
+              Kết quả gần đây
             </h2>
-            <p className="text-slate-600 dark:text-[#A8A29E] max-w-md">
-              Live scores, recent results, and upcoming fixtures.
-            </p>
           </div>
-          <Link 
-            to="/matches" 
-            className="text-[#00D9FF] hover:text-[#00E8FF] font-label font-semibold text-sm flex items-center gap-2 group"
-          >
-            View All Matches
+          <Link to="/matches" className="flex items-center gap-2 text-sm font-semibold text-[#00D9FF] hover:text-foreground transition-colors group">
+            Xem tất cả
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </Link>
         </motion.div>
 
-        {/* Live Matches Section */}
-        {liveMatches.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="mb-8"
-          >
-            <div className="flex items-center gap-2 mb-4">
-              <Radio className="w-4 h-4 text-[#FF4444] animate-pulse" />
-              <h3 className="font-label font-bold text-slate-900 dark:text-white uppercase tracking-wider text-sm">
-                Live Now
-              </h3>
-            </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {liveMatches.map((match, index) => (
-                <motion.div
-                  key={match.id}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.4, delay: index * 0.1 }}
-                >
-                  <MatchCard match={match} featured />
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-        )}
-
-        {/* Recent & Upcoming */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {recentMatches.map((match, index) => (
-            <motion.div
-              key={match.id}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-            >
-              <MatchCard match={match} />
-            </motion.div>
+        {/* League tabs */}
+        <div className="flex gap-2 mb-6">
+          {LEAGUES.map((l, i) => (
+            <button key={l.tournamentId} onClick={() => setActiveTab(i)}
+              className={cn(
+                'px-5 py-2 rounded-xl text-sm font-semibold transition-all duration-200',
+                activeTab === i ? 'text-white shadow-lg' : 'text-muted-foreground hover:text-foreground bg-muted hover:bg-muted/80'
+              )}
+              style={activeTab === i ? { backgroundColor: l.color, boxShadow: `0 6px 20px ${l.color}30` } : {}}>
+              {l.name}
+            </button>
           ))}
         </div>
+
+        {/* Content */}
+        {loading ? (
+          <div className="space-y-2">
+            {[...Array(7)].map((_, i) => (
+              <div key={i} className="h-14 rounded-2xl bg-muted border border-border animate-pulse" />
+            ))}
+          </div>
+        ) : (
+          <AnimatePresence mode="wait">
+            <motion.div key={activeTab}
+              initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+              {!current || current.matches.length === 0 ? (
+                <div className="text-center py-16 text-muted-foreground">
+                  <Calendar className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                  <p className="text-sm">Không có dữ liệu</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {current.matches.map((m, i) => <MatchRow key={m.id} match={m} index={i} />)}
+                </div>
+              )}
+            </motion.div>
+          </AnimatePresence>
+        )}
       </div>
     </section>
   );
