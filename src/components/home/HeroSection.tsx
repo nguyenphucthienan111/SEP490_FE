@@ -210,11 +210,10 @@ export function HeroSection() {
                     </div>
 
                     {/* Quick stats */}
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-2 gap-3">
                       {[
                         { label: 'Tuổi', value: player.age ?? '—' },
                         { label: 'Chiều cao', value: player.heightCm ? `${player.heightCm}cm` : '—' },
-                        { label: 'Cân nặng', value: player.weightKg ? `${player.weightKg}kg` : '—' },
                       ].map(s => (
                         <div key={s.label} className="text-center p-3 rounded-xl bg-muted border border-border">
                           <p className="font-mono-data text-lg font-bold text-foreground">{s.value}</p>

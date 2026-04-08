@@ -90,12 +90,12 @@ function FeatureBanner() {
     <section className="py-16 relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-r from-[#FF4444]/5 via-transparent to-[#00D9FF]/5" />
       <div className="container mx-auto px-4 relative">
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 items-stretch">
           {FEATURES.map((f, i) => (
-            <motion.div key={f.title}
+            <motion.div key={f.title} className="h-full"
               initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }} transition={{ duration: 0.4, delay: i * 0.1 }}>
-              <Link to={f.to} className="flex items-start gap-4 p-5 rounded-2xl border border-border bg-card hover:bg-muted/50 hover:shadow-md transition-all duration-200 group block">
+              <Link to={f.to} className="flex items-start gap-4 p-5 rounded-2xl border border-border bg-card hover:bg-muted/50 hover:shadow-md transition-all duration-200 group h-full">
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110"
                   style={{ backgroundColor: `${f.color}15`, border: `1px solid ${f.color}25` }}>
                   <f.icon className="w-5 h-5" style={{ color: f.color }} />
@@ -177,6 +177,8 @@ function CompareSection() {
 }
 
 function CommunitySection() {
+  const isLoggedIn = !!localStorage.getItem('accessToken');
+
   return (
     <section className="py-24 relative overflow-hidden">
       <div className="absolute inset-0 pointer-events-none">
@@ -196,7 +198,7 @@ function CommunitySection() {
             </h2>
             <p className="text-muted-foreground mt-3 max-w-md">Tham gia cộng đồng fan bóng đá Việt Nam — chia sẻ, phân tích và dự đoán cùng nhau.</p>
           </div>
-          <Link to="/predictions" className="flex items-center gap-2 text-sm font-semibold text-[#a78bfa] hover:text-foreground transition-colors group">
+          <Link to="/analytics" className="flex items-center gap-2 text-sm font-semibold text-[#a78bfa] hover:text-foreground transition-colors group">
             Xem tất cả bài viết
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </Link>
@@ -251,26 +253,63 @@ function CommunitySection() {
 
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }} transition={{ delay: 0.3 }}
-          className="mt-10 p-8 rounded-3xl border border-[#a78bfa]/20 bg-gradient-to-br from-[#a78bfa]/8 to-[#00D9FF]/5 text-center">
-          <Star className="w-8 h-8 text-[#a78bfa] mx-auto mb-3" />
-          <h3 className="font-display font-bold text-xl text-foreground mb-2">Tham gia cộng đồng ngay</h3>
-          <p className="text-muted-foreground text-sm mb-5 max-w-sm mx-auto">
-            Đăng ký miễn phí để bình luận, dự đoán kết quả và tương tác với hàng nghìn fan bóng đá Việt Nam.
+          className="mt-10 relative overflow-hidden rounded-3xl border border-[#a78bfa]/20 bg-gradient-to-br from-[#a78bfa]/8 to-[#7c3aed]/5 text-center p-10">
+          {/* Background glow blobs */}
+          <div className="absolute -top-16 -left-16 w-64 h-64 bg-[#a78bfa]/10 rounded-full blur-[80px] pointer-events-none" />
+          <div className="absolute -bottom-16 -right-16 w-64 h-64 bg-[#7c3aed]/10 rounded-full blur-[80px] pointer-events-none" />
+
+          {/* Badge */}
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#a78bfa]/20 border border-[#a78bfa]/30 mb-5">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#a78bfa] animate-pulse" />
+            <span className="text-[11px] font-bold text-[#a78bfa] uppercase tracking-widest">Tính năng nổi bật</span>
+          </div>
+
+          <h3 className="font-display font-extrabold text-3xl text-foreground mb-3">
+            Dự đoán kết quả — <span className="text-[#a78bfa]">Thắng điểm thưởng</span>
+          </h3>
+          <p className="text-muted-foreground text-sm max-w-md mx-auto mb-8">
+            Dự đoán tỉ số trước mỗi trận, tích điểm và leo bảng xếp hạng cộng đồng fan bóng đá Việt Nam.
           </p>
-          <div className="flex gap-3 justify-center flex-wrap">
-            <Link to="/register">
-              <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                className="px-6 py-2.5 bg-gradient-to-r from-[#a78bfa] to-[#7c3aed] text-white font-label font-bold rounded-xl text-sm shadow-lg shadow-purple-500/20">
-                Đăng ký miễn phí
-              </motion.button>
-            </Link>
+
+          {/* Mini stats */}
+          <div className="flex justify-center gap-8 mb-8">
+            {[
+              { label: 'Dự đoán mỗi tuần', value: '500+' },
+              { label: 'Người tham gia', value: '1.2K' },
+              { label: 'Điểm thưởng tối đa', value: '×3' },
+            ].map(s => (
+              <div key={s.label} className="text-center">
+                <p className="text-2xl font-black text-foreground font-mono-data">{s.value}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">{s.label}</p>
+              </div>
+            ))}
+          </div>
+
+          {isLoggedIn ? (
             <Link to="/predictions">
               <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                className="px-6 py-2.5 border border-border text-muted-foreground hover:text-foreground font-label font-semibold rounded-xl text-sm transition-all">
-                Xem dự đoán
+                className="px-8 py-3 bg-gradient-to-r from-[#a78bfa] to-[#7c3aed] text-white font-label font-bold rounded-xl text-sm shadow-lg shadow-purple-500/30 inline-flex items-center gap-2">
+                Dự đoán ngay
+                <ArrowRight className="w-4 h-4" />
               </motion.button>
             </Link>
-          </div>
+          ) : (
+            <div className="flex gap-3 justify-center flex-wrap">
+              <Link to="/register">
+                <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                  className="px-8 py-3 bg-gradient-to-r from-[#a78bfa] to-[#7c3aed] text-white font-label font-bold rounded-xl text-sm shadow-lg shadow-purple-500/30 inline-flex items-center gap-2">
+                  Đăng ký miễn phí
+                  <ArrowRight className="w-4 h-4" />
+                </motion.button>
+              </Link>
+              <Link to="/predictions">
+                <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                  className="px-8 py-3 border border-[#a78bfa]/40 text-[#a78bfa] hover:bg-[#a78bfa]/10 font-label font-bold rounded-xl text-sm transition-all">
+                  Xem dự đoán
+                </motion.button>
+              </Link>
+            </div>
+          )}
         </motion.div>
       </div>
     </section>
