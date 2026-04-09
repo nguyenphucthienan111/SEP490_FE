@@ -41,6 +41,9 @@ function CommentItem({ c, onReply, currentUserId, userIdLoaded, onRefresh, isRep
   const [editContent, setEditContent] = useState(c.content);
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [showReport, setShowReport] = useState(false);
+  const [reportReason, setReportReason] = useState("");
+  const [reporting, setReporting] = useState(false);
 
   const loadout = c.authorNameColorPreview || c.authorFramePreview || c.authorBadgePreview
     ? { nameColorPreview: c.authorNameColorPreview, framePreview: c.authorFramePreview, badgePreview: c.authorBadgePreview } as any
@@ -71,6 +74,18 @@ function CommentItem({ c, onReply, currentUserId, userIdLoaded, onRefresh, isRep
       onRefresh();
       toast.success("Đã xóa bình luận");
     } catch { toast.error("Lỗi"); }
+  };
+
+  const handleReport = async () => {
+    if (!reportReason.trim()) return;
+    setReporting(true);
+    try {
+      await forumService.reportComment(c.commentId, reportReason);
+      toast.success("Đã gửi báo cáo");
+      setShowReport(false);
+      setReportReason("");
+    } catch (e: any) { toast.error(e.message || "Lỗi"); }
+    finally { setReporting(false); }
   };
 
   // Render content - strip @mention from text and show it separately with styling
@@ -141,7 +156,30 @@ function CommentItem({ c, onReply, currentUserId, userIdLoaded, onRefresh, isRep
               <button onClick={() => setConfirmDelete(true)} className="text-xs text-slate-500 hover:text-red-500 transition-colors">Xóa</button>
             </>
           )}
+          {!isOwner && userIdLoaded && currentUserId && c.status !== "warned" && (
+            <button onClick={() => setShowReport(true)} className="text-xs text-slate-400 hover:text-orange-500 transition-colors">Báo cáo</button>
+          )}
         </div>
+
+        {/* Report modal */}
+        {showReport && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/40" onClick={() => setShowReport(false)} />
+            <div className="relative bg-white dark:bg-slate-800 rounded-2xl p-5 w-full max-w-xs shadow-xl">
+              <p className="font-semibold text-slate-900 dark:text-white mb-1">Báo cáo bình luận</p>
+              <p className="text-xs text-slate-500 mb-3">Lý do báo cáo</p>
+              <textarea value={reportReason} onChange={e => setReportReason(e.target.value)}
+                placeholder="Mô tả vi phạm..." maxLength={300} rows={3}
+                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm resize-none focus:outline-none mb-3" />
+              <div className="flex gap-3 justify-end">
+                <button onClick={() => { setShowReport(false); setReportReason(""); }} className="px-4 py-2 rounded-xl text-sm bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">Hủy</button>
+                <button onClick={handleReport} disabled={reporting || !reportReason.trim()} className="px-4 py-2 rounded-xl text-sm bg-orange-500 hover:bg-orange-600 text-white disabled:opacity-50">
+                  {reporting ? "..." : "Gửi"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Confirm delete */}

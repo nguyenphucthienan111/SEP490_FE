@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { AdminLayout } from "./AdminLayout";
+import { Link } from "react-router-dom";
 import { forumService, PostSummary, PostDetail, CommentDto } from "@/services/forumService";
 import { Button } from "@/components/ui/button";
-import { Loader2, Check, X, EyeOff, MessageSquare, Eye, Ban, ShieldOff } from "lucide-react";
+import { Loader2, Check, X, EyeOff, MessageSquare, Eye, Ban, ShieldOff, Flag } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
@@ -11,7 +12,7 @@ const TABS = [
   { key: "approved", label: "Đã duyệt" },
   { key: "hidden",   label: "Đã ẩn" },
   { key: "rejected", label: "Từ chối" },
-  { key: "comments", label: "Bình luận" },
+  { key: "reports",  label: "Báo cáo 🚩" },
 ];
 
 export default function AdminForumPage() {
@@ -25,6 +26,47 @@ export default function AdminForumPage() {
   const [selectedPostId, setSelectedPostId] = useState<number | null>(null);
   const [banModal, setBanModal] = useState<{ userId: string; name: string } | null>(null);
   const [banReason, setBanReason] = useState("");
+  const [reports, setReports] = useState<any[]>([]);
+  const [dismissModal, setDismissModal] = useState<{ id: number } | null>(null);
+  const [dismissReason, setDismissReason] = useState("");
+  const [pendingReportsCount, setPendingReportsCount] = useState(0);
+
+  const loadReports = async () => {
+    setLoading(true);
+    try {
+      const res = await forumService.adminGetReports("pending");
+      const data = (res as any).data ?? res ?? [];
+      setReports(data);
+      setPendingReportsCount(Array.isArray(data) ? data.length : 0);
+    } catch { toast.error("Không thể tải báo cáo"); }
+    finally { setLoading(false); }
+  };
+
+  // Load pending reports count on mount for badge
+  useEffect(() => {
+    forumService.adminGetReports("pending")
+      .then(res => {
+        const data = (res as any).data ?? res ?? [];
+        setPendingReportsCount(Array.isArray(data) ? data.length : 0);
+      }).catch(() => {});
+  }, []);
+
+  const approveReport = async (id: number) => {
+    try {
+      await forumService.adminApproveReport(id);
+      toast.success("Đã duyệt báo cáo — bình luận đã bị ẩn");
+      loadReports();
+    } catch (e: any) { toast.error(e.message || "Lỗi"); }
+  };
+  const dismissReport = async () => {
+    if (!dismissModal) return;
+    try {
+      await forumService.adminDismissReport(dismissModal.id, dismissReason);
+      toast.success("Đã từ chối báo cáo");
+      setDismissModal(null); setDismissReason("");
+      loadReports();
+    } catch (e: any) { toast.error(e.message || "Lỗi"); }
+  };
 
   const load = async () => {
     setLoading(true);
@@ -41,7 +83,9 @@ export default function AdminForumPage() {
   };
 
   useEffect(() => {
-    if (tab === "comments" && !selectedPostId) {
+    if (tab === "reports") {
+      loadReports();
+    } else if (tab === "comments" && !selectedPostId) {
       // Load approved posts for comment management
       setLoading(true);
       forumService.adminGetPosts("approved", 1, 50)
@@ -82,8 +126,13 @@ export default function AdminForumPage() {
         <div className="flex gap-2 mb-6 border-b border-slate-200 dark:border-slate-700">
           {TABS.map(t => (
             <button key={t.key} onClick={() => setTab(t.key)}
-              className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors ${tab === t.key ? "border-[#FF4444] text-[#FF4444]" : "border-transparent text-slate-500 hover:text-slate-700"}`}>
+              className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors flex items-center gap-1.5 ${tab === t.key ? "border-[#FF4444] text-[#FF4444]" : "border-transparent text-slate-500 hover:text-slate-700"}`}>
               {t.label}
+              {t.key === "reports" && pendingReportsCount > 0 && (
+                <span className="px-1.5 py-0.5 rounded-full bg-[#FF4444] text-white text-[10px] font-bold leading-none">
+                  {pendingReportsCount}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -247,6 +296,61 @@ export default function AdminForumPage() {
           </div>
         </DialogContent>
       </Dialog>
+      {/* Reports tab */}
+      {tab === "reports" && (
+        <div className="p-6">
+          {loading
+            ? <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-[#FF4444]" /></div>
+            : reports.length === 0
+            ? <p className="text-center text-slate-500 py-8">Không có báo cáo nào đang chờ xử lý.</p>
+            : <div className="space-y-3">
+                {reports.map((r: any) => (
+                  <div key={r.reportId} className="bg-white dark:bg-card border border-slate-200 dark:border-border rounded-xl p-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <span className="text-xs font-semibold text-[#FF4444]">Báo cáo #{r.reportId}</span>
+                          <span className="text-xs text-slate-400">·</span>
+                          <span className="text-xs text-slate-500">Bài: <span className="font-medium text-slate-700 dark:text-slate-300">{r.postTitle}</span></span>
+                          <span className="text-xs text-slate-400">·</span>
+                          <span className="text-xs text-slate-500">{r.totalReports} báo cáo</span>
+                          {r.postId && (
+                            <Link to={`/forum/${r.postId}`} target="_blank"
+                              className="text-xs text-[#00D9FF] hover:underline ml-1">
+                              Xem bài →
+                            </Link>
+                          )}
+                        </div>
+                        <div className="bg-slate-50 dark:bg-slate-800 rounded-lg px-3 py-2 mb-2">
+                          <p className="text-xs text-slate-400 mb-0.5">Nội dung bình luận:</p>
+                          <p className="text-sm text-slate-700 dark:text-slate-300 line-clamp-2">{r.commentContent}</p>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-slate-500 flex-wrap">
+                          <span>Người báo cáo: <span className="font-medium">{r.reporterName}</span></span>
+                          <span>·</span>
+                          <span>Lý do: <span className="font-medium text-orange-600 dark:text-orange-400">{r.reason}</span></span>
+                          <span>·</span>
+                          <span>{r.createdAt}</span>
+                        </div>
+                      </div>
+                      <div className="flex gap-2 flex-shrink-0">
+                        <Button size="sm" onClick={() => approveReport(r.reportId)}
+                          className="bg-red-500 hover:bg-red-600 text-white gap-1 text-xs">
+                          <EyeOff className="w-3 h-3" />Ẩn bình luận
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => setDismissModal({ id: r.reportId })}
+                          className="gap-1 text-xs">
+                          <X className="w-3 h-3" />Từ chối
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+          }
+        </div>
+      )}
+
       {/* Ban modal */}
       <Dialog open={!!banModal} onOpenChange={() => setBanModal(null)}>
         <DialogContent className="max-w-sm">
@@ -262,6 +366,20 @@ export default function AdminForumPage() {
               toast.success(`Đã cấm bình luận ${banModal.name} 2 ngày`);
               setBanModal(null); setBanReason("");
             }} className="bg-red-500 hover:bg-red-600 text-white">Cấm 2 ngày</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      {/* Dismiss report modal */}
+      <Dialog open={!!dismissModal} onOpenChange={() => { setDismissModal(null); setDismissReason(""); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Từ chối báo cáo</DialogTitle></DialogHeader>
+          <p className="text-sm text-slate-500">Lý do từ chối (tùy chọn, sẽ gửi cho người báo cáo)</p>
+          <textarea value={dismissReason} onChange={e => setDismissReason(e.target.value)}
+            placeholder="Bình luận không vi phạm quy định..."
+            className="w-full min-h-[80px] rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm resize-none" />
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => { setDismissModal(null); setDismissReason(""); }}>Hủy</Button>
+            <Button onClick={dismissReport} className="bg-slate-600 hover:bg-slate-700 text-white">Xác nhận từ chối</Button>
           </div>
         </DialogContent>
       </Dialog>

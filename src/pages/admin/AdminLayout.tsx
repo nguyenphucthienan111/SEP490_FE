@@ -19,7 +19,7 @@ interface AdminLayoutProps {
 
 const sidebarItems = [
   { icon: LayoutDashboard, label: 'Dashboard',     path: '/admin' },
-  { icon: Users,           label: 'Users',          path: '/admin/users' },
+  { icon: Users,           label: 'Quản lý người dùng', path: '/admin/users' },
   { icon: Users,           label: 'Players',        path: '/admin/players' },
   { icon: Calendar,        label: 'Matches',        path: '/admin/matches' },
   { icon: Trophy,          label: 'Leagues',        path: '/admin/leagues' },

@@ -95,9 +95,21 @@ export const forumService = {
   deletePost: (postId: number) =>
     apiClient.delete<void>(`/api/forum/posts/${postId}`),
 
+  reportComment: (commentId: number, reason: string) =>
+    apiClient.post<void>(`/api/forum/comments/${commentId}/report`, { reason }),
+
   // Admin
   adminGetPosts: (status?: string, page = 1, pageSize = 20) =>
     apiClient.get<PostsResponse>(`/api/forum/admin/posts?${status ? `status=${status}&` : ''}page=${page}&pageSize=${pageSize}`),
+
+  adminGetReports: (status?: string) =>
+    apiClient.get<any[]>(`/api/forum/admin/reports${status ? `?status=${status}` : ''}`),
+
+  adminApproveReport: (id: number) =>
+    apiClient.post<void>(`/api/forum/admin/reports/${id}/approve`),
+
+  adminDismissReport: (id: number, reason?: string) =>
+    apiClient.post<void>(`/api/forum/admin/reports/${id}/dismiss`, { reason: reason ?? '' }),
 
   adminApprove: (id: number) => apiClient.post<void>(`/api/forum/admin/posts/${id}/approve`),
   adminReject: (id: number, reason: string) => apiClient.post<void>(`/api/forum/admin/posts/${id}/reject`, { reason }),
