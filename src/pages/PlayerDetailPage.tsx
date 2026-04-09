@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, ChevronDown, Users, Loader2, ArrowRight, ChevronLeft, ChevronRight, TrendingUp } from 'lucide-react';
+import { ArrowLeft, ChevronDown, Users, Loader2, ArrowRight, ChevronLeft, ChevronRight, TrendingUp, X } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { getPlayerById } from '@/data/mockData';
@@ -16,11 +16,12 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Area, AreaChart,
 } from 'recharts';
 
-type TabKey = 'overview' | 'stats' | 'transfers';
+type TabKey = 'overview' | 'stats' | 'transfers' | 'matches';
 
 const TABS: { key: TabKey; label: string; icon: string }[] = [
   { key: 'overview',  label: 'Tổng quan',    icon: '⚡' },
   { key: 'stats',     label: 'Thống kê',      icon: '📊' },
+  { key: 'matches',   label: 'Lịch sử trận',  icon: '🏟️' },
   { key: 'transfers', label: 'Chuyển nhượng', icon: '🔄' },
 ];
 
@@ -36,6 +37,11 @@ export default function PlayerDetailPage() {
   const [fromTeamId, setFromTeamId] = useState<string | null>(null);
   const [transfers, setTransfers] = useState<any[]>([]);
   const [transfersLoading, setTransfersLoading] = useState(false);
+  const [matchHistory, setMatchHistory] = useState<any[]>([]);
+  const [matchHistoryLoading, setMatchHistoryLoading] = useState(false);
+  const [matchHistoryLoaded, setMatchHistoryLoaded] = useState(false);
+  const [selectedMatchStat, setSelectedMatchStat] = useState<{ match: any; stats: any } | null>(null);
+  const [matchVisibleCount, setMatchVisibleCount] = useState(5);
   const [selectedSeasonIdx, setSelectedSeasonIdx] = useState(0);
   const [showTrend, setShowTrend] = useState(false);
   const [compareSeasonA, setCompareSeasonA] = useState(1);
@@ -95,6 +101,79 @@ export default function PlayerDetailPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const LEAGUE_MAP: Record<number, { tournamentId: number; seasonId: number }> = {
+    1: { tournamentId: 626, seasonId: 78589 },
+    2: { tournamentId: 771, seasonId: 80926 },
+    3: { tournamentId: 3087, seasonId: 81023 },
+  };
+
+  const loadMatchHistory = async () => {
+    if (!apiPlayer || matchHistoryLoaded || matchHistoryLoading) return;
+    setMatchHistoryLoading(true);
+    try {
+      // Lấy tất cả trận của tất cả giải
+      const allMatches: any[] = [];
+      await Promise.all(
+        Object.values(LEAGUE_MAP).map(async ({ tournamentId, seasonId }) => {
+          try {
+            const matches = await leagueService.getAllMatchesFromDb(tournamentId, seasonId);
+            allMatches.push(...matches);
+          } catch {}
+        })
+      );
+
+      // Lọc trận mà cầu thủ có trong lineup (dùng apiPlayerId)
+      const apiPlayerId = apiPlayer.apiPlayerId;
+      const teamApiId = playerTeam?.apiTeamId ?? apiPlayer?.team?.apiTeamId;
+
+      // Lọc trận của đội cầu thủ đang chơi trước (nhanh hơn)
+      const teamMatches = allMatches.filter(m => {
+        const homeId = m.homeTeam?.apiTeamId ?? m.homeTeam?.id;
+        const awayId = m.awayTeam?.apiTeamId ?? m.awayTeam?.id;
+        return homeId === teamApiId || awayId === teamApiId;
+      });
+
+      // Với mỗi trận đã kết thúc, lấy player match stats từ DB
+      const finishedMatches = teamMatches
+        .filter(m => m.status === 'finished' || m.status?.type === 'finished')
+        .sort((a, b) => {
+          const da = a.matchDate ? new Date(a.matchDate).getTime() : (a.startTimestamp ?? 0) * 1000;
+          const db = b.matchDate ? new Date(b.matchDate).getTime() : (b.startTimestamp ?? 0) * 1000;
+          return db - da;
+        })
+        .slice(0, 30); // giới hạn 30 trận gần nhất
+
+      const results: any[] = [];
+      await Promise.all(
+        finishedMatches.map(async (match) => {
+          const fixtureId = match.apiFixtureId ?? match.matchId ?? match.id;
+          if (!fixtureId) return;
+          try {
+            const stats = await leagueService.getPlayerMatchStatsByMatch(fixtureId);
+            const playerStat = stats.find((s: any) =>
+              s.apiPlayerId === apiPlayerId ||
+              s.playerId === apiPlayer.playerId ||
+              String(s.apiPlayerId) === String(apiPlayerId)
+            );
+            if (playerStat) {
+              results.push({ match, stats: playerStat });
+            }
+          } catch {}
+        })
+      );
+
+      results.sort((a, b) => {
+        const da = a.match.matchDate ? new Date(a.match.matchDate).getTime() : 0;
+        const db = b.match.matchDate ? new Date(b.match.matchDate).getTime() : 0;
+        return db - da;
+      });
+
+      setMatchHistory(results);
+      setMatchHistoryLoaded(true);
+    } catch {}
+    setMatchHistoryLoading(false);
   };
 
   const displayPlayer = apiPlayer || player;
@@ -158,7 +237,147 @@ export default function PlayerDetailPage() {
     return data.every(d => d.value === 0) ? null : data;
   };
 
+  // ── MATCH STAT MODAL ──
+  const MatchStatModal = ({ item, onClose }: { item: { match: any; stats: any }; onClose: () => void }) => {
+    const s = item.stats;
+    const [statTab, setStatTab] = useState<'shot' | 'pass' | 'drib' | 'def' | 'gk'>('shot');
+    const isGK = (apiPlayer?.position ?? '') === 'G';
+    const rating = s?.rating != null ? Number(s.rating) : null;
+    const ratingColor = rating == null ? '#6b7280' : rating >= 8 ? '#22c55e' : rating >= 7 ? '#84cc16' : rating >= 6 ? '#eab308' : '#ef4444';
+
+    const isHome = (item.match.homeTeam?.apiTeamId ?? item.match.homeTeam?.id) === (playerTeam?.apiTeamId ?? apiPlayer?.team?.apiTeamId);
+    const opponent = isHome ? item.match.awayTeam : item.match.homeTeam;
+    const myGoals = isHome ? (item.match.homeGoals ?? 0) : (item.match.awayGoals ?? 0);
+    const oppGoals = isHome ? (item.match.awayGoals ?? 0) : (item.match.homeGoals ?? 0);
+    const date = item.match.matchDate ? new Date(item.match.matchDate).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
+
+    const sections: Record<string, { label: string; rows: { label: string; val: any }[] }> = {
+      shot: { label: 'Sút', rows: [
+        { label: 'Bàn thắng', val: s?.goals },
+        { label: 'Tổng cú sút', val: s?.shots ?? s?.totalShots },
+        { label: 'Sút trúng đích', val: s?.shotsOnTarget },
+        { label: 'Cơ hội lớn bỏ lỡ', val: s?.bigChanceMissed ?? s?.bigChancesMissed },
+      ]},
+      pass: { label: 'Chuyền', rows: [
+        { label: 'Kiến tạo', val: s?.assists },
+        { label: 'Chuyền chính xác', val: s?.passes != null && s?.passesAccuracy != null ? `${Math.round(s.passes * s.passesAccuracy / 100)}/${s.passes}` : s?.accuratePasses != null ? `${s.accuratePasses}/${s.totalPasses ?? '?'}` : null },
+        { label: 'Chuyền then chốt', val: s?.passesKey ?? s?.keyPasses },
+        { label: 'Tạt bóng chính xác', val: s?.accurateCrosses != null ? `${s.accurateCrosses}/${s.totalCrosses ?? '?'}` : null },
+        { label: 'Cơ hội lớn tạo ra', val: s?.bigChanceCreated ?? s?.bigChancesCreated },
+      ]},
+      drib: { label: 'Rê bóng', rows: [
+        { label: 'Rê bóng thành công', val: s?.dribblesSuccess != null ? `${s.dribblesSuccess}/${s.dribblesAttempted ?? '?'}` : null },
+        { label: 'Chạm bóng', val: s?.touches },
+        { label: 'Mất bóng', val: s?.possessionLost },
+        { label: 'Bị phạm lỗi', val: s?.wasFouled },
+        { label: 'Phạm lỗi', val: s?.foulsCommitted },
+      ]},
+      def: { label: 'Phòng thủ', rows: [
+        { label: 'Tắc bóng', val: s?.tackles },
+        { label: 'Cắt bóng', val: s?.interceptions },
+        { label: 'Phá bóng', val: s?.clearances },
+        { label: 'Tranh chấp trên không', val: s?.aerialDuelsWon != null ? `${s.aerialDuelsWon}/${(s.aerialDuelsWon ?? 0) + (s.aerialDuelsLost ?? 0)}` : null },
+        { label: 'Thẻ vàng', val: s?.yellowCards },
+        { label: 'Thẻ đỏ', val: s?.redCards },
+      ]},
+      gk: { label: 'Thủ môn', rows: [
+        { label: 'Cứu thua', val: s?.saves },
+        { label: 'Cứu thua trong vòng cấm', val: s?.savesInsideBox },
+        { label: 'Thủng lưới', val: s?.goalsConceded },
+        { label: 'Cản phá penalty', val: s?.penaltiesSaved },
+        { label: 'Ra khỏi khung thành', val: s?.runsOut != null ? `${s.runsOutSuccessful ?? 0}/${s.runsOut}` : null },
+        { label: 'Bắt bóng bổng', val: s?.highClaims },
+      ]},
+    };
+
+    const visibleTabs = isGK ? (['gk', 'pass', 'def'] as const) : (['shot', 'pass', 'drib', 'def'] as const);
+    const activeRows = sections[statTab]?.rows.filter(r => r.val != null) ?? [];
+
+    return (
+      <AnimatePresence>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          onClick={onClose}>
+          <motion.div initial={{ opacity: 0, scale: 0.92, y: 16 }} animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.92, y: 16 }} transition={{ type: 'spring', damping: 22, stiffness: 320 }}
+            className="glass-card rounded-2xl w-full max-w-sm relative overflow-hidden max-h-[90vh] flex flex-col"
+            onClick={e => e.stopPropagation()}>
+
+            {/* Header trận đấu */}
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100 dark:border-white/10 flex-shrink-0">
+              <img src={`https://api.sofascore.app/api/v1/team/${opponent?.apiTeamId ?? opponent?.id}/image`}
+                alt={opponent?.teamName ?? ''} className="w-8 h-8 object-contain"
+                onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-slate-900 dark:text-foreground truncate">
+                  {isHome ? 'vs' : '@'} {opponent?.teamName ?? opponent?.name ?? '—'}
+                </p>
+                <p className="text-[10px] text-slate-400">{date}{item.match.round ? ` · Vòng ${item.match.round}` : ''}</p>
+              </div>
+              <div className="text-center px-3 py-1 rounded-lg bg-slate-100 dark:bg-white/10">
+                <span className="font-mono-data text-sm font-black text-slate-900 dark:text-foreground">{myGoals} - {oppGoals}</span>
+              </div>
+              <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 transition-colors">
+                <X className="w-4 h-4 text-slate-400" />
+              </button>
+            </div>
+
+            {/* Quick stats row */}
+            <div className="flex divide-x divide-slate-100 dark:divide-white/10 border-b border-slate-100 dark:border-white/10 flex-shrink-0">
+              {[
+                { label: 'Phút', val: s?.minutes != null ? `${s.minutes}'` : null },
+                { label: 'Bàn thắng', val: s?.goals },
+                { label: 'Kiến tạo', val: s?.assists },
+                { label: 'Đánh giá', val: rating != null ? rating.toFixed(1) : null, color: ratingColor },
+              ].filter(x => x.val != null).map(x => (
+                <div key={x.label} className="flex-1 flex flex-col items-center py-2.5">
+                  <span className="font-mono-data font-bold text-base text-foreground" style={x.color ? { color: x.color } : {}}>{x.val}</span>
+                  <span className="text-[10px] text-slate-400 mt-0.5">{x.label}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Stat tabs */}
+            <div className="p-4 overflow-y-auto flex-1">
+              <div className="flex gap-1 bg-slate-100 dark:bg-white/5 rounded-lg p-1 mb-3">
+                {visibleTabs.map(tab => (
+                  <button key={tab} onClick={() => setStatTab(tab as any)}
+                    className={cn('flex-1 py-1.5 rounded-md text-[11px] font-semibold transition-all',
+                      statTab === tab ? 'bg-white dark:bg-white/15 text-slate-900 dark:text-foreground shadow-sm' : 'text-slate-500 dark:text-[#A8A29E]')}>
+                    {sections[tab].label}
+                  </button>
+                ))}
+              </div>
+              {activeRows.length > 0 ? (
+                <div className="space-y-1">
+                  {activeRows.map(row => (
+                    <div key={row.label} className="flex items-center justify-between py-2 border-b border-slate-100 dark:border-white/5 last:border-0">
+                      <span className="text-xs text-slate-500 dark:text-[#A8A29E]">{row.label}</span>
+                      <span className="font-mono-data text-sm font-semibold text-foreground">{row.val}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-center text-xs text-slate-400 py-6">Không có dữ liệu</p>
+              )}
+            </div>
+
+            {/* Link sang trang trận đấu */}
+            <div className="px-4 pb-4 flex-shrink-0">
+              <Link to={`/matches/${item.match.apiFixtureId ?? item.match.matchId}`}
+                className="block w-full text-center py-2 rounded-xl bg-[#00D9FF]/10 text-[#00D9FF] text-xs font-semibold hover:bg-[#00D9FF]/20 transition-colors"
+                onClick={onClose}>
+                Xem chi tiết trận đấu →
+              </Link>
+            </div>
+          </motion.div>
+        </motion.div>
+      </AnimatePresence>
+    );
+  };
+
   return (
+    <>
     <MainLayout>
       <div className="min-h-screen">
         <div className="container mx-auto px-4 py-6 max-w-5xl">
@@ -243,7 +462,7 @@ export default function PlayerDetailPage() {
             <div className="border-t border-slate-100 dark:border-white/5 px-5 sm:px-7">
               <div className="flex">
                 {TABS.map(tab => (
-                  <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+                  <button key={tab.key} onClick={() => { setActiveTab(tab.key); if (tab.key === 'matches') loadMatchHistory(); }}
                     className={cn('relative flex items-center gap-1.5 px-4 py-3 text-sm font-semibold transition-colors whitespace-nowrap',
                       activeTab === tab.key ? 'text-[#00D9FF]' : 'text-slate-500 dark:text-[#A8A29E] hover:text-slate-700 dark:hover:text-foreground')}>
                     <span>{tab.icon}</span>
@@ -599,6 +818,107 @@ export default function PlayerDetailPage() {
                 </PremiumGate>
               )}
 
+              {/* ── LỊCH SỬ TRẬN ── */}
+              {activeTab === 'matches' && (
+                <div className="mt-4 space-y-3">
+                  {matchHistoryLoading ? (
+                    <div className="glass-card rounded-2xl flex items-center justify-center py-16">
+                      <div className="text-center">
+                        <Loader2 className="w-8 h-8 text-[#00D9FF] animate-spin mx-auto mb-3" />
+                        <p className="text-sm text-slate-400">Đang tải lịch sử trận đấu...</p>
+                      </div>
+                    </div>
+                  ) : matchHistory.length === 0 && matchHistoryLoaded ? (
+                    <div className="glass-card rounded-2xl flex flex-col items-center justify-center py-16 text-slate-400">
+                      <span className="text-4xl mb-3">🏟️</span>
+                      <p className="text-sm">Không tìm thấy dữ liệu trận đấu</p>
+                    </div>
+                  ) : matchHistory.length === 0 ? (
+                    <div className="glass-card rounded-2xl flex flex-col items-center justify-center py-16 text-slate-400">
+                      <span className="text-4xl mb-3">🏟️</span>
+                      <p className="text-sm">Nhấn tab để tải lịch sử trận đấu</p>
+                    </div>
+                  ) : (
+                    <div className="glass-card rounded-2xl overflow-hidden">
+                      <div className="px-5 py-3.5 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
+                        <span className="font-semibold text-sm text-slate-900 dark:text-foreground">Lịch sử trận đấu</span>
+                        <span className="text-xs text-slate-400">{matchHistory.length} trận</span>
+                      </div>
+                      <div className="divide-y divide-slate-100 dark:divide-white/5">
+                        {matchHistory.slice(0, matchVisibleCount).map(({ match, stats: s }, i) => {
+                          const isHome = (match.homeTeam?.apiTeamId ?? match.homeTeam?.id) === (playerTeam?.apiTeamId ?? apiPlayer?.team?.apiTeamId);
+                          const opponent = isHome ? match.awayTeam : match.homeTeam;
+                          const myGoals = isHome ? (match.homeGoals ?? 0) : (match.awayGoals ?? 0);
+                          const oppGoals = isHome ? (match.awayGoals ?? 0) : (match.homeGoals ?? 0);
+                          const result = myGoals > oppGoals ? 'T' : myGoals < oppGoals ? 'B' : 'H';
+                          const resultCls = result === 'T' ? 'bg-green-500 text-white' : result === 'B' ? 'bg-red-500 text-white' : 'bg-slate-400 text-white';
+                          const date = match.matchDate ? new Date(match.matchDate).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '—';
+                          const rating = s?.rating != null ? Number(s.rating) : null;
+                          const ratingColor = rating == null ? '#6b7280' : rating >= 8 ? '#22c55e' : rating >= 7 ? '#84cc16' : rating >= 6 ? '#eab308' : '#ef4444';
+                          const round = match.round ? `Vòng ${match.round}` : '';
+                          return (
+                            <motion.div key={i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}>
+                              <div onClick={() => setSelectedMatchStat({ match, stats: s })}
+                                className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors group cursor-pointer">
+                                  {/* Kết quả */}
+                                  <div className={cn('w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black flex-shrink-0', resultCls)}>
+                                    {result}
+                                  </div>
+                                  {/* Đối thủ */}
+                                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                                    <img
+                                      src={`https://api.sofascore.app/api/v1/team/${opponent?.apiTeamId ?? opponent?.id}/image`}
+                                      alt={opponent?.teamName ?? opponent?.name ?? ''}
+                                      className="w-6 h-6 object-contain flex-shrink-0"
+                                      onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                    />
+                                    <div className="min-w-0">
+                                      <p className="text-sm font-semibold text-slate-900 dark:text-foreground truncate group-hover:text-[#00D9FF] transition-colors">
+                                        {isHome ? 'vs' : '@'} {opponent?.teamName ?? opponent?.name ?? '—'}
+                                      </p>
+                                      <p className="text-[10px] text-slate-400">{date}{round ? ` · ${round}` : ''}</p>
+                                    </div>
+                                  </div>
+                                  {/* Tỉ số */}
+                                  <div className="text-center flex-shrink-0 min-w-[48px]">
+                                    <span className="font-mono-data text-sm font-bold text-slate-900 dark:text-foreground">
+                                      {myGoals} - {oppGoals}
+                                    </span>
+                                  </div>
+                                  {/* Thông số nhanh */}
+                                  <div className="hidden sm:flex items-center gap-3 text-xs text-slate-500 dark:text-[#A8A29E] flex-shrink-0">
+                                    {s?.minutes != null && <span>{s.minutes}'</span>}
+                                    {s?.goals > 0 && <span className="text-[#FF4444] font-bold">⚽ {s.goals}</span>}
+                                    {s?.assists > 0 && <span className="text-[#00D9FF] font-bold">🎯 {s.assists}</span>}
+                                    {s?.yellowCards > 0 && <span>🟨</span>}
+                                    {s?.redCards > 0 && <span>🟥</span>}
+                                  </div>
+                                  {/* Rating */}
+                                  {rating != null && (
+                                    <div className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center border-2"
+                                      style={{ borderColor: ratingColor, background: `${ratingColor}15` }}>
+                                      <span className="font-mono-data text-sm font-black" style={{ color: ratingColor }}>
+                                        {rating.toFixed(1)}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              </motion.div>
+                          );
+                        })}
+                      </div>
+                      {matchVisibleCount < matchHistory.length && (
+                        <button
+                          onClick={() => setMatchVisibleCount(c => c + 5)}
+                          className="w-full py-3 text-xs font-semibold text-[#00D9FF] hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                          Xem thêm ({matchHistory.length - matchVisibleCount} trận còn lại)
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* ── CHUYỂN NHƯỢNG ── */}
               {activeTab === 'transfers' && (
                 <PremiumGate locked={!isPremium} message="Đăng ký Premium để xem lịch sử chuyển nhượng.">
@@ -678,5 +998,7 @@ export default function PlayerDetailPage() {
         </div>
       </div>
     </MainLayout>
+    {selectedMatchStat && <MatchStatModal item={selectedMatchStat} onClose={() => setSelectedMatchStat(null)} />}
+    </>
   );
 }
