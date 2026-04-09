@@ -52,7 +52,7 @@ function PlayerModal({ p, eventId, matchStatsMap, onClose }: { p: LineupPlayer; 
     ownGoals:            p.statistics?.ownGoals            ?? raw.ownGoals,
     minutesPlayed:       p.statistics?.minutesPlayed       ?? raw.minutes         ?? raw.minutesPlayed,
     totalShots:          p.statistics?.totalShots          ?? raw.shots           ?? raw.totalShots,
-    rating:              p.statistics?.rating              ?? (raw.rating != null ? Number(raw.rating) : undefined),
+    rating:              (raw.rating != null ? Number(raw.rating) : undefined),
     assists:             p.statistics?.assists             ?? raw.assists,
     yellowCards:         p.statistics?.yellowCards         ?? raw.yellowCards,
     redCards:            p.statistics?.redCards            ?? raw.redCards,
@@ -342,18 +342,19 @@ function PitchSVG() {
   );
 }
 
-function PlayerPin({ p, color, onSelect, events }: {
+function PlayerPin({ p, color, onSelect, events, dbRating }: {
   p: LineupPlayer;
   color: { primary: string; number: string };
   onSelect: (p: LineupPlayer) => void;
   events?: { icon: string; time: string }[];
+  dbRating?: number;
 }) {
   const [imgOk, setImgOk] = useState(true);
   const hasGoal = events?.some(e => e.icon.startsWith('⚽'));
   const hasYellow = events?.some(e => e.icon === '🟨');
   const hasRed = events?.some(e => e.icon === '🟥');
   const hasSub = events?.some(e => e.icon.startsWith('🔼') || e.icon.startsWith('🔽'));
-  const rating = p.statistics?.rating;
+  const rating = dbRating ?? p.statistics?.rating;
 
   return (
     <button onClick={() => onSelect(p)} className="flex flex-col items-center gap-0.5 group" style={{ width: 52 }}>
@@ -407,11 +408,12 @@ function PlayerPin({ p, color, onSelect, events }: {
   );
 }
 
-function FormationPitch({ lineup, side, onSelect, playerEvents }: {
+function FormationPitch({ lineup, side, onSelect, playerEvents, matchStatsMap }: {
   lineup: { players: LineupPlayer[]; formation: string; playerColor: { primary: string; number: string }; goalkeeperColor: { primary: string; number: string } };
   side: 'home' | 'away';
   onSelect: (p: LineupPlayer) => void;
   playerEvents?: Map<number, { icon: string; time: string }[]>;
+  matchStatsMap?: Map<number, any>;
 }) {
   const starters = lineup.players.filter(p => !p.substitute);
   const rows = lineup.formation.split('-').map(Number);
@@ -441,6 +443,7 @@ function FormationPitch({ lineup, side, onSelect, playerEvents }: {
                 color={p.position === 'G' ? lineup.goalkeeperColor : lineup.playerColor}
                 onSelect={onSelect}
                 events={playerEvents?.get(p.player.id)}
+                dbRating={matchStatsMap?.has(p.player.id) ? Number(matchStatsMap.get(p.player.id)?.rating) || undefined : undefined}
               />
             ))}
           </div>
@@ -596,7 +599,7 @@ function LineupTab({ lineups, homeTeamName, awayTeamName, homeTeamId, awayTeamId
               <span className="font-body font-semibold text-sm text-foreground">{homeTeamName}</span>
               <span className="text-xs text-slate-500 dark:text-[#A8A29E] ml-auto">{lineups.home.formation}</span>
             </div>
-            <FormationPitch lineup={lineups.home} side="home" onSelect={setSelectedPlayer} playerEvents={playerEvents} />
+            <FormationPitch lineup={lineups.home} side="home" onSelect={setSelectedPlayer} playerEvents={playerEvents} matchStatsMap={matchStatsMap} />
           </div>
           {/* Away */}
           <div>
@@ -605,7 +608,7 @@ function LineupTab({ lineups, homeTeamName, awayTeamName, homeTeamId, awayTeamId
               <span className="font-body font-semibold text-sm text-foreground">{awayTeamName}</span>
               <span className="text-xs text-slate-500 dark:text-[#A8A29E] ml-auto">{lineups.away.formation}</span>
             </div>
-            <FormationPitch lineup={lineups.away} side="away" onSelect={setSelectedPlayer} playerEvents={playerEvents} />
+            <FormationPitch lineup={lineups.away} side="away" onSelect={setSelectedPlayer} playerEvents={playerEvents} matchStatsMap={matchStatsMap} />
           </div>
         </div>
       ) : (

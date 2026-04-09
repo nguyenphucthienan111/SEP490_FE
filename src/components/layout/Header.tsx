@@ -18,6 +18,7 @@ import { ThemeToggle } from "./ThemeToggle";
 import { authService } from "@/services/authService";
 import { userService, UserResponse } from "@/services/userService";
 import { useMyLoadout } from "@/hooks/useMyLoadout";
+import { NotificationBell } from "./NotificationBell";
 import { UserAvatar, UserDisplayName } from "@/components/cosmetics/UserAvatar";
 import {
   DropdownMenu,
@@ -189,6 +190,9 @@ export function Header() {
 
               {/* Theme Toggle */}
               <ThemeToggle />
+
+              {/* Notification Bell */}
+              {user && <NotificationBell />}
 
               {/* User Menu or Login/Register */}
               {!isLoadingUser && (

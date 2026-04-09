@@ -1,14 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { motion } from "framer-motion";
-import { MessageSquare, Plus, Loader2, Lock, Eye } from "lucide-react";
+import { MessageSquare, Plus, Loader2, Lock, Eye, Pencil, Trash2, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { forumService, PostSummary, PostDetail } from "@/services/forumService";
 import { authService } from "@/services/authService";
 import { useSubscription } from "@/hooks/useSubscription";
 import { CreatePostModal } from "@/components/forum/CreatePostModal";
+import { cloudinaryUpload } from "@/utils/cloudinaryUpload";
 import { toast } from "sonner";
 
 const LEAGUES = ["Tất cả", "V-League 1", "V-League 2", "Vietnam Cup"];
@@ -31,6 +32,73 @@ export default function ForumPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [detailPost, setDetailPost] = useState<PostDetail | null>(null);
   const [detailLoadingId, setDetailLoadingId] = useState<number | null>(null);
+  const [editingPost, setEditingPost] = useState<PostSummary | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editContent, setEditContent] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
+  const [editMediaUrls, setEditMediaUrls] = useState<string[]>([]);
+  const [editMediaTypes, setEditMediaTypes] = useState<string[]>([]);
+  const [editUploading, setEditUploading] = useState(false);
+  const editFileRef = useRef<HTMLInputElement>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+
+  const openEditModal = async (p: PostSummary) => {
+    setEditingPost(p);
+    setEditTitle(p.title);
+    setEditContent("Đang tải...");
+    setEditMediaUrls([]);
+    setEditMediaTypes([]);
+    try {
+      const res = await forumService.getPost(p.postId);
+      const detail = (res as any).data ?? res;
+      setEditContent(detail.content);
+      setEditMediaUrls(detail.mediaUrls ?? []);
+      setEditMediaTypes(detail.mediaTypes ?? []);
+    } catch {
+      toast.error("Không thể tải nội dung bài");
+      setEditingPost(null);
+    }
+  };
+
+  const handleEditFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length) return;
+    setEditUploading(true);
+    try {
+      for (const file of files) {
+        const isImage = file.type.startsWith("image");
+        const isVideo = file.type.startsWith("video");
+        if (!isImage && !isVideo) { toast.error("Chỉ chấp nhận ảnh hoặc video."); continue; }
+        if (isVideo && editMediaTypes.includes("video")) { toast.error("Chỉ được 1 video."); continue; }
+        if (isImage && editMediaTypes.filter(t => t === "image").length >= 5) { toast.error("Tối đa 5 ảnh."); continue; }
+        const url = await cloudinaryUpload(file, "forum");
+        setEditMediaUrls(prev => [...prev, url]);
+        setEditMediaTypes(prev => [...prev, isVideo ? "video" : "image"]);
+      }
+    } catch { toast.error("Upload thất bại"); }
+    finally { setEditUploading(false); if (editFileRef.current) editFileRef.current.value = ""; }
+  };
+
+  const handleEditPost = async () => {
+    if (!editingPost || !editTitle.trim() || !editContent.trim()) return;
+    setEditSaving(true);
+    try {
+      await forumService.editPost(editingPost.postId, { title: editTitle, content: editContent, mediaUrls: editMediaUrls, mediaTypes: editMediaTypes });
+      toast.success("Đã cập nhật bài đăng");
+      setEditingPost(null);
+      loadMyPosts();
+    } catch (e: any) { toast.error(e.message || "Lỗi"); }
+    finally { setEditSaving(false); }
+  };
+
+  const handleDeletePost = async (postId: number) => {
+    try {
+      await forumService.deletePost(postId);
+      toast.success("Đã xóa bài đăng");
+      setConfirmDeleteId(null);
+      loadMyPosts();
+    } catch (e: any) { toast.error(e.message || "Lỗi"); }
+  };
 
   const load = async () => {
     setLoading(true);
@@ -159,6 +227,14 @@ export default function ForumPage() {
                           {p.status === "approved" && (
                             <Link to={`/forum/${p.postId}`} className="text-xs text-[#00D9FF] hover:underline">Trang bài</Link>
                           )}
+                          <div className="flex gap-1 mt-0.5">
+                            <Button size="sm" variant="ghost" onClick={() => openEditModal(p)} className="gap-1 text-xs h-7 text-slate-500 hover:text-[#00D9FF]">
+                              <Pencil className="w-3 h-3" />{p.status === "rejected" ? "Sửa & gửi lại" : "Sửa"}
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => setConfirmDeleteId(p.postId)} className="gap-1 text-xs h-7 text-slate-500 hover:text-red-500">
+                              <Trash2 className="w-3 h-3" />Xóa
+                            </Button>
+                          </div>
                         </div>
                         </div>
                       </div>
@@ -240,6 +316,73 @@ export default function ForumPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Edit post modal */}
+      <Dialog open={!!editingPost} onOpenChange={() => setEditingPost(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>Chỉnh sửa bài đăng</DialogTitle></DialogHeader>
+          <div className="space-y-3 mt-2">
+            {editingPost?.status === "rejected" && (
+              <div className="text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-lg px-3 py-2">
+                ⚠️ Bài bị từ chối. Sau khi sửa sẽ được gửi lại để duyệt.
+              </div>
+            )}
+            <input value={editTitle} onChange={e => setEditTitle(e.target.value)}
+              placeholder="Tiêu đề" maxLength={200}
+              className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#00D9FF]/30" />
+            <textarea value={editContent} onChange={e => setEditContent(e.target.value)}
+              placeholder="Nội dung" maxLength={5000} rows={6}
+              disabled={editContent === "Đang tải..."}
+              className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#00D9FF]/30 disabled:opacity-50" />
+            {/* Media */}
+            <div>
+              <button onClick={() => !editUploading && editFileRef.current?.click()} disabled={editUploading}
+                className="w-full border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm text-slate-500 hover:border-[#00D9FF]/50 transition-colors flex items-center justify-center gap-2 disabled:opacity-60">
+                {editUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                {editUploading ? "Đang upload..." : "Thêm ảnh / video"}
+              </button>
+              <input ref={editFileRef} type="file" accept="image/*,video/*" multiple className="hidden" onChange={handleEditFileUpload} />
+              {editMediaUrls.length > 0 && (
+                <div className="flex gap-2 mt-2 flex-wrap">
+                  {editMediaUrls.map((url, i) => (
+                    <div key={i} className="relative">
+                      {editMediaTypes[i] === "video"
+                        ? <video src={url} className="w-20 h-16 object-cover rounded-lg" />
+                        : <img src={url} alt="" className="w-20 h-16 object-cover rounded-lg" />}
+                      <button onClick={() => { setEditMediaUrls(p => p.filter((_, j) => j !== i)); setEditMediaTypes(p => p.filter((_, j) => j !== i)); }}
+                        className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setEditingPost(null)}>Hủy</Button>
+              <Button onClick={handleEditPost} disabled={editSaving || !editTitle.trim() || !editContent.trim() || editContent === "Đang tải..."}
+                className="bg-gradient-to-r from-[#00D9FF] to-[#00B8D4] text-white">
+                {editSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : editingPost?.status === "rejected" ? "Sửa & gửi lại" : "Lưu"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirm delete modal */}
+      {confirmDeleteId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setConfirmDeleteId(null)} />
+          <div className="relative bg-white dark:bg-slate-800 rounded-2xl p-5 w-full max-w-xs shadow-xl">
+            <p className="font-semibold text-slate-900 dark:text-white mb-1">Xóa bài đăng?</p>
+            <p className="text-sm text-slate-500 mb-4">Hành động này không thể hoàn tác.</p>
+            <div className="flex gap-3 justify-end">
+              <Button variant="outline" onClick={() => setConfirmDeleteId(null)}>Hủy</Button>
+              <Button onClick={() => handleDeletePost(confirmDeleteId)} className="bg-red-500 hover:bg-red-600 text-white">Xóa</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </MainLayout>
   );
 }
