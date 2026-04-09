@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Loader2, CheckCircle2, XCircle, Copy, Clock, ArrowLeft, RefreshCw } from 'lucide-react';
 import { subscriptionService, PaymentInfo } from '@/services/subscriptionService';
+import { invalidateSubscriptionCache } from '@/hooks/useSubscription';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -63,6 +64,7 @@ export default function PaymentPage() {
           if (updated.status === 'Paid') {
             clearInterval(pollRef.current!);
             clearInterval(timerRef.current!);
+            invalidateSubscriptionCache();
             toast.success('Thanh toán thành công! Gói Premium đã được kích hoạt.');
           }
           if (updated.status === 'Expired' || updated.status === 'Cancelled') {

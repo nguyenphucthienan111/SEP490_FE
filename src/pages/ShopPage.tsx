@@ -156,9 +156,9 @@ export default function ShopPage() {
                 { key: "streak_7", label: "Streak 7 ngày", reward: "Khung đồng 🥉", desc: "Điểm danh 7 ngày liên tiếp" },
                 { key: "streak_30", label: "Streak 30 ngày", reward: "Khung lửa đỏ 🔥", desc: "Điểm danh 30 ngày liên tiếp" },
                 { key: "streak_100", label: "Streak 100 ngày", reward: "Khung kim cương 💎", desc: "Điểm danh 100 ngày liên tiếp" },
-                { key: "correct_10", label: "Tiên tri ⚽", reward: "Badge Tiên tri", desc: "Dự đoán đúng 10 trận" },
-                { key: "exact_10", label: "Bắn tỉa 🎯", reward: "Badge Bắn tỉa", desc: "Đúng tỉ số 10 lần" },
-                { key: "correct_50", label: "Huyền thoại 👑", reward: "Badge Huyền thoại", desc: "Dự đoán đúng 50 trận" },
+                { key: "correct_10", label: "Tiên tri ⚽", reward: "Huy hiệu Tiên tri", desc: "Dự đoán đúng 10 trận" },
+                { key: "exact_10", label: "Bắn tỉa 🎯", reward: "Huy hiệu Bắn tỉa", desc: "Đúng tỉ số 10 lần" },
+                { key: "correct_50", label: "Huyền thoại 👑", reward: "Huy hiệu Huyền thoại", desc: "Dự đoán đúng 50 trận" },
               ].map(a => (
                 <div key={a.key} className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-500/10 dark:to-orange-500/10 border border-amber-200 dark:border-amber-500/20 rounded-xl p-4">
                   <p className="font-semibold text-slate-900 dark:text-white text-sm">{a.label}</p>

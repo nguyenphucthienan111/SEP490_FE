@@ -55,4 +55,8 @@ export const subscriptionService = {
   async cancelPayment(paymentCode: string): Promise<void> {
     await apiClient.post(`/api/subscriptions/payments/${paymentCode}/cancel`, {});
   },
+
+  async getMyPayments(): Promise<PaymentInfo[]> {
+    return await apiClient.get<PaymentInfo[]>('/api/subscriptions/payments/my');
+  },
 };

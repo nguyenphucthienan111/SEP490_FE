@@ -36,6 +36,7 @@ export const NOTIFICATION_ICONS: Record<string, string> = {
   welcome:              '🎉',
   subscription_success: '✅',
   subscription_expiring:'⚠️',
+  topup_success:        '💳',
   comment_reply:        '💬',
   comment_warning:      '⚠️',
   comment_ban:          '🚫',

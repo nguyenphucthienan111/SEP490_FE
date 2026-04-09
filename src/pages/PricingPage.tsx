@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Check, Zap, Crown, Loader2, Star } from 'lucide-react';
+import { Check, Zap, Crown, Loader2, Star, Calendar, History, ChevronDown, ChevronUp, Video, FileText, Plus } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { apiClient } from '@/services/api';
-import { subscriptionService, SubscriptionStatus } from '@/services/subscriptionService';
+import { subscriptionService, SubscriptionStatus, PaymentInfo } from '@/services/subscriptionService';
+import { invalidateSubscriptionCache } from '@/hooks/useSubscription';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { Link, useNavigate } from 'react-router-dom';
@@ -76,8 +77,43 @@ export default function PricingPage() {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [paying, setPaying] = useState<string | null>(null);
   const [subscription, setSubscription] = useState<SubscriptionStatus | null>(null);
+  const [payments, setPayments] = useState<PaymentInfo[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
   const navigate = useNavigate();
   const isLoggedIn = !!localStorage.getItem('accessToken');
+
+  // Plan upgrade order
+  const PLAN_ORDER: Record<string, number> = { TRIAL: 1, MONTHLY: 2, QUARTERLY: 3 };
+  const canUpgrade = (planCode: string) => {
+    if (!subscription?.isActive) return true;
+    return (PLAN_ORDER[planCode] ?? 0) > (PLAN_ORDER[subscription.planCode ?? ''] ?? 0);
+  };
+
+  const getButtonLabel = (planCode: string) => {
+    if (!subscription?.isActive) return 'Đăng ký ngay';
+    if (subscription.planCode === planCode) return '✓ Đang sử dụng';
+    if (canUpgrade(planCode)) return '⬆ Nâng cấp';
+    return 'Đã có gói cao hơn';
+  };
+
+  const isButtonDisabled = (planCode: string) => {
+    if (paying) return true;
+    if (!subscription?.isActive) return false;
+    if (subscription.planCode === planCode) return true;
+    return !canUpgrade(planCode);
+  };
+
+  const fmtDate = (iso: string | null) => {
+    if (!iso) return '';
+    const d = new Date(iso.endsWith('Z') ? iso : iso + 'Z');
+    return d.toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  };
+
+  const daysLeft = (iso: string | null) => {
+    if (!iso) return 0;
+    const exp = new Date(iso.endsWith('Z') ? iso : iso + 'Z').getTime();
+    return Math.max(0, Math.ceil((exp - Date.now()) / 86400000));
+  };
 
   useEffect(() => {
     apiClient.get<any>('/api/subscriptions/plans')
@@ -92,6 +128,9 @@ export default function PricingPage() {
       subscriptionService.getMySubscription()
         .then(setSubscription)
         .catch(() => {});
+      subscriptionService.getMyPayments()
+        .then(data => setPayments((data as any)?.data ?? data ?? []))
+        .catch(() => {});
     }
   }, []);
 
@@ -100,6 +139,7 @@ export default function PricingPage() {
     setPaying(planCode);
     try {
       const payment = await subscriptionService.createPayment(planCode);
+      invalidateSubscriptionCache();
       navigate(`/payment/${payment.paymentCode}`);
     } catch (e: any) {
       toast.error(e?.message || 'Không thể tạo đơn thanh toán');
@@ -133,6 +173,53 @@ export default function PricingPage() {
             </p>
           </motion.div>
 
+          {/* Subscription status banner */}
+          {isLoggedIn && subscription?.isActive && (
+            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+              className="mb-8 glass-card rounded-2xl p-5 border border-emerald-500/20 bg-emerald-500/5">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/15 flex items-center justify-center">
+                    <Crown className="w-5 h-5 text-emerald-500" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-slate-900 dark:text-white text-sm">Gói {subscription.planName} đang hoạt động</p>
+                    <p className="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5">
+                      <Calendar className="w-3 h-3" />
+                      Hết hạn: {fmtDate(subscription.expiresAt)}
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-semibold">
+                        Còn {daysLeft(subscription.expiresAt)} ngày
+                      </span>
+                    </p>
+                  </div>
+                </div>
+                <button onClick={() => setShowHistory(v => !v)}
+                  className="flex items-center gap-1.5 text-xs text-[#00D9FF] hover:underline">
+                  <History className="w-3.5 h-3.5" />Lịch sử thanh toán
+                  {showHistory ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                </button>
+              </div>
+              {showHistory && (
+                <div className="mt-4 border-t border-emerald-500/10 pt-4 space-y-2">
+                  {payments.filter(p => p.status === 'Paid').length === 0
+                    ? <p className="text-xs text-slate-400 text-center py-2">Chưa có lịch sử thanh toán</p>
+                    : payments.filter(p => p.status === 'Paid').map(p => (
+                      <div key={p.paymentId} className="flex items-center justify-between text-xs py-1.5 border-b border-slate-100 dark:border-slate-800 last:border-0">
+                        <div>
+                          <span className="font-semibold text-slate-700 dark:text-slate-300">{p.planName}</span>
+                          <span className="text-slate-400 ml-2">{fmtDate(p.paidAt)}</span>
+                        </div>
+                        <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                          {p.amount.toLocaleString('vi-VN')}đ
+                        </span>
+                      </div>
+                    ))
+                  }
+                </div>
+              )}
+            </motion.div>
+          )}
+
           {/* Plans */}
           {loading ? (
             <div className="flex justify-center py-20">
@@ -140,7 +227,7 @@ export default function PricingPage() {
             </div>
           ) : (
             <div className="grid sm:grid-cols-3 gap-6 mb-12">
-              {plans.map((plan, i) => {
+              {plans.filter(p => !p.code.startsWith('TOPUP_')).map((plan, i) => {
                 const meta = PLAN_META[plan.code] ?? {
                   icon: <Zap className="w-5 h-5" />,
                   color: 'from-slate-500/10 to-transparent',
@@ -216,23 +303,21 @@ export default function PricingPage() {
                       {/* CTA */}
                       {isLoggedIn ? (
                         <button
-                          disabled={!!paying || subscription?.isActive}
+                          disabled={isButtonDisabled(plan.code)}
                           className={cn(
                             'w-full py-3 rounded-xl font-bold text-sm transition-all duration-200 flex items-center justify-center gap-2',
                             subscription?.isActive && subscription.planCode === plan.code
                               ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 cursor-default'
+                              : !canUpgrade(plan.code) && subscription?.isActive
+                              ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed'
                               : plan.code === 'QUARTERLY'
                               ? 'bg-gradient-to-r from-[#FF4444] to-[#FF6666] text-white hover:shadow-lg hover:shadow-[#FF4444]/25 disabled:opacity-50'
                               : 'bg-gradient-to-r from-[#00D9FF] to-[#00E8FF] text-slate-900 hover:shadow-lg hover:shadow-[#00D9FF]/25 disabled:opacity-50'
                           )}
-                          onClick={e => { e.stopPropagation(); if (!subscription?.isActive) handleSubscribe(plan.code); }}
+                          onClick={e => { e.stopPropagation(); if (!isButtonDisabled(plan.code)) handleSubscribe(plan.code); }}
                         >
                           {paying === plan.code ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                          {subscription?.isActive && subscription.planCode === plan.code
-                            ? '✓ Đang sử dụng'
-                            : subscription?.isActive
-                            ? 'Đã có gói khác'
-                            : 'Đăng ký ngay'}
+                          {getButtonLabel(plan.code)}
                         </button>
                       ) : (
                         <button
@@ -252,6 +337,70 @@ export default function PricingPage() {
                 );
               })}
             </div>
+          )}
+
+          {/* Top-up credits section */}
+          {isLoggedIn && (
+            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+              className="mb-8">
+              <h2 className="font-display font-bold text-xl text-slate-900 dark:text-white mb-2 flex items-center gap-2">
+                <Plus className="w-5 h-5 text-[#00D9FF]" />Nạp thêm credit
+              </h2>
+              <p className="text-sm text-slate-500 dark:text-[#A8A29E] mb-5">
+                Hết credit? Nạp thêm bất cứ lúc nào. Giá lẻ cao hơn gói — mua gói sẽ tiết kiệm hơn.
+              </p>
+              <div className="grid sm:grid-cols-2 gap-4">
+                {[
+                  {
+                    code: 'TOPUP_AI_VIDEO',
+                    icon: <Video className="w-5 h-5" />,
+                    label: 'AI Video Analysis',
+                    amount: '5 lượt',
+                    price: 50000,
+                    perUnit: '10.000đ/lượt',
+                    compare: 'Gói Monthly: 6.600đ/lượt',
+                    color: 'text-[#00D9FF]',
+                    bg: 'bg-[#00D9FF]/10',
+                    border: 'border-[#00D9FF]/20',
+                  },
+                  {
+                    code: 'TOPUP_FORUM_POST',
+                    icon: <FileText className="w-5 h-5" />,
+                    label: 'Bài đăng diễn đàn',
+                    amount: '10 bài',
+                    price: 50000,
+                    perUnit: '5.000đ/bài',
+                    compare: 'Gói Monthly: 6.600đ/bài',
+                    color: 'text-[#FF4444]',
+                    bg: 'bg-[#FF4444]/10',
+                    border: 'border-[#FF4444]/20',
+                  },
+                ].map(item => (
+                  <div key={item.code} className={`glass-card rounded-2xl p-5 border ${item.border} flex items-center justify-between gap-4`}>
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-xl ${item.bg} ${item.color} flex items-center justify-center flex-shrink-0`}>
+                        {item.icon}
+                      </div>
+                      <div>
+                        <p className="font-bold text-slate-900 dark:text-white text-sm">{item.label}</p>
+                        <p className="text-xs text-slate-500">{item.amount} · {item.perUnit}</p>
+                        <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">⚡ {item.compare}</p>
+                      </div>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className="font-bold text-slate-900 dark:text-white">{item.price.toLocaleString('vi-VN')}đ</p>
+                      <button
+                        disabled={!!paying}
+                        onClick={() => handleSubscribe(item.code)}
+                        className={`mt-1.5 px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${item.color} ${item.bg} border ${item.border} hover:opacity-80 disabled:opacity-50`}
+                      >
+                        {paying === item.code ? <Loader2 className="w-3 h-3 animate-spin inline" /> : 'Mua ngay'}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
           )}
 
           {/* FAQ / Trust */}

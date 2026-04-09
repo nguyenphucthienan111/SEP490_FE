@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Bell, Check, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { notificationService, NotificationDto, NOTIFICATION_ICONS } from '@/services/notificationService';
@@ -57,6 +58,7 @@ export function NotificationBell() {
       setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, isRead: true } : x));
       setUnread(prev => Math.max(0, prev - 1));
     }
+    setOpen(false);
     setSelectedNotif(n);
   };
 
@@ -125,9 +127,9 @@ export function NotificationBell() {
         )}
       </AnimatePresence>
 
-      {/* Detail modal */}
-      <AnimatePresence>
-        {selectedNotif && (
+      {/* Detail modal — rendered via portal to escape navbar stacking context */}
+      {selectedNotif && createPortal(
+        <AnimatePresence>
           <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               className="absolute inset-0 bg-black/40" onClick={() => setSelectedNotif(null)} />
@@ -153,8 +155,9 @@ export function NotificationBell() {
               </div>
             </motion.div>
           </div>
-        )}
-      </AnimatePresence>
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 }
