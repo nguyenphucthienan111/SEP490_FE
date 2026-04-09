@@ -467,7 +467,7 @@ export default function PlayerDetailPage() {
                       activeTab === tab.key ? 'text-[#00D9FF]' : 'text-slate-500 dark:text-[#A8A29E] hover:text-slate-700 dark:hover:text-foreground')}>
                     <span>{tab.icon}</span>
                     <span>{tab.label}</span>
-                    {(tab.key === 'stats' || tab.key === 'transfers') && !isPremium && (
+                    {(tab.key === 'stats' || tab.key === 'transfers' || tab.key === 'matches') && !isPremium && (
                       <span className="ml-0.5 text-[10px]">🔒</span>
                     )}
                     {tab.key === 'transfers' && transfers.length > 0 && (
@@ -820,6 +820,7 @@ export default function PlayerDetailPage() {
 
               {/* ── LỊCH SỬ TRẬN ── */}
               {activeTab === 'matches' && (
+                <PremiumGate locked={!isPremium} message="Đăng ký Premium để xem lịch sử trận đấu và thông số chi tiết từng trận.">
                 <div className="mt-4 space-y-3">
                   {matchHistoryLoading ? (
                     <div className="glass-card rounded-2xl flex items-center justify-center py-16">
@@ -917,6 +918,7 @@ export default function PlayerDetailPage() {
                     </div>
                   )}
                 </div>
+                </PremiumGate>
               )}
 
               {/* ── CHUYỂN NHƯỢNG ── */}

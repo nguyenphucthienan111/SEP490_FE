@@ -21,11 +21,11 @@ function teamLogo(id: number) {
 }
 
 function fmtDate(ts: number) {
-  return new Date(ts * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: '2-digit' });
+  return new Date(ts * 1000).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: '2-digit', timeZone: 'Asia/Ho_Chi_Minh' });
 }
 
 function fmtTime(ts: number) {
-  return new Date(ts * 1000).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+  return new Date(ts * 1000).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Ho_Chi_Minh' });
 }
 
 function MatchCard({ match, liveUpdate, index }: { match: SofascoreTeamMatch; liveUpdate?: LiveMatchUpdate; index: number }) {
@@ -155,7 +155,7 @@ export default function MatchesPage() {
         awayTeam: { id: m.awayTeam?.apiTeamId ?? 0, name: m.awayTeam?.teamName ?? '' },
         homeScore: { current: m.homeGoals ?? 0, penalties: m.homePenalties ?? null },
         awayScore: { current: m.awayGoals ?? 0, penalties: m.awayPenalties ?? null },
-        startTimestamp: m.matchDate ? Math.floor(new Date(m.matchDate).getTime() / 1000) : 0,
+        startTimestamp: m.matchDate ? Math.floor(new Date(m.matchDate.endsWith('Z') ? m.matchDate : m.matchDate + 'Z').getTime() / 1000) : 0,
         status: { type: m.status ?? 'notstarted' },
         roundInfo: m.round ? { round: Number(m.round) } : undefined,
       }));
