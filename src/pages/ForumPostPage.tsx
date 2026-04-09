@@ -29,10 +29,11 @@ function timeAgo(dateStr: string) {
   return d.toLocaleDateString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
-function CommentItem({ c, onReply, currentUserId, onRefresh, isReply = false }: {
+function CommentItem({ c, onReply, currentUserId, userIdLoaded, onRefresh, isReply = false }: {
   c: CommentDto;
   onReply: (name: string, id: number) => void;
   currentUserId: string | null;
+  userIdLoaded: boolean;
   onRefresh: () => void;
   isReply?: boolean;
 }) {
@@ -85,7 +86,23 @@ function CommentItem({ c, onReply, currentUserId, onRefresh, isReply = false }: 
     <div className={`flex gap-3 ${isReply ? "ml-10" : ""}`}>
       <UserAvatar avatarUrl={c.authorAvatar} username={c.authorName} size={32} loadout={loadout} className="flex-shrink-0 mt-0.5" />
       <div className="flex-1">
-        <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl px-3 py-2">
+        {/* Show warned comments to author with warning, show placeholder to others */}
+        {userIdLoaded && currentUserId !== null && c.status === "warned" && c.userId !== currentUserId
+          ? (
+        <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-2xl px-3 py-2">
+          <p className="text-xs text-red-500 dark:text-red-400 italic flex items-center gap-1.5">
+            <span>🚫</span> Bình luận đã bị ẩn do vi phạm tiêu chuẩn cộng đồng.
+          </p>
+        </div>
+          )
+          : (
+        <div className={`bg-slate-50 dark:bg-slate-800/50 rounded-2xl px-3 py-2 ${c.status === "warned" ? "opacity-60" : ""}`}>
+          {c.status === "warned" && (
+            <div className="flex items-center gap-1.5 mb-1.5 px-2 py-1 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20">
+              <span className="text-xs">⚠️</span>
+              <span className="text-xs text-amber-700 dark:text-amber-400 font-medium">Bình luận vi phạm ngôn từ - chỉ bạn mới thấy</span>
+            </div>
+          )}
           <UserDisplayName username={c.authorName} loadout={loadout} className="text-sm font-semibold" />
           {c.parentAuthorName && !editing && (
             <p className="text-xs mt-0.5 flex items-center gap-1">
@@ -111,6 +128,7 @@ function CommentItem({ c, onReply, currentUserId, onRefresh, isReply = false }: 
             <p className="text-sm text-slate-700 dark:text-slate-300 mt-0.5">{renderContent(c.content)}</p>
           )}
         </div>
+        )}
         <div className="flex items-center gap-3 mt-1 px-1">
           <span className="text-xs text-slate-400">{timeAgo(c.createdAt)}</span>
           <button onClick={() => onReply(c.authorName, c.commentId)}
@@ -167,6 +185,7 @@ export default function ForumPostPage() {
     reactionTimeout.current = setTimeout(() => setShowReactions(false), 200);
   };
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [userIdLoaded, setUserIdLoaded] = useState(false);
   const commentRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -190,13 +209,16 @@ export default function ForumPostPage() {
       .finally(() => setLoading(false));
 
     if (isLoggedIn) {
-      userService.getMe().then(u => setCurrentUserId(u.userId)).catch(() => {});
+      userService.getMe().then(u => { setCurrentUserId(u.userId); setUserIdLoaded(true); }).catch(() => setUserIdLoaded(true));
+    } else {
+      setUserIdLoaded(true);
     }
   }, [id]);
 
   const refreshComments = async () => {
     const c = await forumService.getComments(Number(id));
-    setComments((c as any).data ?? c);
+    const data = (c as any).data ?? c;
+    if (Array.isArray(data)) setComments(data);
   };
 
   const handleComment = async () => {
@@ -326,7 +348,7 @@ export default function ForumPostPage() {
           {/* Comments */}
           <div className="bg-white dark:bg-card border border-slate-200 dark:border-border rounded-2xl p-6">
             <h2 className="font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-              <MessageSquare className="w-5 h-5" /> {comments.length} bình luận
+              <MessageSquare className="w-5 h-5" /> {comments.filter(c => c.status !== "warned" || c.userId === currentUserId).length} bình luận
             </h2>
 
             <div className="space-y-4 mb-6">
@@ -335,17 +357,18 @@ export default function ForumPostPage() {
                 : (() => {
                     const topLevel = comments.filter(c => !c.parentCommentId);
                     const replies = comments.filter(c => c.parentCommentId);
-                    // Get all comment IDs that are top-level
-                    const topLevelIds = new Set(topLevel.map(c => c.commentId));
+                    // Build a map to find the root top-level ancestor of any comment
+                    const commentMap = new Map(comments.map(c => [c.commentId, c]));
+                    const getRootId = (commentId: number): number => {
+                      const c = commentMap.get(commentId);
+                      if (!c || !c.parentCommentId) return commentId;
+                      return getRootId(c.parentCommentId);
+                    };
                     return topLevel.map(c => (
                       <div key={c.commentId} className="space-y-2">
-                        <CommentItem c={c} onReply={handleReply} currentUserId={currentUserId} onRefresh={refreshComments} />
-                        {replies.filter(r => {
-                          // Show as reply if parent is this top-level comment OR parent's parent is this comment
-                          return r.parentCommentId === c.commentId ||
-                            replies.find(p => p.commentId === r.parentCommentId)?.parentCommentId === c.commentId;
-                        }).map(r => (
-                          <CommentItem key={r.commentId} c={r} onReply={handleReply} currentUserId={currentUserId} onRefresh={refreshComments} isReply />
+                        <CommentItem c={c} onReply={handleReply} currentUserId={currentUserId} userIdLoaded={userIdLoaded} onRefresh={refreshComments} />
+                        {replies.filter(r => getRootId(r.parentCommentId!) === c.commentId).map(r => (
+                          <CommentItem key={r.commentId} c={r} onReply={handleReply} currentUserId={currentUserId} userIdLoaded={userIdLoaded} onRefresh={refreshComments} isReply />
                         ))}
                       </div>
                     ));

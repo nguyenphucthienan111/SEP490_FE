@@ -89,6 +89,12 @@ export const forumService = {
   deleteComment: (commentId: number) =>
     apiClient.delete<void>(`/api/forum/comments/${commentId}`),
 
+  editPost: (postId: number, data: { title: string; content: string; mediaUrls?: string[]; mediaTypes?: string[] }) =>
+    apiClient.put<void>(`/api/forum/posts/${postId}`, data),
+
+  deletePost: (postId: number) =>
+    apiClient.delete<void>(`/api/forum/posts/${postId}`),
+
   // Admin
   adminGetPosts: (status?: string, page = 1, pageSize = 20) =>
     apiClient.get<PostsResponse>(`/api/forum/admin/posts?${status ? `status=${status}&` : ''}page=${page}&pageSize=${pageSize}`),
