@@ -266,103 +266,70 @@ export default function ProfilePage() {
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="bg-card border border-slate-200 dark:border-white/[0.08] p-1 rounded-xl">
-            <TabsTrigger
-              value="profile"
-              className="data-[state=active]:bg-blue-100 dark:bg-[#00D9FF]/10 data-[state=active]:text-[#00D9FF] rounded-lg px-6"
-            >
-              <User className="w-4 h-4 mr-2" />
-              Thông tin
+            <TabsTrigger value="profile" className="data-[state=active]:bg-blue-100 dark:bg-[#00D9FF]/10 data-[state=active]:text-[#00D9FF] rounded-lg px-6">
+              <User className="w-4 h-4 mr-2" />Thông tin
             </TabsTrigger>
-            <TabsTrigger
-              value="favorites"
-              className="data-[state=active]:bg-blue-100 dark:bg-[#00D9FF]/10 data-[state=active]:text-[#00D9FF] rounded-lg px-6"
-            >
-              <Star className="w-4 h-4 mr-2" />
-              Yêu thích
+            <TabsTrigger value="favorites" className="data-[state=active]:bg-blue-100 dark:bg-[#00D9FF]/10 data-[state=active]:text-[#00D9FF] rounded-lg px-6">
+              <Star className="w-4 h-4 mr-2" />Yêu thích
             </TabsTrigger>
-            <TabsTrigger
-              value="activity"
-              className="data-[state=active]:bg-blue-100 dark:bg-[#00D9FF]/10 data-[state=active]:text-[#00D9FF] rounded-lg px-6"
-            >
-              <Clock className="w-4 h-4 mr-2" />
-              Hoạt động
-            </TabsTrigger>
-            <TabsTrigger
-              value="settings"
-              className="data-[state=active]:bg-blue-100 dark:bg-[#00D9FF]/10 data-[state=active]:text-[#00D9FF] rounded-lg px-6"
-            >
-              <Bell className="w-4 h-4 mr-2" />
-              Cài đặt
-            </TabsTrigger>
-            <TabsTrigger
-              value="wardrobe"
-              className="data-[state=active]:bg-blue-100 dark:bg-[#00D9FF]/10 data-[state=active]:text-[#00D9FF] rounded-lg px-6"
-            >
-              <Package className="w-4 h-4 mr-2" />
-              Tủ đồ
+            <TabsTrigger value="wardrobe" className="data-[state=active]:bg-blue-100 dark:bg-[#00D9FF]/10 data-[state=active]:text-[#00D9FF] rounded-lg px-6">
+              <Package className="w-4 h-4 mr-2" />Tủ đồ
             </TabsTrigger>
           </TabsList>
 
           {/* Profile Tab */}
           <TabsContent value="profile" className="space-y-6">
             <div className="bg-card border border-slate-200 dark:border-white/[0.08] rounded-2xl p-6">
-              <h3 className="font-display font-bold text-xl text-foreground mb-6">
-                Thông tin cá nhân
-              </h3>
+              <h3 className="font-display font-bold text-xl text-foreground mb-6">Thông tin cá nhân</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label className="text-slate-600 dark:text-[#A8A29E]">Username</Label>
-                  <p className="text-foreground font-body h-12 flex items-center px-4 bg-muted rounded-xl">
-                    {user.username}
-                  </p>
+                  <p className="text-foreground font-body h-12 flex items-center px-4 bg-muted rounded-xl">{user.username}</p>
                 </div>
                 <div className="space-y-2">
                   <Label className="text-slate-600 dark:text-[#A8A29E]">Email</Label>
                   {isEditing ? (
-                    <Input
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="bg-card/5 border-slate-200 dark:border-white/[0.08] text-foreground h-12 rounded-xl"
-                    />
+                    <Input value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      className="bg-card/5 border-slate-200 dark:border-white/[0.08] text-foreground h-12 rounded-xl" />
                   ) : (
-                    <p className="text-foreground font-body h-12 flex items-center px-4 bg-muted rounded-xl">
-                      {formData.email}
-                    </p>
+                    <p className="text-foreground font-body h-12 flex items-center px-4 bg-muted rounded-xl">{formData.email}</p>
                   )}
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <Label className="text-slate-600 dark:text-[#A8A29E]">Họ và tên</Label>
                   {isEditing ? (
-                    <Input
-                      value={formData.fullName}
-                      onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                      className="bg-card/5 border-slate-200 dark:border-white/[0.08] text-foreground h-12 rounded-xl"
-                    />
+                    <Input value={formData.fullName} onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                      className="bg-card/5 border-slate-200 dark:border-white/[0.08] text-foreground h-12 rounded-xl" />
                   ) : (
-                    <p className="text-foreground font-body h-12 flex items-center px-4 bg-muted rounded-xl">
-                      {formData.fullName}
-                    </p>
+                    <p className="text-foreground font-body h-12 flex items-center px-4 bg-muted rounded-xl">{formData.fullName}</p>
                   )}
                 </div>
               </div>
               {isEditing && (
                 <div className="mt-6 flex justify-end gap-3">
-                  <Button
-                    variant="ghost"
-                    onClick={() => setIsEditing(false)}
-                    className="text-slate-600 dark:text-[#A8A29E] hover:text-foreground"
-                  >
-                    Hủy
-                  </Button>
-                  <Button
-                    onClick={handleSave}
-                    disabled={isSaving}
-                    className="bg-gradient-to-r from-[#FF4444] to-[#FF6666] text-slate-900 dark:text-white"
-                  >
+                  <Button variant="ghost" onClick={() => setIsEditing(false)} className="text-slate-600 dark:text-[#A8A29E] hover:text-foreground">Hủy</Button>
+                  <Button onClick={handleSave} disabled={isSaving} className="bg-gradient-to-r from-[#FF4444] to-[#FF6666] text-slate-900 dark:text-white">
                     {isSaving ? 'Đang lưu...' : 'Lưu thay đổi'}
                   </Button>
                 </div>
               )}
+            </div>
+
+            {/* Bảo mật */}
+            <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-6">
+              <div className="flex items-center gap-2 mb-1">
+                <Shield className="w-5 h-5 text-red-400" />
+                <h3 className="font-display font-bold text-lg text-red-400">Bảo mật</h3>
+              </div>
+              <p className="text-slate-500 dark:text-[#A8A29E] text-sm mb-5">Quản lý mật khẩu và bảo mật tài khoản.</p>
+              <div className="flex flex-wrap gap-3">
+                <Button variant="outline" className="border-red-500/30 text-red-400 hover:bg-red-500/10">
+                  Đổi mật khẩu
+                </Button>
+                <Button variant="outline" className="border-red-500/30 text-red-400 hover:bg-red-500/10">
+                  Xóa tài khoản
+                </Button>
+              </div>
             </div>
           </TabsContent>
 
@@ -394,120 +361,6 @@ export default function ProfilePage() {
               </div>
             </div>
           </TabsContent>
-
-          {/* Activity Tab */}
-          <TabsContent value="activity" className="space-y-6">
-            <div className="bg-card border border-slate-200 dark:border-white/[0.08] rounded-2xl p-6">
-              <h3 className="font-display font-bold text-xl text-foreground mb-6">
-                Hoạt động gần đây
-              </h3>
-              <div className="space-y-3">
-                {mockUser.recentViews.map((view, index) => (
-                  <Link
-                    key={index}
-                    to={view.type === "player" ? `/players/${view.id}` : `/matches/${view.id}`}
-                    className="flex items-center justify-between p-4 rounded-xl bg-muted hover:bg-accent border border-slate-200 dark:border-white/[0.05] transition-colors group"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        view.type === "player" ? "bg-blue-100 dark:bg-[#00D9FF]/10" : "bg-red-100 dark:bg-[#FF4444]/10"
-                      }`}>
-                        {view.type === "player" ? (
-                          <User className="w-5 h-5 text-[#00D9FF]" />
-                        ) : (
-                          <Calendar className="w-5 h-5 text-[#FF4444]" />
-                        )}
-                      </div>
-                      <div>
-                        <p className="text-foreground font-medium">{view.name}</p>
-                        <p className="text-slate-600 dark:text-[#A8A29E] text-sm">
-                          {view.type === "player" ? "Cầu thủ" : "Trận đấu"} • {view.date}
-                        </p>
-                      </div>
-                    </div>
-                    <ChevronRight className="w-5 h-5 text-slate-600 dark:text-[#A8A29E] group-hover:text-foreground transition-colors" />
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </TabsContent>
-
-          {/* Settings Tab */}
-          <TabsContent value="settings" className="space-y-6">
-            <div className="bg-card border border-slate-200 dark:border-white/[0.08] rounded-2xl p-6">
-              <h3 className="font-display font-bold text-xl text-foreground mb-6">
-                Cài đặt thông báo
-              </h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 rounded-xl bg-muted border border-slate-200 dark:border-white/[0.05]">
-                  <div>
-                    <p className="text-foreground font-medium">Kết quả trận đấu</p>
-                    <p className="text-slate-600 dark:text-[#A8A29E] text-sm">Nhận thông báo khi trận đấu kết thúc</p>
-                  </div>
-                  <Switch
-                    checked={notifications.matchResults}
-                    onCheckedChange={(checked) => setNotifications({ ...notifications, matchResults: checked })}
-                  />
-                </div>
-                <div className="flex items-center justify-between p-4 rounded-xl bg-muted border border-slate-200 dark:border-white/[0.05]">
-                  <div>
-                    <p className="text-foreground font-medium">Cập nhật cầu thủ</p>
-                    <p className="text-slate-600 dark:text-[#A8A29E] text-sm">Thông báo về cầu thủ yêu thích</p>
-                  </div>
-                  <Switch
-                    checked={notifications.playerUpdates}
-                    onCheckedChange={(checked) => setNotifications({ ...notifications, playerUpdates: checked })}
-                  />
-                </div>
-                <div className="flex items-center justify-between p-4 rounded-xl bg-muted border border-slate-200 dark:border-white/[0.05]">
-                  <div>
-                    <p className="text-foreground font-medium">Bản tin hàng tuần</p>
-                    <p className="text-slate-600 dark:text-[#A8A29E] text-sm">Nhận email tổng hợp mỗi tuần</p>
-                  </div>
-                  <Switch
-                    checked={notifications.newsletter}
-                    onCheckedChange={(checked) => setNotifications({ ...notifications, newsletter: checked })}
-                  />
-                </div>
-                <div className="flex items-center justify-between p-4 rounded-xl bg-muted border border-slate-200 dark:border-white/[0.05]">
-                  <div>
-                    <p className="text-foreground font-medium">Push Notifications</p>
-                    <p className="text-slate-600 dark:text-[#A8A29E] text-sm">Thông báo đẩy trên trình duyệt</p>
-                  </div>
-                  <Switch
-                    checked={notifications.pushNotifications}
-                    onCheckedChange={(checked) => setNotifications({ ...notifications, pushNotifications: checked })}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Danger Zone */}
-            <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-6">
-              <h3 className="font-display font-bold text-xl text-red-400 mb-4">
-                Bảo mật
-              </h3>
-              <p className="text-slate-600 dark:text-[#A8A29E] text-sm mb-4">
-                Các hành động dưới đây không thể hoàn tác. Hãy cẩn thận.
-              </p>
-              <div className="flex flex-wrap gap-3">
-                <Button
-                  variant="outline"
-                  className="border-red-500/30 text-red-400 hover:bg-red-500/10"
-                >
-                  Đổi mật khẩu
-                </Button>
-                <Button
-                  variant="outline"
-                  className="border-red-500/30 text-red-400 hover:bg-red-500/10"
-                >
-                  Xóa tài khoản
-                </Button>
-              </div>
-            </div>
-          </TabsContent>
-
-          {/* Check-in Tab removed - accessible via header dropdown */}
 
           {/* Wardrobe Tab */}
           <TabsContent value="wardrobe" className="space-y-6">
