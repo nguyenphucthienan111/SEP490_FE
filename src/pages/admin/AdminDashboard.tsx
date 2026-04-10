@@ -1,107 +1,60 @@
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Users, Trophy, Calendar, TrendingUp, ArrowUpRight, ArrowDownRight, BarChart3 } from 'lucide-react';
+import { Users, Target, FileText, ArrowUpRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { AdminLayout } from './AdminLayout';
-import { players, matches, leagues, articles } from '@/data/mockData';
-
-const stats = [
-  { 
-    label: 'Total Players', 
-    value: players.length, 
-    change: '+12',
-    changeType: 'positive',
-    icon: Users,
-    href: '/admin/players'
-  },
-  { 
-    label: 'Matches Tracked', 
-    value: matches.length, 
-    change: '+5',
-    changeType: 'positive',
-    icon: Calendar,
-    href: '/admin/matches'
-  },
-  { 
-    label: 'Active Leagues', 
-    value: leagues.length, 
-    change: '0',
-    changeType: 'neutral',
-    icon: Trophy,
-    href: '/admin/leagues'
-  },
-  { 
-    label: 'Articles Published', 
-    value: articles.length, 
-    change: '+2',
-    changeType: 'positive',
-    icon: BarChart3,
-    href: '/admin/content'
-  },
-];
-
-const recentActivity = [
-  { action: 'Match stats updated', target: 'Hà Nội FC vs HAGL', time: '5 mins ago', type: 'match' },
-  { action: 'Player rating calculated', target: 'Nguyễn Quang Hải', time: '15 mins ago', type: 'player' },
-  { action: 'Article published', target: 'V.League Season Preview', time: '1 hour ago', type: 'content' },
-  { action: 'New match created', target: 'Viettel vs Nam Định', time: '2 hours ago', type: 'match' },
-  { action: 'Player profile updated', target: 'Đoàn Văn Hậu', time: '3 hours ago', type: 'player' },
-];
-
-const quickActions = [
-  { label: 'Add New Match', href: '/admin/matches/new', icon: Calendar },
-  { label: 'Add New Player', href: '/admin/players/new', icon: Users },
-  { label: 'Input Match Stats', href: '/admin/matches', icon: BarChart3 },
-  { label: 'Create Article', href: '/admin/content/new', icon: TrendingUp },
-];
+import { apiClient } from '@/services/api';
+import { contestService } from '@/services/contestService';
 
 export default function AdminDashboard() {
+  const [userCount, setUserCount] = useState<number | null>(null);
+  const [contestCount, setContestCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    apiClient.get<any>('/api/auth/admin/users?page=1&pageSize=1')
+      .then(res => { const d = (res as any).data ?? res; setUserCount(d.total ?? null); })
+      .catch(() => {});
+    contestService.getOpen()
+      .then(c => setContestCount(Array.isArray(c) ? c.length : null))
+      .catch(() => {});
+  }, []);
+
+  const stats = [
+    { label: 'Người dùng', value: userCount, icon: Users, href: '/admin/users', color: 'text-[#00D9FF]', bg: 'bg-[#00D9FF]/10' },
+    { label: 'Cuộc thi dự đoán', value: contestCount, icon: Target, href: '/admin/predictions', color: 'text-[#FF4444]', bg: 'bg-[#FF4444]/10' },
+    { label: 'Diễn đàn', value: null, icon: FileText, href: '/admin/forum', color: 'text-[#a78bfa]', bg: 'bg-[#a78bfa]/10' },
+  ];
+
+  const quickActions = [
+    { label: 'Quản lý người dùng', href: '/admin/users', icon: Users },
+    { label: 'Tạo cuộc thi dự đoán', href: '/admin/predictions', icon: Target },
+    { label: 'Quản lý diễn đàn', href: '/admin/forum', icon: FileText },
+  ];
+
   return (
     <AdminLayout>
       <div className="space-y-8">
-        {/* Page Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <h1 className="font-display font-extrabold text-3xl text-foreground mb-2">
-            Dashboard
-          </h1>
-          <p className="text-slate-600 dark:text-[#A8A29E]">
-            Welcome back! Here's an overview of your platform.
-          </p>
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
+          <h1 className="font-display font-extrabold text-2xl text-foreground mb-1">Dashboard</h1>
+          <p className="text-sm text-slate-500 dark:text-[#A8A29E]">Tổng quan hệ thống quản trị</p>
         </motion.div>
 
-        {/* Stats Grid */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {stats.map((stat, index) => (
-            <motion.div
-              key={stat.label}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: index * 0.1 }}
-            >
-              <Link to={stat.href}>
+        {/* Stats */}
+        <div className="grid sm:grid-cols-3 gap-5">
+          {stats.map((s, i) => (
+            <motion.div key={s.label} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}>
+              <Link to={s.href}>
                 <div className="glass-card rounded-2xl p-6 hover:translate-y-[-2px] hover:shadow-lg transition-all duration-200 group">
                   <div className="flex items-start justify-between mb-4">
-                    <div className="w-12 h-12 rounded-xl bg-red-100 dark:bg-[#FF4444]/10 flex items-center justify-center">
-                      <stat.icon className="w-6 h-6 text-[#FF4444]" />
+                    <div className={`w-11 h-11 rounded-xl ${s.bg} flex items-center justify-center`}>
+                      <s.icon className={`w-5 h-5 ${s.color}`} />
                     </div>
-                    <div className={`flex items-center gap-1 text-xs font-mono-data ${
-                      stat.changeType === 'positive' ? 'text-green-400' : 
-                      stat.changeType === 'negative' ? 'text-red-400' : 'text-slate-600 dark:text-[#A8A29E]'
-                    }`}>
-                      {stat.changeType === 'positive' && <ArrowUpRight className="w-3 h-3" />}
-                      {stat.changeType === 'negative' && <ArrowDownRight className="w-3 h-3" />}
-                      {stat.change}
-                    </div>
+                    <ArrowUpRight className="w-4 h-4 text-slate-400 group-hover:text-foreground transition-colors" />
                   </div>
                   <p className="font-mono-data text-3xl font-bold text-foreground mb-1">
-                    {stat.value}
+                    {s.value != null ? s.value : '—'}
                   </p>
-                  <p className="text-sm text-slate-600 dark:text-[#A8A29E] group-hover:text-foreground transition-colors">
-                    {stat.label}
-                  </p>
+                  <p className="text-sm text-slate-500 dark:text-[#A8A29E] group-hover:text-foreground transition-colors">{s.label}</p>
                 </div>
               </Link>
             </motion.div>
@@ -109,106 +62,21 @@ export default function AdminDashboard() {
         </div>
 
         {/* Quick Actions */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-        >
-          <h2 className="font-display font-bold text-xl text-foreground mb-4">
-            Quick Actions
-          </h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {quickActions.map((action) => (
-              <Link key={action.label} to={action.href}>
-                <div className="glass-card rounded-xl p-4 hover:bg-slate-100 dark:bg-white/5 transition-colors flex items-center gap-3 group">
-                  <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-[#00D9FF]/10 flex items-center justify-center">
-                    <action.icon className="w-5 h-5 text-[#00D9FF]" />
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
+          <h2 className="font-display font-bold text-lg text-foreground mb-4">Truy cập nhanh</h2>
+          <div className="grid sm:grid-cols-3 gap-4">
+            {quickActions.map((a) => (
+              <Link key={a.label} to={a.href}>
+                <div className="glass-card rounded-xl p-4 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors flex items-center gap-3 group">
+                  <div className="w-9 h-9 rounded-lg bg-[#00D9FF]/10 flex items-center justify-center flex-shrink-0">
+                    <a.icon className="w-4 h-4 text-[#00D9FF]" />
                   </div>
-                  <span className="font-body font-medium text-foreground group-hover:text-[#00D9FF] transition-colors">
-                    {action.label}
-                  </span>
+                  <span className="text-sm font-medium text-foreground group-hover:text-[#00D9FF] transition-colors">{a.label}</span>
                 </div>
               </Link>
             ))}
           </div>
         </motion.div>
-
-        {/* Recent Activity & Top Players */}
-        <div className="grid lg:grid-cols-2 gap-8">
-          {/* Recent Activity */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-            className="glass-card rounded-2xl p-6"
-          >
-            <h2 className="font-display font-bold text-xl text-foreground mb-6">
-              Recent Activity
-            </h2>
-            <div className="space-y-4">
-              {recentActivity.map((activity, index) => (
-                <div 
-                  key={index}
-                  className="flex items-start gap-4 py-3 border-b border-slate-200 dark:border-white/5 last:border-0"
-                >
-                  <div className={`w-2 h-2 rounded-full mt-2 ${
-                    activity.type === 'match' ? 'bg-[#00D9FF]' :
-                    activity.type === 'player' ? 'bg-[#FF4444]' :
-                    'bg-green-400'
-                  }`} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-foreground">{activity.action}</p>
-                    <p className="text-xs text-slate-600 dark:text-[#A8A29E] truncate">{activity.target}</p>
-                  </div>
-                  <span className="text-xs text-slate-600 dark:text-[#A8A29E] whitespace-nowrap">{activity.time}</span>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* Top Rated Players */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.5 }}
-            className="glass-card rounded-2xl p-6"
-          >
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="font-display font-bold text-xl text-foreground">
-                Top Rated Players
-              </h2>
-              <Link to="/admin/players" className="text-sm text-[#00D9FF] hover:text-[#00E8FF] font-label">
-                View All
-              </Link>
-            </div>
-            <div className="space-y-4">
-              {players.slice(0, 5).map((player, index) => (
-                <div 
-                  key={player.id}
-                  className="flex items-center gap-4 py-3 border-b border-slate-200 dark:border-white/5 last:border-0"
-                >
-                  <span className="font-mono-data text-lg font-bold text-slate-600 dark:text-[#A8A29E] w-6">
-                    {index + 1}
-                  </span>
-                  <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-white/5 flex items-center justify-center overflow-hidden">
-                    <img 
-                      src={player.photoUrl} 
-                      alt={player.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{player.name}</p>
-                    <p className="text-xs text-slate-600 dark:text-[#A8A29E]">{player.team}</p>
-                  </div>
-                  <span className="font-mono-data text-lg font-bold text-[#00D9FF]">
-                    {player.rating.toFixed(1)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        </div>
       </div>
     </AdminLayout>
   );

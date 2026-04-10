@@ -43,22 +43,13 @@ export function LeagueGrid() {
             const seasonId = seasonMap[l.tournamentId] ?? l.fallbackSeasonId;
 
             if (l.isCup) {
-              // Cup không có standings — lấy data từ DB matches
               try {
                 const matches = await leagueService.getAllMatchesFromDb(l.tournamentId, seasonId);
-                // Chỉ lấy vòng knockout (loại bỏ vòng loại sơ bộ — round có số nhỏ hoặc null)
-                const knockoutKeywords = ['16', '8', 'quarter', 'semi', 'final', 'tứ', 'bán', 'chung'];
-                const knockoutMatches = matches.filter((m: any) => {
-                  const r = (m.round ?? '').toString().toLowerCase();
-                  return knockoutKeywords.some(k => r.includes(k));
-                });
-                // Nếu không detect được keyword thì lấy tất cả finished
-                const relevantMatches = knockoutMatches.length > 0 ? knockoutMatches : matches;
-                const finished = relevantMatches.filter((m: any) =>
+                const finished = matches.filter((m: any) =>
                   m.status === 'finished' || (m.homeGoals != null && m.awayGoals != null)
                 );
                 const teamIds = new Set<number>();
-                relevantMatches.forEach((m: any) => {
+                matches.forEach((m: any) => {
                   if (m.homeTeam?.teamId) teamIds.add(m.homeTeam.teamId);
                   if (m.awayTeam?.teamId) teamIds.add(m.awayTeam.teamId);
                 });
@@ -69,9 +60,8 @@ export function LeagueGrid() {
                   tournamentId: l.tournamentId,
                   name: l.name, color: l.color, gradient: l.gradient, tier: l.tier,
                   teamCount: teamIds.size,
-                  matchesPlayed: finished.length,
+                  matchesPlayed: matches.length,
                   totalGoals,
-                  // Placeholder leader để card bằng chiều cao với V-League
                   leader: { name: 'Knockout · Loại trực tiếp', points: 0, logo: '', wins: finished.length },
                 } as LeagueInfo;
               } catch {
