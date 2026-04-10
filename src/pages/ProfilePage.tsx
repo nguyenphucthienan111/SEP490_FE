@@ -1,23 +1,12 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
-  User,
-  Mail,
-  Calendar,
-  Shield,
-  Bell,
-  Star,
-  Clock,
-  ChevronRight,
-  Edit2,
-  Camera,
-  LogOut,
-  ArrowLeft,
-  Flame,
-  Package,
-  Check,
+  User, Mail, Calendar, Shield, Bell, Star, Clock, ChevronRight,
+  Edit2, Camera, LogOut, ArrowLeft, Flame, Package, Check,
+  CreditCard, CheckCircle2, XCircle, AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { apiClient } from "@/services/api";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -69,6 +58,18 @@ export default function ProfilePage() {
   const [loadout, setLoadout] = useState<LoadoutDto>({});
   const [fullLoadout, setFullLoadout] = useState<any>(null);
   const [equipping, setEquipping] = useState(false);
+  const [payments, setPayments] = useState<any[]>([]);
+  const [paymentsLoading, setPaymentsLoading] = useState(false);
+
+  useEffect(() => {
+    if (activeTab === 'payments' && payments.length === 0 && !paymentsLoading) {
+      setPaymentsLoading(true);
+      apiClient.get<any>('/api/subscriptions/my-payments')
+        .then(res => setPayments(res?.data ?? res ?? []))
+        .catch(() => {})
+        .finally(() => setPaymentsLoading(false));
+    }
+  }, [activeTab]);
   const [notifications, setNotifications] = useState({
     matchResults: true,
     playerUpdates: true,
@@ -272,6 +273,18 @@ export default function ProfilePage() {
             <TabsTrigger value="favorites" className="data-[state=active]:bg-blue-100 dark:bg-[#00D9FF]/10 data-[state=active]:text-[#00D9FF] rounded-lg px-6">
               <Star className="w-4 h-4 mr-2" />Yêu thích
             </TabsTrigger>
+            <TabsTrigger value="payments" className="data-[state=active]:bg-blue-100 dark:bg-[#00D9FF]/10 data-[state=active]:text-[#00D9FF] rounded-lg px-6"
+              onClick={() => {
+                if (payments.length === 0 && !paymentsLoading) {
+                  setPaymentsLoading(true);
+                  apiClient.get<any>('/api/subscriptions/my-payments')
+                    .then(res => setPayments(res?.data ?? []))
+                    .catch(() => {})
+                    .finally(() => setPaymentsLoading(false));
+                }
+              }}>
+              <CreditCard className="w-4 h-4 mr-2" />Thanh toán
+            </TabsTrigger>
             <TabsTrigger value="wardrobe" className="data-[state=active]:bg-blue-100 dark:bg-[#00D9FF]/10 data-[state=active]:text-[#00D9FF] rounded-lg px-6">
               <Package className="w-4 h-4 mr-2" />Tủ đồ
             </TabsTrigger>
@@ -359,6 +372,70 @@ export default function ProfilePage() {
                   </Link>
                 ))}
               </div>
+            </div>
+          </TabsContent>
+
+          {/* Payments Tab */}
+          <TabsContent value="payments" className="space-y-4">
+            <div className="bg-card border border-slate-200 dark:border-white/[0.08] rounded-2xl overflow-hidden">
+              <div className="px-6 py-4 border-b border-slate-200 dark:border-white/[0.08] flex items-center justify-between">
+                <h3 className="font-display font-bold text-lg text-foreground">Lịch sử thanh toán</h3>
+                <Link to="/pricing" className="text-xs text-[#00D9FF] hover:underline font-medium">Nâng cấp gói →</Link>
+              </div>
+              {paymentsLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="w-6 h-6 border-2 border-[#00D9FF] border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : payments.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+                  <CreditCard className="w-10 h-10 mb-3 opacity-30" />
+                  <p className="text-sm">Chưa có giao dịch nào</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-100 dark:divide-white/[0.05]">
+                  {payments.map((p: any) => {
+                    const statusMap: Record<string, { label: string; icon: any; cls: string }> = {
+                      Paid:      { label: 'Thành công', icon: CheckCircle2, cls: 'text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10' },
+                      Pending:   { label: 'Chờ thanh toán', icon: AlertTriangle, cls: 'text-amber-500 bg-amber-50 dark:bg-amber-500/10' },
+                      Cancelled: { label: 'Đã huỷ', icon: XCircle, cls: 'text-slate-400 bg-slate-100 dark:bg-white/5' },
+                      Expired:   { label: 'Hết hạn', icon: XCircle, cls: 'text-red-400 bg-red-50 dark:bg-red-500/10' },
+                    };
+                    const s = statusMap[p.status] ?? statusMap.Cancelled;
+                    const Icon = s.icon;
+                    const fmtPrice = (n: number) => n.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
+                    const fmtDate = (d: string) => new Date(d).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                    return (
+                      <div key={p.paymentId} className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors">
+                        {/* Icon trạng thái */}
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${s.cls}`}>
+                          <Icon className="w-5 h-5" />
+                        </div>
+                        {/* Info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-semibold text-sm text-foreground">{p.planName}</span>
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${s.cls}`}>{s.label}</span>
+                          </div>
+                          <p className="text-xs text-slate-400 mt-0.5 font-mono-data">{p.paymentCode}</p>
+                          <p className="text-xs text-slate-400">{fmtDate(p.createdAt)}</p>
+                        </div>
+                        {/* Số tiền */}
+                        <div className="text-right flex-shrink-0">
+                          <p className="font-mono-data font-bold text-sm text-foreground">{fmtPrice(p.amount)}</p>
+                          <p className="text-[10px] text-slate-400">{p.provider}</p>
+                        </div>
+                        {/* Link xem nếu Pending */}
+                        {p.status === 'Pending' && (
+                          <Link to={`/payment/${p.paymentCode}`}
+                            className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-semibold hover:bg-amber-100 transition-colors">
+                            Thanh toán
+                          </Link>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </TabsContent>
 

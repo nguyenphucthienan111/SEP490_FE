@@ -207,18 +207,9 @@ export default function PlayerDetailPage() {
     if (playerStats.length === 0) return (player as any)?.rating ?? 0;
     const withRating = playerStats.filter(s => s.rating != null && s.rating > 0);
     if (withRating.length === 0) return (player as any)?.rating ?? 0;
-    // Ưu tiên mùa current, fallback về seasonId nhỏ nhất, rồi mùa gần nhất có rating
-    const currentSeason = seasons.find(s => s.current);
-    if (currentSeason) {
-      const cur = withRating.find(s => s.seasonId === currentSeason.seasonId);
-      if (cur?.rating) return cur.rating;
-    }
-    // Fallback: seasonId nhỏ nhất có rating (mùa hiện tại theo DB)
-    const minSid = Math.min(...withRating.map(s => s.seasonId ?? 999));
-    const minSeason = withRating.find(s => s.seasonId === minSid);
-    if (minSeason?.rating) return minSeason.rating;
-    // Cuối cùng: mùa gần nhất có rating
-    return withRating.reduce((best, s) => (s.seasonId ?? 0) > (best.seasonId ?? 0) ? s : best).rating ?? 0;
+    // Trung bình toàn sự nghiệp
+    const avg = withRating.reduce((sum, s) => sum + (s.rating ?? 0), 0) / withRating.length;
+    return parseFloat(avg.toFixed(2));
   })();
   const posLabel = ({'F':'Tiền đạo','M':'Tiền vệ','D':'Hậu vệ','G':'Thủ môn'} as Record<string,string>)[playerPosition ?? ''] ?? playerPosition;
 
@@ -452,7 +443,7 @@ export default function PlayerDetailPage() {
                         <span className="font-mono-data text-lg font-black text-slate-900 dark:text-foreground leading-none">{currentRating.toFixed(1)}</span>
                       </div>
                     </div>
-                    <span className="text-[10px] uppercase tracking-widest text-slate-400">Đánh giá</span>
+                    <span className="text-[10px] uppercase tracking-widest text-slate-400">Avg. Rating</span>
                   </div>
                 )}
               </div>
