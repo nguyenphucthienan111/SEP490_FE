@@ -738,59 +738,30 @@ export const leagueService = {
     try {
       sessionStorage.removeItem('player-db-ratings');
       sessionStorage.removeItem('player-season-ratings-v2');
-      const cached = sessionStorage.getItem('player-season-ratings-v3');
+      sessionStorage.removeItem('player-season-ratings-v3');
+      const cached = sessionStorage.getItem('player-career-ratings-v1');
       if (cached) return JSON.parse(cached);
 
       const raw = await apiClient.get<any[]>('/api/SofascoreHybrid/player-season-statistics');
       if (!Array.isArray(raw)) return {};
 
-      // Tìm seasonId hiện tại: ưu tiên season có current=true, fallback về seasonId nhỏ nhất
-      // (theo data DB: seasonId=1 là mùa 25/26 hiện tại)
-      let currentSeasonId: number | null = null;
-      try {
-        const seasons = await apiClient.get<any[]>('/api/Football/seasons?leagueId=1');
-        if (Array.isArray(seasons)) {
-          const cur = seasons.find((s: any) =>
-            s.IsCurrent === true || s.isCurrent === true || s.current === true ||
-            s.IsCurrentSeason === true || s.isCurrentSeason === true
-          );
-          if (cur) currentSeasonId = cur.SeasonId ?? cur.seasonId ?? null;
-        }
-      } catch {}
-
-      // Nếu không tìm được qua API, lấy seasonId nhỏ nhất có trong data (mùa đầu tiên = hiện tại)
-      if (currentSeasonId == null) {
-        const ids = raw.map((x: any) => x.seasonId ?? x.SeasonId ?? 0).filter(Boolean);
-        if (ids.length > 0) currentSeasonId = Math.min(...ids);
+      // Gom tất cả rating theo playerId rồi tính trung bình
+      const accumulator: Record<number, { sum: number; count: number }> = {};
+      for (const x of raw) {
+        const pid = Number(x.playerId ?? x.PlayerId);
+        const r = x.rating ?? x.Rating;
+        if (!pid || r == null || r <= 0) continue;
+        if (!accumulator[pid]) accumulator[pid] = { sum: 0, count: 0 };
+        accumulator[pid].sum += r;
+        accumulator[pid].count += 1;
       }
 
       const map: Record<number, number> = {};
-      for (const x of raw) {
-        const pid = x.playerId ?? x.PlayerId;
-        const r = x.rating ?? x.Rating;
-        const sid = x.seasonId ?? x.SeasonId;
-        if (pid && r != null && r > 0 && sid === currentSeasonId) {
-          map[Number(pid)] = r;
-        }
+      for (const [pid, { sum, count }] of Object.entries(accumulator)) {
+        map[Number(pid)] = parseFloat((sum / count).toFixed(2));
       }
 
-      // Fallback: cầu thủ chưa có rating mùa hiện tại → lấy mùa gần nhất có rating
-      const fallbackMap: Record<number, { seasonId: number; rating: number }> = {};
-      for (const x of raw) {
-        const pid = x.playerId ?? x.PlayerId;
-        const r = x.rating ?? x.Rating;
-        const sid = x.seasonId ?? x.SeasonId ?? 0;
-        if (pid && r != null && r > 0 && map[Number(pid)] == null) {
-          if (fallbackMap[pid] == null || sid > fallbackMap[pid].seasonId) {
-            fallbackMap[pid] = { seasonId: sid, rating: r };
-          }
-        }
-      }
-      for (const [pid, { rating }] of Object.entries(fallbackMap)) {
-        map[Number(pid)] = rating;
-      }
-
-      sessionStorage.setItem('player-season-ratings-v3', JSON.stringify(map));
+      sessionStorage.setItem('player-career-ratings-v1', JSON.stringify(map));
       return map;
     } catch { return {}; }
   },

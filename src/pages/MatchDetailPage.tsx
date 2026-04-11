@@ -828,7 +828,7 @@ export default function MatchDetailPage() {
     window.scrollTo(0, 0);
 
     // Preload stats + teams in background immediately (warm up cache)
-    const CACHE_TTL = 30 * 60 * 1000;
+    const CACHE_TTL = 5 * 60 * 1000; // 5 phút
     const now = Date.now();
 
     function getCachedData(key: string) {
@@ -932,7 +932,7 @@ export default function MatchDetailPage() {
 
   const loadMatchStats = async (homeSofaId: number, awaySofaId: number) => {
     try {
-      const CACHE_TTL = 30 * 60 * 1000;
+      const CACHE_TTL = 5 * 60 * 1000; // 5 phút
       const now = Date.now();
 
       function getCachedData(key: string) {
@@ -969,18 +969,33 @@ export default function MatchDetailPage() {
       const awayDbTeam = dbTeams.find((t: any) => t.apiTeamId === awaySofaId);
       if (!homeDbTeam || !awayDbTeam) return;
 
-      const homeStats = allStats.filter((s: MatchStat) => s.teamId === homeDbTeam.teamId && s.possession !== null);
-      const awayStats = allStats.filter((s: MatchStat) => s.teamId === awayDbTeam.teamId && s.possession !== null);
+      // Match trực tiếp bằng matchId từ DB (apiFixtureId = eventId)
+      const dbMatchRecord = await leagueService.getMatchByFixtureId(eventId).catch(() => null);
+      const dbMatchId = dbMatchRecord?.matchId ?? dbMatchRecord?.id ?? null;
 
-      const homeMatchIds = new Set(homeStats.map((s: MatchStat) => s.matchId));
-      const awayMatchIds = new Set(awayStats.map((s: MatchStat) => s.matchId));
-      const commonMatchId = [...homeMatchIds].find(id => awayMatchIds.has(id));
+      let home: MatchStat | null = null;
+      let away: MatchStat | null = null;
 
-      if (commonMatchId) {
-        const home = homeStats.find((s: MatchStat) => s.matchId === commonMatchId) ?? null;
-        const away = awayStats.find((s: MatchStat) => s.matchId === commonMatchId) ?? null;
-        setMatchStats({ home, away });
+      if (dbMatchId) {
+        // Ưu tiên match chính xác theo matchId
+        home = allStats.find((s: MatchStat) => s.matchId === dbMatchId && s.teamId === homeDbTeam.teamId) ?? null;
+        away = allStats.find((s: MatchStat) => s.matchId === dbMatchId && s.teamId === awayDbTeam.teamId) ?? null;
       }
+
+      // Fallback: tìm theo teamId + possession (cách cũ)
+      if (!home || !away) {
+        const homeStats = allStats.filter((s: MatchStat) => s.teamId === homeDbTeam.teamId);
+        const awayStats = allStats.filter((s: MatchStat) => s.teamId === awayDbTeam.teamId);
+        const homeMatchIds = new Set(homeStats.map((s: MatchStat) => s.matchId));
+        const awayMatchIds = new Set(awayStats.map((s: MatchStat) => s.matchId));
+        const commonMatchId = [...homeMatchIds].find(id => awayMatchIds.has(id));
+        if (commonMatchId) {
+          home = home ?? homeStats.find((s: MatchStat) => s.matchId === commonMatchId) ?? null;
+          away = away ?? awayStats.find((s: MatchStat) => s.matchId === commonMatchId) ?? null;
+        }
+      }
+
+      if (home || away) setMatchStats({ home, away });
     } catch (e) {}
   };
 

@@ -25,6 +25,7 @@ export default function LeaguesPage() {
   const [standingsData, setStandingsData] = React.useState<Record<number, SofascoreStandingRow[]>>({});
   const [standingsLoading, setStandingsLoading] = React.useState(false);
   const [standingsError, setStandingsError] = React.useState<string | null>(null);
+  const [cupMatchCount, setCupMatchCount] = React.useState<number | null>(null);
 
   const activeLeague = STANDINGS_LEAGUES[activeStandingsIndex];
 
@@ -89,6 +90,11 @@ export default function LeaguesPage() {
 
       // Pre-load standings for all leagues in parallel
       loadAllStandings();
+
+      // Load cup match count
+      leagueService.getAllMatchesFromDb(3087, 81023)
+        .then(matches => setCupMatchCount(matches.length))
+        .catch(() => {});
 
     } catch {
       toast.error('Không thể tải dữ liệu');
@@ -197,9 +203,13 @@ export default function LeaguesPage() {
                             <span className="px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 text-xs font-semibold">
                               🏆 Knockout
                             </span>
-                            <span className="px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-400 text-xs font-semibold">
-                              Vòng loại trực tiếp
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <Calendar className="w-4 h-4 text-slate-600 dark:text-[#A8A29E]" />
+                              <span className="font-mono-data text-xl font-bold text-slate-900 dark:text-foreground">
+                                {cupMatchCount ?? '-'}
+                              </span>
+                              <p className="text-xs text-slate-600 dark:text-[#A8A29E]">Trận đấu</p>
+                            </div>
                           </div>
                           <p className="text-xs text-slate-500 dark:text-[#A8A29E] leading-relaxed">
                             Cúp Quốc gia Việt Nam — giải đấu cúp theo thể thức loại trực tiếp dành cho các CLB chuyên nghiệp.
