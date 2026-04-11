@@ -26,6 +26,7 @@ export interface ContestEntryDto {
   rank: number;
   teamId?: number;
   teamName?: string;
+  apiTeamId?: number;
   playerId?: number;
   playerName?: string;
   points?: number;
@@ -36,6 +37,7 @@ export interface ContestResultDto {
   rank: number;
   teamId?: number;
   teamName?: string;
+  apiTeamId?: number;
   playerId?: number;
   playerName?: string;
 }
@@ -89,4 +91,8 @@ export const contestService = {
   create: (data: CreateContestRequest) => apiClient.post<ContestDto>('/api/contests/admin', data),
   getAll: () => apiClient.get<ContestDto[]>('/api/contests/admin/all'),
   settle: (data: SettleContestRequest) => apiClient.post<{ settled: number }>('/api/contests/admin/settle', data),
+  getEntries: (contestId: number) => apiClient.get<any>(`/api/contests/admin/${contestId}/entries`),
+
+  // User settled
+  getSettled: () => apiClient.get<ContestDto[]>('/api/contests/settled'),
 };

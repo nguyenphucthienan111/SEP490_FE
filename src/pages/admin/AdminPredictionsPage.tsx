@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { AdminLayout } from './AdminLayout';
 import { Plus, Trophy, Star, Target, Award, Crown, Loader2, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,72 @@ const STATUS_LABEL: Record<string, { text: string; cls: string }> = {
   SETTLED: { text: 'Đã chấm',   cls: 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300' },
 };
 
+function Top4RankPicker({ rank, teams, selected, otherSelected, onChange, onClear }: {
+  rank: number;
+  teams: { teamId: number; teamName: string; apiTeamId?: number }[];
+  selected: number | null;
+  otherSelected: number[];
+  onChange: (teamId: number) => void;
+  onClear: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const selectedTeam = teams.find(t => t.teamId === selected);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  return (
+    <div className="flex items-center gap-3">
+      <span className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-sm font-bold flex-shrink-0">#{rank}</span>
+      <div ref={ref} className="flex-1 relative">
+        <button onClick={() => setOpen(v => !v)}
+          className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg border text-sm text-left transition-all ${selected ? 'border-[#FF4444] bg-[#FF4444]/5' : 'border-slate-200 dark:border-slate-700 hover:border-slate-400'}`}>
+          {selectedTeam?.apiTeamId && (
+            <img src={`https://api.sofascore.app/api/v1/team/${selectedTeam.apiTeamId}/image`}
+              className="w-5 h-5 object-contain flex-shrink-0"
+              onError={e => (e.target as HTMLImageElement).style.display='none'} />
+          )}
+          <span className={`flex-1 truncate ${selected ? 'font-semibold text-slate-900 dark:text-white' : 'text-slate-400'}`}>
+            {selectedTeam?.teamName ?? '-- Chọn đội --'}
+          </span>
+          {selected && (
+            <span onClick={e => { e.stopPropagation(); onClear(); }} className="text-slate-400 hover:text-red-500 ml-1">✕</span>
+          )}
+          <span className="text-slate-400 text-xs">▾</span>
+        </button>
+        {open && (
+          <div className="absolute top-full mt-1 left-0 right-0 z-50 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl max-h-52 overflow-y-auto">
+            {teams.map(t => {
+              const disabled = otherSelected.includes(t.teamId);
+              return (
+                <button key={t.teamId} disabled={disabled}
+                  onClick={() => { onChange(t.teamId); setOpen(false); }}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left transition-colors
+                    ${t.teamId === selected ? 'bg-[#FF4444]/10 text-[#FF4444] font-semibold' : ''}
+                    ${disabled ? 'opacity-40 cursor-not-allowed' : 'hover:bg-slate-50 dark:hover:bg-slate-800'}
+                  `}>
+                  {t.apiTeamId
+                    ? <img src={`https://api.sofascore.app/api/v1/team/${t.apiTeamId}/image`} className="w-5 h-5 object-contain flex-shrink-0" onError={e => (e.target as HTMLImageElement).style.display='none'} />
+                    : <div className="w-5 h-5 flex-shrink-0" />
+                  }
+                  {t.teamName}
+                  {disabled && <span className="ml-auto text-xs text-slate-400">Đã chọn</span>}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function AdminPredictionsPage() {
   const [contests, setContests] = useState<ContestDto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,6 +111,8 @@ export default function AdminPredictionsPage() {
   const [singleTeam, setSingleTeam] = useState<number | null>(null);
   const [singlePlayer, setSinglePlayer] = useState<number | null>(null);
   const [settling, setSettling] = useState(false);
+  const [detailContest, setDetailContest] = useState<any | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -77,6 +145,9 @@ export default function AdminPredictionsPage() {
 
   const handleCreate = async () => {
     if (!form.title || !form.closesAt || !form.contestType) { toast.error('Vui lòng điền đầy đủ thông tin'); return; }
+    if (form.contestType === 'TOP4' && (form.pointsPartial ?? 0) >= (form.pointsExact ?? 0)) {
+      toast.error('Điểm đúng một phần phải nhỏ hơn điểm đúng hoàn toàn'); return;
+    }
     setCreating(true);
     try {
       // datetime-local gives local time (UTC+7), convert to UTC ISO string for BE
@@ -223,9 +294,23 @@ export default function AdminPredictionsPage() {
                         <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${st.cls}`}>{st.text}</span>
                       </td>
                       <td className="px-4 py-3 text-right">
-                        {c.status !== 'SETTLED' && (
-                          <Button size="sm" variant="outline" onClick={() => openSettle(c)}>
-                            Chấm điểm
+                        {c.status !== 'SETTLED' ? (
+                          <Button size="sm" variant="outline"
+                            disabled={c.status === 'OPEN'}
+                            title={c.status === 'OPEN' ? 'Phải đóng contest trước khi chấm điểm' : ''}
+                            onClick={() => c.status !== 'OPEN' && openSettle(c)}>
+                            {c.status === 'OPEN' ? 'Đang mở' : 'Chấm điểm'}
+                          </Button>
+                        ) : (
+                          <Button size="sm" variant="outline" onClick={async () => {
+                            setDetailLoading(true);
+                            try {
+                              const res = await contestService.getEntries(c.contestId);
+                              setDetailContest((res as any).data ?? res);
+                            } catch { toast.error('Không thể tải chi tiết'); }
+                            finally { setDetailLoading(false); }
+                          }}>
+                            {detailLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Xem chi tiết'}
                           </Button>
                         )}
                       </td>
@@ -271,7 +356,12 @@ export default function AdminPredictionsPage() {
               {selectedType === 'TOP4' && (
                 <div>
                   <Label>Điểm đúng một phần</Label>
-                  <Input className="mt-1" type="number" min={0} value={form.pointsPartial ?? 0} onChange={e => setForm(f => ({ ...f, pointsPartial: Number(e.target.value) }))} />
+                  <Input className="mt-1" type="number" min={0} max={(form.pointsExact ?? 1) - 1}
+                    value={form.pointsPartial ?? 0}
+                    onChange={e => setForm(f => ({ ...f, pointsPartial: Number(e.target.value) }))} />
+                  {(form.pointsPartial ?? 0) >= (form.pointsExact ?? 0) && (
+                    <p className="text-xs text-red-500 mt-1">Phải nhỏ hơn điểm đúng hoàn toàn</p>
+                  )}
                 </div>
               )}
             </div>
@@ -324,26 +414,22 @@ export default function AdminPredictionsPage() {
               {settleContest.contestType === 'TOP4' && (
                 <div className="space-y-3">
                   <p className="text-sm font-semibold">Kết quả Top 4:</p>
-                  {[1, 2, 3, 4].map(rank => (
-                    <div key={rank} className="flex items-center gap-3">
-                      <span className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-sm font-bold flex-shrink-0">#{rank}</span>
-                      <select
-                        className="flex-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm"
-                        value={top4Results[rank - 1] ?? ''}
-                        onChange={e => {
+                  {[1, 2, 3, 4].map(rank => {
+                    const selectedTeam = teams.find(t => t.teamId === top4Results[rank - 1]);
+                    return (
+                      <Top4RankPicker key={rank} rank={rank} teams={teams} selected={top4Results[rank - 1]}
+                        otherSelected={top4Results.filter((_, i) => i !== rank - 1).filter(Boolean) as number[]}
+                        onChange={teamId => {
                           const newR = [...top4Results];
-                          const val = Number(e.target.value);
-                          const existing = newR.indexOf(val);
+                          const existing = newR.indexOf(teamId);
                           if (existing !== -1) newR[existing] = null;
-                          newR[rank - 1] = val || null;
+                          newR[rank - 1] = teamId;
                           setTop4Results(newR);
                         }}
-                      >
-                        <option value="">-- Chọn đội --</option>
-                        {teams.map(t => <option key={t.teamId} value={t.teamId}>{t.teamName}</option>)}
-                      </select>
-                    </div>
-                  ))}
+                        onClear={() => { const r = [...top4Results]; r[rank-1] = null; setTop4Results(r); }}
+                      />
+                    );
+                  })}
                 </div>
               )}
 
@@ -353,7 +439,8 @@ export default function AdminPredictionsPage() {
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {teams.map(t => (
                       <button key={t.teamId} onClick={() => setSingleTeam(t.teamId)}
-                        className={`p-3 rounded-xl border-2 text-sm font-semibold transition-all ${singleTeam === t.teamId ? 'border-[#FF4444] bg-red-50 dark:bg-red-500/10 text-[#FF4444]' : 'border-slate-200 dark:border-slate-700'}`}>
+                        className={`p-3 rounded-xl border-2 text-sm font-semibold transition-all flex items-center gap-2 ${singleTeam === t.teamId ? 'border-[#FF4444] bg-red-50 dark:bg-red-500/10 text-[#FF4444]' : 'border-slate-200 dark:border-slate-700'}`}>
+                        {t.apiTeamId && <img src={`https://api.sofascore.app/api/v1/team/${t.apiTeamId}/image`} className="w-5 h-5 object-contain" onError={e => (e.target as HTMLImageElement).style.display='none'} />}
                         {t.teamName}
                       </button>
                     ))}
@@ -368,7 +455,8 @@ export default function AdminPredictionsPage() {
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                       {teams.map(t => (
                         <button key={t.teamId} onClick={() => selectTeamForPlayer(t.teamId)}
-                          className={`p-2.5 rounded-xl border-2 text-sm font-semibold transition-all ${selectedTeamId === t.teamId ? 'border-[#00D9FF] bg-cyan-50 dark:bg-cyan-500/10 text-[#00D9FF]' : 'border-slate-200 dark:border-slate-700'}`}>
+                          className={`p-2.5 rounded-xl border-2 text-sm font-semibold transition-all flex items-center gap-2 ${selectedTeamId === t.teamId ? 'border-[#00D9FF] bg-cyan-50 dark:bg-cyan-500/10 text-[#00D9FF]' : 'border-slate-200 dark:border-slate-700'}`}>
+                          {t.apiTeamId && <img src={`https://api.sofascore.app/api/v1/team/${t.apiTeamId}/image`} className="w-5 h-5 object-contain" onError={e => (e.target as HTMLImageElement).style.display='none'} />}
                           {t.teamName}
                         </button>
                       ))}
@@ -397,6 +485,58 @@ export default function AdminPredictionsPage() {
                   {settling ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />}
                   Xác nhận kết quả
                 </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Detail modal */}
+      <Dialog open={!!detailContest} onOpenChange={() => setDetailContest(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{detailContest?.title} — Chi tiết kết quả</DialogTitle>
+          </DialogHeader>
+          {detailContest && (
+            <div className="space-y-4 mt-2">
+              {/* Official results */}
+              <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-3">
+                <p className="text-xs font-semibold text-slate-500 mb-2">Kết quả chính thức</p>
+                <div className="flex flex-wrap gap-3">
+                  {detailContest.officialResults?.map((r: any) => (
+                    <span key={r.rank} className="flex items-center gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-300">
+                      {detailContest.contestType === 'TOP4' && <span className="text-slate-400">#{r.rank}</span>}
+                      {r.apiTeamId && <img src={`https://api.sofascore.app/api/v1/team/${r.apiTeamId}/image`} className="w-5 h-5 object-contain" onError={e => (e.target as HTMLImageElement).style.display='none'} />}
+                      {r.teamName ?? r.playerName}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <p className="text-xs text-slate-500">{detailContest.totalEntrants} người tham gia</p>
+              {/* Entries leaderboard */}
+              <div className="space-y-2">
+                {detailContest.entries?.map((u: any, i: number) => (
+                  <div key={u.userId} className="bg-white dark:bg-card border border-slate-200 dark:border-border rounded-xl p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-slate-400">#{i + 1}</span>
+                        <span className="text-sm font-semibold text-slate-900 dark:text-white">{u.username}</span>
+                        {u.correctCount > 0 && <span className="text-xs text-green-600">✓✓ {u.correctCount} đúng vị trí</span>}
+                        {u.partialCount > 0 && <span className="text-xs text-yellow-600">✓ {u.partialCount} đúng có mặt</span>}
+                      </div>
+                      <span className="text-sm font-bold text-[#00D9FF]">+{u.totalPoints}đ</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {u.picks?.map((p: any) => (
+                        <span key={p.rank} className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${p.isCorrect === 2 ? 'bg-green-100 text-green-700' : p.isCorrect === 1 ? 'bg-yellow-100 text-yellow-700' : 'bg-slate-100 text-slate-500'}`}>
+                          {detailContest.contestType === 'TOP4' && <span className="font-bold">#{p.rank}</span>}
+                          {p.apiTeamId && <img src={`https://api.sofascore.app/api/v1/team/${p.apiTeamId}/image`} className="w-4 h-4 object-contain" onError={e => (e.target as HTMLImageElement).style.display='none'} />}
+                          {p.teamName ?? p.playerName}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}

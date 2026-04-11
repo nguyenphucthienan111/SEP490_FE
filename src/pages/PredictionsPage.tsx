@@ -12,6 +12,7 @@ import { leagueService, SofascoreTeamMatch } from "@/services/leagueService";
 import { authService } from "@/services/authService";
 import { userService } from "@/services/userService";
 import { toast } from "sonner";
+import { DateRangePicker } from "@/components/ui/DateRangePicker";
 
 const LEAGUES_CONFIG = [
   { tournamentId: 626, seasonId: 78589, name: "V-League 1" },
@@ -41,6 +42,27 @@ function teamLogo(id: number) {
   return `https://api.sofascore.app/api/v1/team/${id}/image`;
 }
 
+function fmtVN(iso: string) {
+  const d = new Date(iso.endsWith('Z') ? iso : iso + 'Z');
+  return d.toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+// Parse dd/mm/yyyy → yyyy-mm-dd for comparison
+function parseVNDate(s: string): string {
+  const parts = s.split('/');
+  if (parts.length !== 3) return '';
+  const [d, m, y] = parts;
+  if (!d || !m || !y || y.length !== 4) return '';
+  return `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
+}
+
+// Format yyyy-mm-dd → dd/mm/yyyy for display
+function toVNDateStr(iso: string): string {
+  if (!iso) return '';
+  const [y, m, d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+
 type MatchWithDbId = SofascoreTeamMatch & { _leagueName?: string; _dbMatchId?: number };
 
 export default function PredictionsPage() {
@@ -59,6 +81,7 @@ export default function PredictionsPage() {
   const [contests, setContests] = useState<ContestDto[]>([]);
   const [contestsLoading, setContestsLoading] = useState(true);
   const [activeContest, setActiveContest] = useState<ContestDto | null>(null);
+  const [settledContests, setSettledContests] = useState<ContestDto[]>([]);
   const [teams, setTeams] = useState<TeamPickerDto[]>([]);
   const [players, setPlayers] = useState<PlayerPickerDto[]>([]);
   const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
@@ -84,6 +107,16 @@ export default function PredictionsPage() {
   const [myStatsLoading, setMyStatsLoading] = useState(false);
   const [myHistoryLoading, setMyHistoryLoading] = useState(false);
   const [showPointsBreakdown, setShowPointsBreakdown] = useState(false);
+  const [mineSubTab, setMineSubTab] = useState<'special' | 'match'>('special');
+  const [specialFilter, setSpecialFilter] = useState<'all' | 'open' | 'settled'>('all');
+  const [specialTypeFilter, setSpecialTypeFilter] = useState<string>('all');
+  const [specialDateFrom, setSpecialDateFrom] = useState('');
+  const [specialDateTo, setSpecialDateTo] = useState('');
+  const [specialDateApplied, setSpecialDateApplied] = useState({ from: '', to: '' });
+  const [matchResultFilter, setMatchResultFilter] = useState<'all' | 'correct' | 'exact' | 'wrong'>('all');
+  const [matchDateFrom, setMatchDateFrom] = useState('');
+  const [matchDateTo, setMatchDateTo] = useState('');
+  const [matchDateApplied, setMatchDateApplied] = useState({ from: '', to: '' });
 
   useEffect(() => {
     contestService.getOpen()
@@ -159,6 +192,10 @@ export default function PredictionsPage() {
     // Load contests nếu chưa có
     if (contests.length === 0) {
       contestService.getOpen().then(setContests).catch(() => {});
+    }
+    // Load settled contests for user
+    if (authService.isAuthenticated()) {
+      contestService.getSettled().then(data => setSettledContests((data as any).data ?? data ?? [])).catch(() => {});
     }
   }, [tab]);
 
@@ -486,20 +523,83 @@ export default function PredictionsPage() {
                     </div>
                   )
                 }
+                {/* Sub-tabs */}
+                <div className="flex gap-1 border-b border-slate-200 dark:border-slate-700">
+                  <button onClick={() => setMineSubTab('special')}
+                    className={`px-4 py-2 text-sm font-semibold transition-colors border-b-2 -mb-px ${mineSubTab === 'special' ? 'border-[#FF4444] text-[#FF4444]' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
+                    🏆 Dự đoán đặc biệt
+                  </button>
+                  <button onClick={() => setMineSubTab('match')}
+                    className={`px-4 py-2 text-sm font-semibold transition-colors border-b-2 -mb-px ${mineSubTab === 'match' ? 'border-[#FF4444] text-[#FF4444]' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
+                    ⚽ Lịch sử trận đấu
+                  </button>
+                </div>
+
                 {/* Contest entries */}
-                {contests.filter(c => c.hasEntered && c.myEntries?.length).length > 0 && (
-                  <div>
-                    <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">Dự đoán đặc biệt của tôi</h3>
-                    <div className="space-y-2">
-                      {contests.filter(c => c.hasEntered && c.myEntries?.length).map(c => {
+                {mineSubTab === 'special' && (() => {
+                  const allOpen = contests.filter(c => c.hasEntered && c.myEntries?.length);
+                  const applyDateFilter = (dateStr: string) => {
+                    if (!specialDateApplied.from && !specialDateApplied.to) return true;
+                    const d = dateStr ? new Date(dateStr.endsWith('Z') ? dateStr : dateStr + 'Z').toISOString().slice(0, 10) : '';
+                    if (specialDateApplied.from && d < specialDateApplied.from) return false;
+                    if (specialDateApplied.to && d > specialDateApplied.to) return false;
+                    return true;
+                  };
+                  const filteredOpen = allOpen.filter(c =>
+                    (specialFilter === 'all' || specialFilter === 'open') &&
+                    (specialTypeFilter === 'all' || c.contestType === specialTypeFilter) &&
+                    applyDateFilter(c.closesAt)
+                  );
+                  const filteredSettled = settledContests.filter(c =>
+                    (specialFilter === 'all' || specialFilter === 'settled') &&
+                    (specialTypeFilter === 'all' || c.contestType === specialTypeFilter) &&
+                    applyDateFilter(c.resultAt ?? c.closesAt)
+                  );
+                  const hasAny = allOpen.length > 0 || settledContests.length > 0;
+                  const contestTypes = [...new Set([...allOpen, ...settledContests].map(c => c.contestType))];
+                  return (
+                  <div className="space-y-3">
+                    {hasAny && (
+                      <div className="space-y-2">
+                        <div className="flex gap-2 flex-wrap items-center">
+                          <select value={specialFilter} onChange={e => setSpecialFilter(e.target.value as any)}
+                            className="text-xs px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                            <option value="all">Tất cả trạng thái</option>
+                            <option value="open">Đang mở</option>
+                            <option value="settled">Đã chấm</option>
+                          </select>
+                          {contestTypes.length > 1 && (
+                            <select value={specialTypeFilter} onChange={e => setSpecialTypeFilter(e.target.value)}
+                              className="text-xs px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                              <option value="all">Tất cả loại</option>
+                              {contestTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                            </select>
+                          )}
+                          <DateRangePicker
+                            from={specialDateApplied.from}
+                            to={specialDateApplied.to}
+                            onApply={(f, t) => setSpecialDateApplied({ from: f, to: t })}
+                            onClear={() => { setSpecialDateFrom(''); setSpecialDateTo(''); setSpecialDateApplied({ from: '', to: '' }); }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                    {filteredOpen.length === 0 && filteredSettled.length === 0
+                      ? <p className="text-center py-8 text-slate-500 text-sm">Không có dự đoán nào.</p>
+                      : <>
+                      {/* Active/open contests */}
+                      {filteredOpen.map(c => {
                         const meta = CONTEST_TYPE_LABELS[c.contestType] ?? { label: c.contestType, color: "from-slate-500 to-slate-600", icon: null };
                         return (
                           <div key={c.contestId} className="bg-white dark:bg-card border border-slate-200 dark:border-border rounded-xl px-4 py-3">
                             <div className="flex items-center justify-between mb-2">
                               <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold bg-gradient-to-r ${meta.color} text-white`}>{meta.icon}{meta.label}</span>
                               <span className="text-xs text-slate-500">{c.title}</span>
-                              {c.status === "SETTLED" && <span className="text-xs text-slate-400">Đã chấm điểm</span>}
-                              {c.status === "OPEN" && <span className="text-xs text-green-600 font-semibold">Đang mở</span>}
+                              <div className="flex flex-col items-end gap-0.5">
+                                {c.status === "SETTLED" && <span className="text-xs text-slate-400">Đã chấm điểm</span>}
+                                {c.status === "OPEN" && <span className="text-xs text-green-600 font-semibold">Đang mở</span>}
+                                <span className="text-xs text-slate-400">Đóng: {fmtVN(c.closesAt)}</span>
+                              </div>
                             </div>
                             <div className="space-y-1">
                               {c.myEntries!.map(e => (
@@ -520,18 +620,112 @@ export default function PredictionsPage() {
                           </div>
                         );
                       })}
-                    </div>
+                      {/* Settled contests */}
+                      {filteredSettled.map(c => {
+                        const meta = CONTEST_TYPE_LABELS[c.contestType] ?? { label: c.contestType, color: "from-slate-500 to-slate-600", icon: null };
+                        const totalPts = c.contestType === 'TOP4'
+                          ? (c.myEntries?.[0]?.points ?? 0)
+                          : c.myEntries?.reduce((s, e) => s + (e.points ?? 0), 0) ?? 0;
+                        const correctCount = c.myEntries?.filter(e => e.isCorrect === 2).length ?? 0;
+                        const partialCount = c.myEntries?.filter(e => e.isCorrect === 1).length ?? 0;
+                        return (
+                          <div key={c.contestId} className="bg-white dark:bg-card border border-slate-200 dark:border-border rounded-xl px-4 py-3">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold bg-gradient-to-r ${meta.color} text-white`}>{meta.icon}{meta.label}</span>
+                              <span className="text-xs text-slate-500">{c.title}</span>
+                              <div className="flex flex-col items-end gap-0.5">
+                                <span className="text-xs text-slate-400">Đã chấm điểm</span>
+                                {c.resultAt && <span className="text-xs text-slate-400">{fmtVN(c.resultAt)}</span>}
+                              </div>
+                            </div>
+                            {c.results && c.results.length > 0 && (
+                              <div className="mb-2 px-2 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/50">
+                                <p className="text-xs text-slate-400 mb-1">Kết quả chính thức:</p>
+                                <div className="flex flex-wrap gap-2">
+                                  {c.results.map(r => (
+                                    <span key={r.rank} className="flex items-center gap-1 text-xs font-medium text-slate-700 dark:text-slate-300">
+                                      {c.contestType === "TOP4" && <span className="text-slate-400">#{r.rank}</span>}
+                                      {r.apiTeamId && <img src={`https://api.sofascore.app/api/v1/team/${r.apiTeamId}/image`} className="w-4 h-4 object-contain" onError={ev => (ev.target as HTMLImageElement).style.display='none'} />}
+                                      {r.teamName ?? r.playerName}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            <div className="space-y-1">
+                              {c.myEntries?.map(e => (
+                                <div key={e.entryId} className="flex items-center justify-between text-xs">
+                                  <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
+                                    {c.contestType === "TOP4" && <span className="font-semibold">#{e.rank}</span>}
+                                    {e.apiTeamId && <img src={`https://api.sofascore.app/api/v1/team/${e.apiTeamId}/image`} className="w-4 h-4 object-contain" onError={ev => (ev.target as HTMLImageElement).style.display='none'} />}
+                                    {e.teamName ?? e.playerName ?? "?"}
+                                  </span>
+                                  <div className="flex items-center gap-1">
+                                    {e.isCorrect === 2 && <span className="text-green-600 font-bold">✓✓ Đúng vị trí</span>}
+                                    {e.isCorrect === 1 && <span className="text-yellow-600 font-bold">✓ Đúng có mặt</span>}
+                                    {e.isCorrect === 0 && <span className="text-slate-400">Sai</span>}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                            <div className="mt-2 pt-2 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between text-xs">
+                              <span className="text-slate-500">
+                                {correctCount > 0 && <span className="text-green-600 font-semibold mr-2">{correctCount} đúng vị trí</span>}
+                                {partialCount > 0 && <span className="text-yellow-600 font-semibold">{partialCount} đúng có mặt</span>}
+                              </span>
+                              <span className={`font-bold ${totalPts > 0 ? 'text-[#00D9FF]' : 'text-slate-400'}`}>Tổng: +{totalPts}đ</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                      </>
+                    }
                   </div>
-                )}
+                  );
+                })()}
 
-                <div>
-                  <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">Lịch sử dự đoán trận đấu</h3>
+                {mineSubTab === 'match' && (
+                  <div className="space-y-3">
+                  {/* Filter bar */}
+                  {myPredictions.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="flex gap-2 flex-wrap items-center">
+                        {(['all', 'exact', 'correct', 'wrong'] as const).map(f => (
+                          <button key={f} onClick={() => setMatchResultFilter(f)}
+                            className={`text-xs px-3 py-1.5 rounded-full border transition-all font-medium ${matchResultFilter === f ? 'border-[#FF4444] bg-[#FF4444]/10 text-[#FF4444]' : 'border-slate-200 dark:border-slate-700 text-slate-500 hover:border-slate-400'}`}>
+                            {f === 'all' ? 'Tất cả' : f === 'exact' ? '✓✓ Đúng tỉ số' : f === 'correct' ? '✓ Đúng kết quả' : '✗ Sai'}
+                          </button>
+                        ))}
+                        <DateRangePicker
+                          from={matchDateApplied.from}
+                          to={matchDateApplied.to}
+                          onApply={(f, t) => setMatchDateApplied({ from: f, to: t })}
+                          onClear={() => { setMatchDateFrom(''); setMatchDateTo(''); setMatchDateApplied({ from: '', to: '' }); }}
+                        />
+                      </div>
+                    </div>
+                  )}
                   {myHistoryLoading
                     ? <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-[#00D9FF]" /></div>
-                    : myPredictions.length === 0
-                      ? <div className="text-center py-10 text-slate-500 text-sm">Bạn chưa dự đoán trận nào.</div>
-                      : <div className="space-y-2">
-                          {[...myPredictions].reverse().map((p) => {
+                    : (() => {
+                        const filtered = [...myPredictions].reverse().filter(p => {
+                          if (matchResultFilter === 'exact' && p.isCorrect !== 2) return false;
+                          if (matchResultFilter === 'correct' && p.isCorrect !== 1) return false;
+                          if (matchResultFilter === 'wrong' && p.isCorrect !== 0) return false;
+                          if (matchDateApplied.from || matchDateApplied.to) {
+                            const createdAt = p.createdAt ? new Date(p.createdAt.endsWith('Z') ? p.createdAt : p.createdAt + 'Z') : null;
+                            if (createdAt) {
+                              const dateStr = createdAt.toISOString().slice(0, 10);
+                              if (matchDateApplied.from && dateStr < matchDateApplied.from) return false;
+                              if (matchDateApplied.to && dateStr > matchDateApplied.to) return false;
+                            }
+                          }
+                          return true;
+                        });
+                        return filtered.length === 0
+                          ? <div className="text-center py-10 text-slate-500 text-sm">Không có dự đoán nào.</div>
+                          : <div className="space-y-2">
+                          {filtered.map((p) => {
                             const isExact = p.isCorrect === 2;
                             const isResult = p.isCorrect === 1;
                             const isWrong = p.isCorrect === 0;
@@ -566,9 +760,11 @@ export default function PredictionsPage() {
                               </div>
                             );
                           })}
-                        </div>
+                        </div>;
+                      })()
                   }
-                </div>
+                  </div>
+                )}
               </div>
         )}
       </div>

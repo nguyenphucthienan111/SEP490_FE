@@ -23,7 +23,7 @@ const sidebarItems = [
   { icon: Users,           label: 'Players',        path: '/admin/players' },
   { icon: Calendar,        label: 'Matches',        path: '/admin/matches' },
   { icon: Trophy,          label: 'Leagues',        path: '/admin/leagues' },
-  { icon: BarChart3,       label: 'Predictions',    path: '/admin/predictions' },
+  { icon: BarChart3,       label: 'Quản lý dự đoán',    path: '/admin/predictions' },
   { icon: BarChart3,       label: 'Rating Engine',  path: '/admin/ratings' },
   { icon: FileText,        label: 'Content',        path: '/admin/content' },
   { icon: FileText,        label: 'Diễn đàn',       path: '/admin/forum' },
