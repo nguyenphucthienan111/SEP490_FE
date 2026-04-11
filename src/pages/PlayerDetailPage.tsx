@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, ChevronDown, Users, Loader2, ArrowRight, ChevronLeft, ChevronRight, TrendingUp, X } from 'lucide-react';
+import { ArrowLeft, ChevronDown, Users, Loader2, ArrowRight, ChevronLeft, ChevronRight, TrendingUp, X, Heart } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { getPlayerById } from '@/data/mockData';
@@ -10,6 +10,8 @@ import { PlayerFromAPI, PlayerStats, leagueService } from '@/services/leagueServ
 import { toast } from 'sonner';
 import { useSubscription } from '@/hooks/useSubscription';
 import { PremiumGate } from '@/components/subscription/PremiumGate';
+import { favoriteService } from '@/services/favoriteService';
+import { authService } from '@/services/authService';
 import {
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
   ResponsiveContainer, LineChart, Line, BarChart, Bar,
@@ -42,6 +44,8 @@ export default function PlayerDetailPage() {
   const [matchHistoryLoaded, setMatchHistoryLoaded] = useState(false);
   const [selectedMatchStat, setSelectedMatchStat] = useState<{ match: any; stats: any } | null>(null);
   const [matchVisibleCount, setMatchVisibleCount] = useState(5);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
   const [selectedSeasonIdx, setSelectedSeasonIdx] = useState(0);
   const [showTrend, setShowTrend] = useState(false);
   const [compareSeasonA, setCompareSeasonA] = useState(1);
@@ -63,6 +67,21 @@ export default function PlayerDetailPage() {
     try {
       const foundPlayer = await leagueService.getPlayerById(Number(playerId));
       setApiPlayer(foundPlayer);
+
+      // Check favorite status ngay sau khi có player data
+      if (localStorage.getItem('accessToken')) {
+        favoriteService.getFavorites()
+          .then(res => {
+            // apiClient đã unwrap result.data → res = { user, favoritePlayers, totalFavorites }
+            const data: any[] = (res as any)?.favoritePlayers ?? [];
+            const found = data.some((f: any) =>
+              Number(f.player?.apiPlayerId ?? 0) === Number(foundPlayer.apiPlayerId) ||
+              Number(f.player?.playerId ?? 0) === Number(foundPlayer.playerId)
+            );
+            setIsFavorite(found);
+          })
+          .catch(() => {});
+      }
       if (foundPlayer.teamId) {
         try { setPlayerTeam(await leagueService.getTeamById(foundPlayer.teamId)); } catch {}
       }
@@ -100,6 +119,33 @@ export default function PlayerDetailPage() {
       toast.error('Không thể tải thông tin cầu thủ');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // isFavorite được check trong loadPlayerData
+
+  const handleToggleFavorite = async () => {
+    if (!apiPlayer) return;
+    if (!authService.isAuthenticated()) { toast.error('Vui lòng đăng nhập'); return; }
+    setFavoriteLoading(true);
+    try {
+      if (isFavorite) {
+        await favoriteService.removeFavorite(apiPlayer.apiPlayerId);
+        setIsFavorite(false);
+        toast.success('Đã xóa khỏi yêu thích');
+      } else {
+        try {
+          await favoriteService.addFavorite(apiPlayer.apiPlayerId);
+        } catch {
+          // 400 = đã tồn tại, vẫn set isFavorite = true
+        }
+        setIsFavorite(true);
+        toast.success('Đã thêm vào yêu thích');
+      }
+    } catch {
+      toast.error('Có lỗi xảy ra');
+    } finally {
+      setFavoriteLoading(false);
     }
   };
 
@@ -445,6 +491,21 @@ export default function PlayerDetailPage() {
                     </div>
                     <span className="text-[10px] uppercase tracking-widest text-slate-400">Avg. Rating</span>
                   </div>
+                )}
+                {/* Favorite button */}
+                {apiPlayer && (
+                  <button onClick={handleToggleFavorite} disabled={favoriteLoading}
+                    className={cn(
+                      'flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-all sm:self-center border',
+                      isFavorite
+                        ? 'bg-red-50 dark:bg-red-500/15 border-red-300 dark:border-red-500/30 text-red-500'
+                        : 'bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-400 hover:text-red-400 hover:border-red-300'
+                    )}>
+                    {favoriteLoading
+                      ? <Loader2 className="w-4 h-4 animate-spin" />
+                      : <Heart className={cn('w-4 h-4', isFavorite && 'fill-red-500')} />
+                    }
+                  </button>
                 )}
               </div>
             </div>

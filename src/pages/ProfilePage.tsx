@@ -3,10 +3,11 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   User, Mail, Calendar, Shield, Bell, Star, Clock, ChevronRight,
   Edit2, Camera, LogOut, ArrowLeft, Flame, Package, Check,
-  CreditCard, CheckCircle2, XCircle, AlertTriangle,
+  CreditCard, CheckCircle2, XCircle, AlertTriangle, Heart, Loader2, Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { apiClient } from "@/services/api";
+import { favoriteService } from "@/services/favoriteService";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -60,6 +61,9 @@ export default function ProfilePage() {
   const [equipping, setEquipping] = useState(false);
   const [payments, setPayments] = useState<any[]>([]);
   const [paymentsLoading, setPaymentsLoading] = useState(false);
+  const [favorites, setFavorites] = useState<any[]>([]);
+  const [favoritesLoading, setFavoritesLoading] = useState(false);
+  const [favoritesLoaded, setFavoritesLoaded] = useState(false);
 
   useEffect(() => {
     if (activeTab === 'payments' && payments.length === 0 && !paymentsLoading) {
@@ -70,6 +74,21 @@ export default function ProfilePage() {
         .finally(() => setPaymentsLoading(false));
     }
   }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab === 'favorites' && user && !favoritesLoaded && !favoritesLoading) {
+      setFavoritesLoading(true);
+      favoriteService.getFavorites()
+        .then(res => {
+          // apiClient đã unwrap result.data → res = { user, favoritePlayers, totalFavorites }
+          const list = (res as any)?.favoritePlayers ?? [];
+          setFavorites(Array.isArray(list) ? list : []);
+          setFavoritesLoaded(true);
+        })
+        .catch(() => setFavoritesLoaded(true))
+        .finally(() => setFavoritesLoading(false));
+    }
+  }, [activeTab, user]);
   const [notifications, setNotifications] = useState({
     matchResults: true,
     playerUpdates: true,
@@ -164,6 +183,14 @@ export default function ProfilePage() {
     } catch (error) {
       toast.error('Đăng xuất thất bại');
     }
+  };
+
+  const handleRemoveFavorite = async (apiPlayerId: number) => {
+    if (!user) return;
+    try {
+      await favoriteService.removeFavorite(apiPlayerId);
+      setFavorites(prev => prev.filter(f => (f.apiPlayerId ?? f.player?.apiPlayerId) !== apiPlayerId));
+    } catch {}
   };
 
   const handleEditClick = () => {
@@ -347,31 +374,57 @@ export default function ProfilePage() {
           </TabsContent>
 
           {/* Favorites Tab */}
-          <TabsContent value="favorites" className="space-y-6">
-            <div className="bg-card border border-slate-200 dark:border-white/[0.08] rounded-2xl p-6">
-              <h3 className="font-display font-bold text-xl text-foreground mb-6">
-                Cầu thủ yêu thích
-              </h3>
-              <div className="space-y-3">
-                {mockUser.favoritePlayers.map((player) => (
-                  <Link
-                    key={player.id}
-                    to={`/players/${player.id}`}
-                    className="flex items-center justify-between p-4 rounded-xl bg-muted hover:bg-accent border border-slate-200 dark:border-white/[0.05] transition-colors group"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#00D9FF]/20 to-[#00D9FF]/5 flex items-center justify-center">
-                        <User className="w-6 h-6 text-[#00D9FF]" />
-                      </div>
-                      <div>
-                        <p className="text-foreground font-semibold">{player.name}</p>
-                        <p className="text-slate-600 dark:text-[#A8A29E] text-sm">{player.team} • {player.position}</p>
-                      </div>
-                    </div>
-                    <ChevronRight className="w-5 h-5 text-slate-600 dark:text-[#A8A29E] group-hover:text-[#00D9FF] transition-colors" />
-                  </Link>
-                ))}
+          <TabsContent value="favorites" className="space-y-4">
+            <div className="bg-card border border-slate-200 dark:border-white/[0.08] rounded-2xl overflow-hidden">
+              <div className="px-6 py-4 border-b border-slate-200 dark:border-white/[0.08] flex items-center justify-between">
+                <h3 className="font-display font-bold text-lg text-foreground">Cầu thủ yêu thích</h3>
+                <span className="text-xs text-slate-400">{favorites.length} cầu thủ</span>
               </div>
+              {favoritesLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-6 h-6 text-[#00D9FF] animate-spin" />
+                </div>
+              ) : favorites.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+                  <Heart className="w-10 h-10 mb-3 opacity-30" />
+                  <p className="text-sm">Chưa có cầu thủ yêu thích</p>
+                  <Link to="/players" className="mt-3 text-xs text-[#00D9FF] hover:underline">Khám phá cầu thủ →</Link>
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-100 dark:divide-white/[0.05]">
+                  {favorites.map((fav: any) => {
+                    const player = fav.player ?? fav;
+                    const apiPlayerId = fav.apiPlayerId ?? player.apiPlayerId;
+                    const playerId = fav.playerId ?? player.playerId;
+                    const name = player.fullName ?? player.name ?? '—';
+                    const photo = player.photoUrl ?? player.photo;
+                    const pos: Record<string, string> = { G: 'Thủ môn', D: 'Hậu vệ', M: 'Tiền vệ', F: 'Tiền đạo' };
+                    const posLabel = pos[player.position] ?? player.position ?? '';
+                    return (
+                      <div key={apiPlayerId ?? playerId} className="flex items-center gap-4 px-5 py-3 hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors group">
+                        <div className="w-11 h-11 rounded-xl overflow-hidden bg-slate-100 dark:bg-white/5 flex-shrink-0">
+                          {photo
+                            ? <img src={photo} alt={name} className="w-full h-full object-cover object-top" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                            : <div className="w-full h-full flex items-center justify-center text-slate-400"><User className="w-5 h-5" /></div>
+                          }
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-sm text-foreground truncate">{name}</p>
+                          <p className="text-xs text-slate-400">{posLabel}{player.teamName ? ` · ${player.teamName}` : ''}</p>
+                        </div>
+                        <Link to={`/players/${playerId}`}
+                          className="text-xs text-[#00D9FF] hover:underline flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                          Xem hồ sơ
+                        </Link>
+                        <button onClick={() => handleRemoveFavorite(apiPlayerId)}
+                          className="p-1.5 rounded-lg text-slate-300 hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors flex-shrink-0 opacity-0 group-hover:opacity-100">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </TabsContent>
 

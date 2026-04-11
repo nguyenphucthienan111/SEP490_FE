@@ -59,4 +59,5 @@ export const NOTIFICATION_ICONS: Record<string, string> = {
   email_verified:       '✅',
   post_popular:         '🔥',
   comment_liked:        '❤️',
+  favorite_player_updated: '⚽',
 };
