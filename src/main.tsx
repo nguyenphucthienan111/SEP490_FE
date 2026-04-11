@@ -5,12 +5,14 @@ import "./index.css";
 import { BrowserRouter } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { AIChatBubble } from "@/components/ai/AIChatBubble";
+import { SupportChatBubble } from "@/components/support/SupportChatBubble";
 
 const basename = import.meta.env.BASE_URL;
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <BrowserRouter basename={basename}>
     <App />
+    <SupportChatBubble />
     <AIChatBubble />
     <Toaster 
       position="top-right"

@@ -85,4 +85,27 @@ export const apiClient = {
   delete<T>(endpoint: string, options?: RequestInit): Promise<T> {
     return request<T>(endpoint, { ...options, method: 'DELETE' });
   },
+
+  patch<T>(endpoint: string, data?: unknown, options?: RequestInit): Promise<T> {
+    return request<T>(endpoint, {
+      ...options,
+      method: 'PATCH',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+  },
+
+  postForm<T>(endpoint: string, formData: FormData): Promise<T> {
+    const token = localStorage.getItem('accessToken');
+    const url = `${API_BASE_URL}${endpoint}`;
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    return fetch(url, { method: 'POST', headers, body: formData })
+      .then(async res => {
+        if (res.status === 401) { localStorage.removeItem('accessToken'); window.location.href = '/login'; throw new Error('Phiên đăng nhập đã hết hạn'); }
+        if (!res.ok) { const err = await res.json().catch(() => ({ message: 'Error' })); throw new Error(err.message || `HTTP ${res.status}`); }
+        const result = await res.json();
+        if (result && typeof result === 'object' && 'data' in result) return result.data as T;
+        return result as T;
+      });
+  },
 };

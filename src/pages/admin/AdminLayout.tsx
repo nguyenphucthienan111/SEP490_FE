@@ -1,7 +1,7 @@
 import { ReactNode, useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
-  LayoutDashboard, Users, FileText, Menu, LogOut, ChevronDown, Target
+  LayoutDashboard, Users, FileText, Menu, LogOut, ChevronDown, Target, Headphones
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { authService } from '@/services/authService';
 import { userService } from '@/services/userService';
+import { apiClient } from '@/services/api';
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -21,12 +22,14 @@ const sidebarItems = [
   { icon: Users,           label: 'Quản lý người dùng', path: '/admin/users' },
   { icon: Target,          label: 'Quản lý dự đoán',    path: '/admin/predictions' },
   { icon: FileText,        label: 'Quản lý diễn đàn',   path: '/admin/forum' },
+  { icon: Headphones,      label: 'Tin nhắn hỗ trợ',    path: '/admin/support' },
 ];
 
 export function AdminLayout({ children }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [username, setUsername] = useState('Admin');
   const [email, setEmail] = useState('');
+  const [supportUnread, setSupportUnread] = useState(0);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -43,6 +46,18 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         setEmail(u.email ?? '');
       })
       .catch(() => navigate('/login', { replace: true }));
+  }, []);
+
+  // Poll unread support count every 30s
+  useEffect(() => {
+    const fetchUnread = () => {
+      apiClient.get<{ count: number }>('/api/support/admin/unread-count')
+        .then(r => setSupportUnread(r.count ?? 0))
+        .catch(() => {});
+    };
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleLogout = () => {
@@ -84,6 +99,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           <nav className="flex-1 p-4 space-y-1">
             {sidebarItems.map((item) => {
               const isActive = location.pathname === item.path;
+              const badge = item.path === '/admin/support' && supportUnread > 0 ? supportUnread : 0;
               return (
                 <Link
                   key={item.path}
@@ -97,7 +113,12 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                   )}
                 >
                   <item.icon className="w-4 h-4 flex-shrink-0" />
-                  {item.label}
+                  <span className="flex-1">{item.label}</span>
+                  {badge > 0 && (
+                    <span className="w-5 h-5 rounded-full bg-white text-[#FF4444] text-[10px] font-bold flex items-center justify-center flex-shrink-0">
+                      {badge > 99 ? '99+' : badge}
+                    </span>
+                  )}
                 </Link>
               );
             })}

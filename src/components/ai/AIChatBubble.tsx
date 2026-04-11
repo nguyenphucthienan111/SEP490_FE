@@ -50,6 +50,16 @@ function renderContent(text: string) {
 
 export function AIChatBubble() {
   const [isLoggedIn, setIsLoggedIn] = useState(() => authService.isAuthenticated());
+  const [isAdmin] = useState(() => {
+    const token = authService.getAccessToken();
+    if (!token) return false;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const roles: string[] = payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role']
+        ?? payload['role'] ?? [];
+      return (Array.isArray(roles) ? roles : [roles]).some((r: string) => r.toLowerCase() === 'admin');
+    } catch { return false; }
+  });
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -170,7 +180,7 @@ export function AIChatBubble() {
 
   return (
     <>
-      {!isLoggedIn ? null : (
+      {!isLoggedIn || isAdmin ? null : (
       <>
       <motion.button
         onClick={() => setIsOpen(v => !v)}

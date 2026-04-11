@@ -44,6 +44,7 @@ const ShopPage = lazy(() => import("@/pages/ShopPage"));
 const ForumPage = lazy(() => import("@/pages/ForumPage"));
 const ForumPostPage = lazy(() => import("@/pages/ForumPostPage"));
 const AdminForumPage = lazy(() => import("@/pages/admin/AdminForumPage"));
+const AdminSupportPage = lazy(() => import("@/pages/admin/AdminSupportPage"));
 
 function PageLoader() {
   return (
@@ -111,6 +112,7 @@ function App() {
         <Route path="/admin/content" element={<AdminContentPage />} />
         <Route path="/admin/settings" element={<AdminSettingsPage />} />
         <Route path="/admin/forum" element={<AdminForumPage />} />
+        <Route path="/admin/support" element={<AdminSupportPage />} />
 
         {/* 404 Not Found */}
         <Route path="*" element={<NotFoundPage />} />
