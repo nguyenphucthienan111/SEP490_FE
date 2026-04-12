@@ -5,77 +5,19 @@ import { FeaturedPlayers } from "@/components/home/FeaturedPlayers";
 import { MatchCenter } from "@/components/home/MatchCenter";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
 import {
   BarChart2, Users, Trophy, Zap, ArrowRight,
   MessageCircle, ThumbsUp, Eye, Flame, Star, Hash,
   GitCompare, TrendingUp, Target, Award,
 } from "lucide-react";
+import { forumService, PostSummary } from "@/services/forumService";
 
 const FEATURES = [
   { icon: BarChart2, title: 'Phân tích chuyên sâu', desc: 'Chỉ số chi tiết cho từng cầu thủ và đội bóng', color: '#FF4444', to: '/analytics' },
   { icon: Users, title: 'So sánh cầu thủ', desc: 'Đặt hai cầu thủ cạnh nhau để so sánh hiệu suất', color: '#00D9FF', to: '/compare' },
   { icon: Trophy, title: 'Dự đoán kết quả', desc: 'Tham gia dự đoán và tích điểm thưởng mỗi ngày', color: '#a78bfa', to: '/predictions' },
   { icon: Zap, title: 'Dữ liệu thời gian thực', desc: 'Cập nhật liên tục từ các nguồn chính thức', color: '#fbbf24', to: '/matches' },
-];
-
-// Mock community posts — sau này thay bằng API thật
-const COMMUNITY_POSTS = [
-  {
-    id: 1,
-    type: 'hot',
-    tag: 'Phân tích',
-    title: 'Nguyễn Văn Toàn đang có phong độ tốt nhất sự nghiệp mùa này',
-    excerpt: 'Với 7 bàn thắng và 5 kiến tạo sau 12 vòng đấu, tiền đạo HAGL đang chứng minh đẳng cấp...',
-    author: 'VNFootball_Fan',
-    avatar: null,
-    likes: 142,
-    comments: 38,
-    views: 1240,
-    time: '2 giờ trước',
-    color: '#FF4444',
-  },
-  {
-    id: 2,
-    type: 'trending',
-    tag: 'Thảo luận',
-    title: 'Hà Nội FC vs Công An Hà Nội — Derby thủ đô vòng 13 ai sẽ thắng?',
-    excerpt: 'Trận derby thủ đô đang được cộng đồng mong chờ nhất vòng 13. Cùng dự đoán kết quả...',
-    author: 'HanoiDerby2025',
-    avatar: null,
-    likes: 89,
-    comments: 67,
-    views: 3100,
-    time: '5 giờ trước',
-    color: '#00D9FF',
-  },
-  {
-    id: 3,
-    type: 'new',
-    tag: 'Tin tức',
-    title: 'V-League 2025/26 chính thức khởi tranh với nhiều gương mặt mới',
-    excerpt: 'Mùa giải mới mang đến nhiều bất ngờ với sự xuất hiện của các ngoại binh chất lượng cao...',
-    author: 'VLeague_Official',
-    avatar: null,
-    likes: 56,
-    comments: 21,
-    views: 890,
-    time: '1 ngày trước',
-    color: '#a78bfa',
-  },
-  {
-    id: 4,
-    type: 'hot',
-    tag: 'Bình luận',
-    title: 'Top 5 pha kiến tạo đẹp nhất vòng 12 — Ai xứng đáng nhất?',
-    excerpt: 'Vòng 12 để lại nhiều pha bóng đẹp mắt. Hãy bình chọn pha kiến tạo yêu thích của bạn...',
-    author: 'GoalHighlights',
-    avatar: null,
-    likes: 203,
-    comments: 94,
-    views: 5600,
-    time: '3 ngày trước',
-    color: '#fbbf24',
-  },
 ];
 
 const TAG_COLORS: Record<string, string> = {
@@ -178,6 +120,31 @@ function CompareSection() {
 
 function CommunitySection() {
   const isLoggedIn = !!localStorage.getItem('accessToken');
+  const [posts, setPosts] = useState<PostSummary[]>([]);
+
+  useEffect(() => {
+    forumService.getPosts(undefined, 1, 4)
+      .then(res => setPosts((res as any)?.data ?? res ?? []))
+      .catch(() => {});
+  }, []);
+
+  const fmtTime = (iso: string) => {
+    const diff = Date.now() - new Date(iso).getTime();
+    const m = Math.floor(diff / 60000);
+    if (m < 60) return `${m} phút trước`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h} giờ trước`;
+    return `${Math.floor(h / 24)} ngày trước`;
+  };
+
+  const TAG_COLOR_MAP: Record<string, { cls: string; color: string }> = {
+    'vleague1':  { cls: 'bg-[#FF4444]/15 text-[#FF4444] border-[#FF4444]/25',   color: '#FF4444' },
+    'vleague2':  { cls: 'bg-[#00D9FF]/15 text-[#00D9FF] border-[#00D9FF]/25',   color: '#00D9FF' },
+    'cup':       { cls: 'bg-[#a78bfa]/15 text-[#a78bfa] border-[#a78bfa]/25',   color: '#a78bfa' },
+    'general':   { cls: 'bg-[#fbbf24]/15 text-[#fbbf24] border-[#fbbf24]/25',   color: '#fbbf24' },
+  };
+  const getTagMeta = (tag?: string) => TAG_COLOR_MAP[tag?.toLowerCase() ?? ''] ?? { cls: 'bg-muted text-muted-foreground border-border', color: '#a78bfa' };
+  const tagLabel: Record<string, string> = { vleague1: 'V-League 1', vleague2: 'V-League 2', cup: 'Cúp QG', general: 'Chung' };
 
   return (
     <section className="py-24 relative overflow-hidden">
@@ -198,57 +165,50 @@ function CommunitySection() {
             </h2>
             <p className="text-muted-foreground mt-3 max-w-md">Tham gia cộng đồng fan bóng đá Việt Nam — chia sẻ, phân tích và dự đoán cùng nhau.</p>
           </div>
-          <Link to="/analytics" className="flex items-center gap-2 text-sm font-semibold text-[#a78bfa] hover:text-foreground transition-colors group">
+          <Link to="/forum" className="flex items-center gap-2 text-sm font-semibold text-[#a78bfa] hover:text-foreground transition-colors group">
             Xem tất cả bài viết
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </Link>
         </motion.div>
 
         <div className="grid lg:grid-cols-2 gap-5">
-          {COMMUNITY_POSTS.map((post, i) => (
-            <motion.div key={post.id}
+          {posts.slice(0, 4).map((post, i) => {
+            const meta = getTagMeta(post.leagueTag);
+            return (
+            <motion.div key={post.postId}
               initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }} transition={{ duration: 0.4, delay: i * 0.08 }}>
+              <Link to={`/forum/${post.postId}`}>
               <div className="group relative rounded-3xl border border-border bg-card hover:bg-muted/40 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 cursor-pointer overflow-hidden">
-                <div className="absolute left-0 top-0 bottom-0 w-0.5 rounded-l-3xl" style={{ backgroundColor: post.color }} />
+                <div className="absolute left-0 top-0 bottom-0 w-0.5 rounded-l-3xl" style={{ backgroundColor: meta.color }} />
                 <div className="p-6 pl-7">
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${TAG_COLORS[post.tag] ?? 'bg-muted text-muted-foreground border-border'}`}>
-                        {post.tag}
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${meta.cls}`}>
+                        {tagLabel[post.leagueTag?.toLowerCase() ?? ''] ?? post.leagueTag ?? 'Chung'}
                       </span>
-                      {post.type === 'hot' && (
-                        <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#FF4444]/15 border border-[#FF4444]/25 text-[10px] font-bold text-[#FF4444]">
-                          <Flame className="w-2.5 h-2.5" /> Hot
-                        </span>
-                      )}
-                      {post.type === 'trending' && (
-                        <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#00D9FF]/15 border border-[#00D9FF]/25 text-[10px] font-bold text-[#00D9FF]">
-                          <Hash className="w-2.5 h-2.5" /> Trending
-                        </span>
-                      )}
                     </div>
-                    <span className="text-[10px] text-muted-foreground flex-shrink-0">{post.time}</span>
+                    <span className="text-[10px] text-muted-foreground flex-shrink-0">{fmtTime(post.createdAt)}</span>
                   </div>
                   <h3 className="font-display font-bold text-base text-foreground group-hover:text-[#a78bfa] transition-colors mb-2 line-clamp-2 leading-snug">{post.title}</h3>
-                  <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed mb-4">{post.excerpt}</p>
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between mt-4">
                     <div className="flex items-center gap-1.5">
                       <div className="w-6 h-6 rounded-full bg-muted border border-border flex items-center justify-center text-[10px] font-bold text-muted-foreground">
-                        {post.author[0].toUpperCase()}
+                        {post.authorName?.[0]?.toUpperCase() ?? '?'}
                       </div>
-                      <span className="text-xs text-muted-foreground font-medium">{post.author}</span>
+                      <span className="text-xs text-muted-foreground font-medium">{post.authorName}</span>
                     </div>
                     <div className="flex items-center gap-4">
-                      <span className="flex items-center gap-1 text-[11px] text-muted-foreground"><ThumbsUp className="w-3 h-3" />{post.likes}</span>
-                      <span className="flex items-center gap-1 text-[11px] text-muted-foreground"><MessageCircle className="w-3 h-3" />{post.comments}</span>
-                      <span className="flex items-center gap-1 text-[11px] text-muted-foreground"><Eye className="w-3 h-3" />{post.views.toLocaleString()}</span>
+                      <span className="flex items-center gap-1 text-[11px] text-muted-foreground"><MessageCircle className="w-3 h-3" />{post.commentCount}</span>
+                      <span className="flex items-center gap-1 text-[11px] text-muted-foreground"><Eye className="w-3 h-3" />{post.viewCount.toLocaleString()}</span>
                     </div>
                   </div>
                 </div>
               </div>
+              </Link>
             </motion.div>
-          ))}
+            );
+          })}
         </div>
 
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}

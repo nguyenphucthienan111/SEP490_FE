@@ -41,6 +41,131 @@ const mockUser = {
   ],
 };
 
+function PaymentsTabContent({ payments, paymentsLoading }: { payments: any[]; paymentsLoading: boolean }) {
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [showCalendar, setShowCalendar] = useState(false);
+
+  const statusMap: Record<string, { label: string; icon: any; cls: string }> = {
+    Paid:      { label: 'Thành công', icon: CheckCircle2, cls: 'text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10' },
+    Pending:   { label: 'Chờ thanh toán', icon: AlertTriangle, cls: 'text-amber-500 bg-amber-50 dark:bg-amber-500/10' },
+    Cancelled: { label: 'Đã huỷ', icon: XCircle, cls: 'text-slate-400 bg-slate-100 dark:bg-white/5' },
+    Expired:   { label: 'Hết hạn', icon: XCircle, cls: 'text-red-400 bg-red-50 dark:bg-red-500/10' },
+  };
+
+  const fmtPrice = (n: number) => n.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
+  const fmtDate = (d: string) => new Date(d).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+  const filtered = payments.filter(p => {
+    if (statusFilter !== 'all' && p.status !== statusFilter) return false;
+    if (dateFrom) {
+      const from = new Date(dateFrom); from.setHours(0,0,0,0);
+      if (new Date(p.createdAt) < from) return false;
+    }
+    if (dateTo) {
+      const to = new Date(dateTo); to.setHours(23,59,59,999);
+      if (new Date(p.createdAt) > to) return false;
+    }
+    return true;
+  });
+
+  const hasFilter = statusFilter !== 'all' || dateFrom || dateTo;
+
+  return (
+    <div className="space-y-3">
+      {/* Filter bar */}
+      <div className="bg-card border border-slate-200 dark:border-white/[0.08] rounded-2xl px-4 py-3 flex flex-wrap items-center gap-3">
+        {/* Status filter */}
+        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+          className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-[#A8A29E] border border-slate-200 dark:border-white/10 focus:outline-none cursor-pointer">
+          <option value="all">Tất cả trạng thái</option>
+          <option value="Paid">Thành công</option>
+          <option value="Pending">Chờ thanh toán</option>
+          <option value="Cancelled">Đã huỷ</option>
+          <option value="Expired">Hết hạn</option>
+        </select>
+
+        {/* Date range */}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10">
+            <Calendar className="w-3.5 h-3.5 text-slate-400" />
+            <input type="date" value={dateFrom} onChange={e => {
+              setDateFrom(e.target.value);
+              if (dateTo && e.target.value > dateTo) setDateTo('');
+            }}
+              className="text-xs bg-transparent text-slate-700 dark:text-[#A8A29E] focus:outline-none cursor-pointer w-28" />
+          </div>
+          <span className="text-xs text-slate-400">—</span>
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10">
+            <Calendar className="w-3.5 h-3.5 text-slate-400" />
+            <input type="date" value={dateTo} min={dateFrom || undefined} onChange={e => setDateTo(e.target.value)}
+              className="text-xs bg-transparent text-slate-700 dark:text-[#A8A29E] focus:outline-none cursor-pointer w-28" />
+          </div>
+        </div>
+
+        {hasFilter && (
+          <button onClick={() => { setStatusFilter('all'); setDateFrom(''); setDateTo(''); }}
+            className="text-xs text-slate-400 hover:text-red-400 transition-colors ml-auto">
+            ✕ Xóa lọc
+          </button>
+        )}
+        <span className="text-xs text-slate-400 ml-auto">{filtered.length} giao dịch</span>
+      </div>
+
+      {/* List */}
+      <div className="bg-card border border-slate-200 dark:border-white/[0.08] rounded-2xl overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-200 dark:border-white/[0.08] flex items-center justify-between">
+          <h3 className="font-display font-bold text-lg text-foreground">Lịch sử thanh toán</h3>
+          <Link to="/pricing" className="text-xs text-[#00D9FF] hover:underline font-medium">Nâng cấp gói →</Link>
+        </div>
+        {paymentsLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="w-6 h-6 border-2 border-[#00D9FF] border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+            <CreditCard className="w-10 h-10 mb-3 opacity-30" />
+            <p className="text-sm">{payments.length === 0 ? 'Chưa có giao dịch nào' : 'Không có giao dịch phù hợp'}</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-100 dark:divide-white/[0.05]">
+            {filtered.map((p: any) => {
+              const s = statusMap[p.status] ?? statusMap.Cancelled;
+              const Icon = s.icon;
+              return (
+                <div key={p.paymentId} className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${s.cls}`}>
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold text-sm text-foreground">{p.planName}</span>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${s.cls}`}>{s.label}</span>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-0.5 font-mono-data">{p.paymentCode}</p>
+                    <p className="text-xs text-slate-400">{fmtDate(p.createdAt)}</p>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className="font-mono-data font-bold text-sm text-foreground">{fmtPrice(p.amount)}</p>
+                    <p className="text-[10px] text-slate-400">{p.provider}</p>
+                  </div>
+                  {p.status === 'Pending' && (
+                    <Link to={`/payment/${p.paymentCode}`}
+                      className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-semibold hover:bg-amber-100 transition-colors">
+                      Thanh toán
+                    </Link>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function ProfilePage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -430,66 +555,7 @@ export default function ProfilePage() {
 
           {/* Payments Tab */}
           <TabsContent value="payments" className="space-y-4">
-            <div className="bg-card border border-slate-200 dark:border-white/[0.08] rounded-2xl overflow-hidden">
-              <div className="px-6 py-4 border-b border-slate-200 dark:border-white/[0.08] flex items-center justify-between">
-                <h3 className="font-display font-bold text-lg text-foreground">Lịch sử thanh toán</h3>
-                <Link to="/pricing" className="text-xs text-[#00D9FF] hover:underline font-medium">Nâng cấp gói →</Link>
-              </div>
-              {paymentsLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="w-6 h-6 border-2 border-[#00D9FF] border-t-transparent rounded-full animate-spin" />
-                </div>
-              ) : payments.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 text-slate-400">
-                  <CreditCard className="w-10 h-10 mb-3 opacity-30" />
-                  <p className="text-sm">Chưa có giao dịch nào</p>
-                </div>
-              ) : (
-                <div className="divide-y divide-slate-100 dark:divide-white/[0.05]">
-                  {payments.map((p: any) => {
-                    const statusMap: Record<string, { label: string; icon: any; cls: string }> = {
-                      Paid:      { label: 'Thành công', icon: CheckCircle2, cls: 'text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10' },
-                      Pending:   { label: 'Chờ thanh toán', icon: AlertTriangle, cls: 'text-amber-500 bg-amber-50 dark:bg-amber-500/10' },
-                      Cancelled: { label: 'Đã huỷ', icon: XCircle, cls: 'text-slate-400 bg-slate-100 dark:bg-white/5' },
-                      Expired:   { label: 'Hết hạn', icon: XCircle, cls: 'text-red-400 bg-red-50 dark:bg-red-500/10' },
-                    };
-                    const s = statusMap[p.status] ?? statusMap.Cancelled;
-                    const Icon = s.icon;
-                    const fmtPrice = (n: number) => n.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
-                    const fmtDate = (d: string) => new Date(d).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-                    return (
-                      <div key={p.paymentId} className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors">
-                        {/* Icon trạng thái */}
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${s.cls}`}>
-                          <Icon className="w-5 h-5" />
-                        </div>
-                        {/* Info */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-semibold text-sm text-foreground">{p.planName}</span>
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${s.cls}`}>{s.label}</span>
-                          </div>
-                          <p className="text-xs text-slate-400 mt-0.5 font-mono-data">{p.paymentCode}</p>
-                          <p className="text-xs text-slate-400">{fmtDate(p.createdAt)}</p>
-                        </div>
-                        {/* Số tiền */}
-                        <div className="text-right flex-shrink-0">
-                          <p className="font-mono-data font-bold text-sm text-foreground">{fmtPrice(p.amount)}</p>
-                          <p className="text-[10px] text-slate-400">{p.provider}</p>
-                        </div>
-                        {/* Link xem nếu Pending */}
-                        {p.status === 'Pending' && (
-                          <Link to={`/payment/${p.paymentCode}`}
-                            className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-semibold hover:bg-amber-100 transition-colors">
-                            Thanh toán
-                          </Link>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+            <PaymentsTabContent payments={payments} paymentsLoading={paymentsLoading} />
           </TabsContent>
 
           {/* Wardrobe Tab */}

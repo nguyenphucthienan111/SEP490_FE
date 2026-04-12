@@ -37,7 +37,6 @@ const navItems = [
   { label: "Trận đấu", path: "/matches" },
   { label: "Dự đoán", path: "/predictions" },
   { label: "Diễn đàn", path: "/forum" },
-  { label: "Phân tích", path: "/analytics" },
   { label: "Premium", path: "/pricing" },
 ];
 

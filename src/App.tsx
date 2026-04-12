@@ -12,7 +12,6 @@ const StadiumsPage = lazy(() => import("@/pages/StadiumsPage"));
 const TeamDetailPage = lazy(() => import("@/pages/TeamDetailPage"));
 const LeaguesPage = lazy(() => import("@/pages/LeaguesPage"));
 const LeagueDetailPage = lazy(() => import("@/pages/LeagueDetailPage"));
-const AnalyticsPage = lazy(() => import("@/pages/AnalyticsPage"));
 const ComparePage = lazy(() => import("@/pages/ComparePage"));
 const PredictionsPage = lazy(() => import("@/pages/PredictionsPage"));
 const PricingPage = lazy(() => import("@/pages/PricingPage"));
@@ -79,8 +78,6 @@ function App() {
         <Route path="/teams/:teamId" element={<TeamDetailPage />} />
         <Route path="/leagues" element={<LeaguesPage />} />
         <Route path="/leagues/:leagueId" element={<LeagueDetailPage />} />
-        <Route path="/analytics" element={<AnalyticsPage />} />
-        <Route path="/analytics/:articleId" element={<AnalyticsPage />} />
         <Route path="/compare" element={<ComparePage />} />
         <Route path="/ai-video" element={<VideoAnalysisPage />} />
         <Route path="/predictions" element={<PredictionsPage />} />
