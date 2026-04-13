@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Check, Zap, Crown, Loader2, Star, Calendar, History, ChevronDown, ChevronUp, Video, FileText, Plus } from 'lucide-react';
+import { Check, Zap, Crown, Loader2, Star, Calendar, History, ChevronDown, ChevronUp, Video, FileText, Plus, BarChart2 } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { apiClient } from '@/services/api';
 import { subscriptionService, SubscriptionStatus, PaymentInfo } from '@/services/subscriptionService';
@@ -37,6 +37,7 @@ const PLAN_META: Record<string, {
       '1 lượt AI Video Analysis',
       '2 bài đăng diễn đàn',
       '10 lượt AI Chat/ngày',
+      '5 lượt AI Phân tích trận/cầu thủ',
     ],
   },
   MONTHLY: {
@@ -48,6 +49,7 @@ const PLAN_META: Record<string, {
       '15 lượt AI Video Analysis',
       '15 bài đăng diễn đàn',
       '25 lượt AI Chat/ngày',
+      '30 lượt AI Phân tích trận/cầu thủ',
       'So sánh chi tiết cầu thủ',
       'Phân tích phong độ qua các mùa',
       'Lịch sử chuyển nhượng',
@@ -64,6 +66,7 @@ const PLAN_META: Record<string, {
       '45 lượt AI Video Analysis',
       '50 bài đăng diễn đàn',
       '50 lượt AI Chat/ngày',
+      '100 lượt AI Phân tích trận/cầu thủ',
       'So sánh chi tiết cầu thủ',
       'Truy cập sớm tính năng mới',
       'Tiết kiệm ~16% so với Gói Tháng',
@@ -386,7 +389,7 @@ export default function PricingPage() {
                     amount: '5 lượt',
                     price: 50000,
                     perUnit: '10.000đ/lượt',
-                    compare: 'Gói Monthly: 6.600đ/lượt',
+                    compare: 'Gói hàng tháng: 6.600đ/lượt',
                     color: 'text-[#00D9FF]',
                     bg: 'bg-[#00D9FF]/10',
                     border: 'border-[#00D9FF]/20',
@@ -398,7 +401,19 @@ export default function PricingPage() {
                     amount: '10 bài',
                     price: 50000,
                     perUnit: '5.000đ/bài',
-                    compare: 'Gói Monthly: 6.600đ/bài',
+                    compare: 'Gói hàng tháng: 6.600đ/bài',
+                    color: 'text-[#FF4444]',
+                    bg: 'bg-[#FF4444]/10',
+                    border: 'border-[#FF4444]/20',
+                  },
+                  {
+                    code: 'TOPUP_AI_MATCH',
+                    icon: <BarChart2 className="w-5 h-5" />,
+                    label: 'AI Phân tích trận/cầu thủ',
+                    amount: '10 lượt',
+                    price: 50000,
+                    perUnit: '5.000đ/lượt',
+                    compare: 'Gói hàng tháng: 3.300đ/lượt',
                     color: 'text-[#FF4444]',
                     bg: 'bg-[#FF4444]/10',
                     border: 'border-[#FF4444]/20',

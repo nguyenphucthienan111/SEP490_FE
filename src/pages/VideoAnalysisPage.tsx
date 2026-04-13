@@ -1,12 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, Video, Loader2, Sparkles, AlertCircle, CheckCircle2, ArrowLeft, Trash2, History, ChevronDown, ChevronUp, Play, Lock, Crown } from 'lucide-react';
+import { Upload, Video, Loader2, Sparkles, AlertCircle, CheckCircle2, ArrowLeft, Trash2, History, ChevronDown, ChevronUp, Play, Lock, Crown, BarChart2 } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { cn } from '@/lib/utils';
 import { apiClient } from '@/services/api';
 import { Link } from 'react-router-dom';
 import { authService } from '@/services/authService';
 import { useSubscription } from '@/hooks/useSubscription';
+import { AIMatchAnalysis } from '@/components/ai/AIMatchAnalysis';
 
 const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME ?? 'your_cloud_name';
 const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET ?? 'football_videos';
@@ -22,6 +23,7 @@ interface HistoryItem {
 }
 
 export default function VideoAnalysisPage() {
+  const [activeTab, setActiveTab] = useState<'video' | 'match'>('video');
   const [file, setFile] = useState<File | null>(null);
   const [prompt, setPrompt] = useState('');
   const [history, setHistory] = useState<HistoryItem[]>([]);
@@ -145,25 +147,44 @@ export default function VideoAnalysisPage() {
           </motion.div>
 
           {/* Header */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-            <div className="flex items-center gap-3 mb-3">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
+            <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF4444] to-[#FF6666] flex items-center justify-center shadow-lg">
-                <Video className="w-5 h-5 text-white" />
+                <Sparkles className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="font-display font-extrabold text-3xl text-foreground">AI Phân tích Video</h1>
-                <p className="text-sm text-slate-500 dark:text-[#A8A29E]">Powered by Gemini · Upload video tình huống bóng đá để phân tích</p>
+                <h1 className="font-display font-extrabold text-3xl text-foreground">AI Phân tích</h1>
+                <p className="text-sm text-slate-500 dark:text-[#A8A29E]">Powered by Gemini · Phân tích video & trận đấu bóng đá</p>
               </div>
             </div>
-            <div className="flex flex-wrap gap-2 mt-4">
-              {['V-League 1', 'V-League 2', 'Vietnam Cup'].map(l => (
-                <span key={l} className="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-[#A8A29E]">{l}</span>
-              ))}
+            {/* Tab switcher */}
+            <div className="flex gap-1 p-1 bg-slate-100 dark:bg-white/5 rounded-2xl">
+              <button onClick={() => setActiveTab('video')}
+                className={cn('flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all duration-200',
+                  activeTab === 'video' ? 'bg-white dark:bg-white/10 text-[#FF4444] shadow-md' : 'text-slate-500 dark:text-slate-400 hover:text-foreground')}>
+                <Video className="w-4 h-4" />AI Phân tích Video
+              </button>
+              <button onClick={() => setActiveTab('match')}
+                className={cn('flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all duration-200',
+                  activeTab === 'match' ? 'bg-white dark:bg-white/10 text-[#FF4444] shadow-md' : 'text-slate-500 dark:text-slate-400 hover:text-foreground')}>
+                <BarChart2 className="w-4 h-4" />AI Phân tích Trận/Cầu thủ
+              </button>
             </div>
           </motion.div>
 
-          <div className="space-y-5">
-            {/* Drop zone */}
+          <AnimatePresence mode="wait">
+          {activeTab === 'match' ? (
+            <motion.div key="match" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
+              <AIMatchAnalysis />
+            </motion.div>
+          ) : (
+            <motion.div key="video" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.2 }}>
+          <div className="flex flex-wrap gap-2 mb-5">
+            {['V-League 1', 'V-League 2', 'Vietnam Cup'].map(l => (
+              <span key={l} className="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-[#A8A29E]">{l}</span>
+            ))}
+          </div>
+          <div className="space-y-5">            {/* Drop zone */}
             {!result && (
               <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
                 <div
@@ -313,10 +334,15 @@ export default function VideoAnalysisPage() {
               </motion.div>
             )}
           </div>
+          </motion.div>
+          )}
+          </AnimatePresence>
+
         </div>
 
-        {/* History section */}
-        {(history.length > 0 || historyLoading) && (
+        {/* History section - only for video tab */}
+        {activeTab === 'video' && (history.length > 0 || historyLoading) && (
+          <div className="container mx-auto px-4 max-w-3xl">
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="mt-8">
             <button
               onClick={() => setShowHistory(v => !v)}
@@ -361,6 +387,7 @@ export default function VideoAnalysisPage() {
               )}
             </AnimatePresence>
           </motion.div>
+          </div>
         )}
       </div>
     </MainLayout>

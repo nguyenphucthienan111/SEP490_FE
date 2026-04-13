@@ -10,6 +10,7 @@ export interface SubscriptionStatus {
   lastPaymentAt: string | null;
   aiVideoCreditsRemaining: number;
   forumPostCreditsRemaining: number;
+  aiMatchAnalysisRemaining: number;
 }
 
 export interface PaymentInfo {

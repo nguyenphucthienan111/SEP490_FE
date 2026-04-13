@@ -94,25 +94,11 @@ export default function PlayerDetailPage() {
       if (foundPlayer.teamId && token) {
         try {
           setTransfersLoading(true);
-          const LEAGUE_MAP: Record<number, { tournamentId: number; seasonId: number }> = {
-            1: { tournamentId: 626, seasonId: 78589 },
-            2: { tournamentId: 771, seasonId: 80926 },
-            3: { tournamentId: 3087, seasonId: 81023 },
-          };
-          const ids = [...new Set(allStats.map(s => s.leagueId).filter(id => LEAGUE_MAP[id]))];
-          for (const lid of (ids.length > 0 ? ids : [1, 2, 3])) {
-            const mapping = LEAGUE_MAP[lid];
-            if (!mapping) continue;
-            try {
-              const res = await leagueService.getLeagueTransfers(mapping.tournamentId, mapping.seasonId);
-              const byPlayer: any[] = res?.transfersByPlayer ?? res?.data?.transfersByPlayer ?? [];
-              const pd = byPlayer.find((p: any) =>
-                p.apiPlayerId === foundPlayer.apiPlayerId || p.playerId === foundPlayer.playerId ||
-                String(p.apiPlayerId) === String(foundPlayer.apiPlayerId) || String(p.playerId) === String(foundPlayer.playerId)
-              );
-              if (pd?.transferHistory?.length) { setTransfers(pd.transferHistory); break; }
-            } catch {}
-          }
+          // Lấy thẳng từ DB theo playerId — nhanh hơn lấy all transfers
+          const res = await (leagueService as any).getPlayerTransfers(Number(playerId));
+          // apiClient tự unwrap 'data' field, res là array trực tiếp
+          const list: any[] = Array.isArray(res) ? res : (res?.data ?? []);
+          setTransfers(list);
         } catch {} finally { setTransfersLoading(false); }
       }
     } catch {
@@ -489,7 +475,7 @@ export default function PlayerDetailPage() {
                         <span className="font-mono-data text-lg font-black text-slate-900 dark:text-foreground leading-none">{currentRating.toFixed(1)}</span>
                       </div>
                     </div>
-                    <span className="text-[10px] uppercase tracking-widest text-slate-400">Avg. Rating</span>
+                    <span className="text-[10px] uppercase tracking-widest text-slate-400">Đánh Giá Trung Bình</span>
                   </div>
                 )}
                 {/* Favorite button */}
@@ -576,7 +562,7 @@ export default function PlayerDetailPage() {
                           { label: 'Thẻ vàng',     value: playerStats.reduce((s, x) => s + x.yellowCards, 0) },
                           { label: 'Thẻ đỏ',       value: playerStats.reduce((s, x) => s + x.redCards, 0) },
                           { label: 'Mùa giải',     value: playerStats.length },
-                          { label: 'Rating TB',    value: playerStats.filter(s => s.rating).length > 0 ? (playerStats.reduce((s, x) => s + (x.rating ?? 0), 0) / playerStats.filter(s => s.rating).length).toFixed(1) : '—' },
+                          { label: 'Đánh Giá TB',    value: playerStats.filter(s => s.rating).length > 0 ? (playerStats.reduce((s, x) => s + (x.rating ?? 0), 0) / playerStats.filter(s => s.rating).length).toFixed(1) : '—' },
                         ].map(item => (
                           <div key={item.label} className="bg-slate-50 dark:bg-white/5 rounded-xl p-3">
                             <p className="text-[11px] text-slate-400 dark:text-[#A8A29E] mb-1">{item.label}</p>
@@ -1021,8 +1007,7 @@ export default function PlayerDetailPage() {
                                   </div>
                                   <div className="flex items-center gap-2 mt-0.5">
                                     <span className="text-xs text-slate-400">{date}</span>
-                                    {fee && fee !== 'Free' && <span className="text-xs text-[#00D9FF] font-semibold">· {fee}</span>}
-                                    {(fee === 'Free' || tType === 'Free') && <span className="text-xs text-emerald-500 font-medium">· Tự do</span>}
+                                    {fee && fee !== 'Free' && fee !== '-' && <span className="text-xs text-[#00D9FF] font-semibold">· {fee}</span>}
                                   </div>
                                 </div>
                                 <span className={cn('px-2.5 py-1 rounded-full text-[10px] font-bold flex-shrink-0', meta.cls)}>{meta.label}</span>

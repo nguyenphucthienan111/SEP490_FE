@@ -20,6 +20,7 @@ export function useSubscription() {
   const isPremium = sub?.isActive ?? false;
   const aiCredits = sub?.aiVideoCreditsRemaining ?? 0;
   const forumCredits = sub?.forumPostCreditsRemaining ?? 0;
+  const aiMatchCredits = sub?.aiMatchAnalysisRemaining ?? 0;
 
   const refresh = async () => {
     cached = null;
@@ -27,7 +28,7 @@ export function useSubscription() {
     cached = s; setSub(s);
   };
 
-  return { sub, loading, isPremium, aiCredits, forumCredits, refresh };
+  return { sub, loading, isPremium, aiCredits, forumCredits, aiMatchCredits, refresh };
 }
 
 export function invalidateSubscriptionCache() { cached = null; }

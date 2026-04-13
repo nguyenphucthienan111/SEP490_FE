@@ -57,6 +57,7 @@ const PLAN_OPTIONS = [
   { code: 'QUARTERLY',        label: 'Gói Hàng quý (90 ngày)' },
   { code: 'TOPUP_AI_VIDEO',   label: 'Nạp thêm AI Video Analysis (5 lượt)' },
   { code: 'TOPUP_FORUM_POST', label: 'Nạp thêm bài đăng diễn đàn (10 bài)' },
+  { code: 'TOPUP_AI_MATCH',   label: 'Nạp thêm AI Phân tích (10 lượt)' },
 ];
 
 export default function AdminSupportPage() {

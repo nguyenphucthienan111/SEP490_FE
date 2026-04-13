@@ -895,6 +895,10 @@ export const leagueService = {
     return await apiClient.get<any>(`/api/SofascoreHybrid/transfers?tournamentId=${tournamentId}&seasonId=${seasonId}`);
   },
 
+  async getPlayerTransfers(playerId: number): Promise<any> {
+    return await apiClient.get<any>(`/api/SofascoreHybrid/player-transfers/${playerId}`);
+  },
+
   async getTransfers(): Promise<Transfer[]> {
     return await apiClient.get<Transfer[]>('/api/Football/transfers');
   },
