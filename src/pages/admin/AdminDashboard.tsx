@@ -9,6 +9,7 @@ import { contestService } from '@/services/contestService';
 export default function AdminDashboard() {
   const [userCount, setUserCount] = useState<number | null>(null);
   const [contestCount, setContestCount] = useState<number | null>(null);
+  const [forumCount, setForumCount] = useState<number | null>(null);
   const [income, setIncome] = useState<any>(null);
 
   useEffect(() => {
@@ -18,6 +19,10 @@ export default function AdminDashboard() {
     contestService.getOpen()
       .then(c => setContestCount(Array.isArray(c) ? c.length : null))
       .catch(() => {});
+    // Forum count — bypass apiClient unwrap để lấy total
+    fetch(`${import.meta.env.VITE_API_BASE_URL || ''}/api/forum/posts?page=1&pageSize=1`, {
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken')}` }
+    }).then(r => r.json()).then(d => setForumCount(d.total ?? null)).catch(() => {});
     apiClient.get<any>('/api/Admin/incomeDashboard')
       .then(res => {
         const d = (res as any).data ?? res;
@@ -41,7 +46,7 @@ export default function AdminDashboard() {
   const stats = [
     { label: 'Người dùng', value: userCount, icon: Users, href: '/admin/users', color: 'text-[#00D9FF]', bg: 'bg-[#00D9FF]/10' },
     { label: 'Cuộc thi dự đoán', value: contestCount, icon: Target, href: '/admin/predictions', color: 'text-[#FF4444]', bg: 'bg-[#FF4444]/10' },
-    { label: 'Diễn đàn', value: null, icon: FileText, href: '/admin/forum', color: 'text-[#a78bfa]', bg: 'bg-[#a78bfa]/10' },
+    { label: 'Diễn đàn', value: forumCount, icon: FileText, href: '/admin/forum', color: 'text-[#a78bfa]', bg: 'bg-[#a78bfa]/10' },
   ];
 
   const quickActions = [
@@ -54,7 +59,7 @@ export default function AdminDashboard() {
     <AdminLayout>
       <div className="space-y-8">
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
-          <h1 className="font-display font-extrabold text-2xl text-foreground mb-1">Dashboard</h1>
+          <h1 className="font-display font-extrabold text-2xl text-foreground mb-1">Tổng quan</h1>
           <p className="text-sm text-slate-500 dark:text-[#A8A29E]">Tổng quan hệ thống quản trị</p>
         </motion.div>
 

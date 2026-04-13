@@ -18,7 +18,7 @@ interface AdminLayoutProps {
 }
 
 const sidebarItems = [
-  { icon: LayoutDashboard, label: 'Dashboard',          path: '/admin' },
+  { icon: LayoutDashboard, label: 'Tổng quan',           path: '/admin' },
   { icon: Users,           label: 'Quản lý người dùng', path: '/admin/users' },
   { icon: Target,          label: 'Quản lý dự đoán',    path: '/admin/predictions' },
   { icon: FileText,        label: 'Quản lý diễn đàn',   path: '/admin/forum' },
@@ -30,6 +30,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const [username, setUsername] = useState('Admin');
   const [email, setEmail] = useState('');
   const [supportUnread, setSupportUnread] = useState(0);
+  const [verified, setVerified] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -44,6 +45,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         if (!isAdmin) { navigate('/', { replace: true }); return; }
         setUsername(u.username ?? u.fullName ?? 'Admin');
         setEmail(u.email ?? '');
+        setVerified(true);
       })
       .catch(() => navigate('/login', { replace: true }));
   }, []);
@@ -80,10 +82,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
       {/* Sidebar */}
       <aside className={cn(
-        "fixed lg:static inset-y-0 left-0 z-50 w-64 bg-card/95 backdrop-blur-xl border-r border-slate-200 dark:border-white/5 transform transition-transform duration-300 lg:transform-none",
+        "fixed inset-y-0 left-0 z-50 w-64 h-screen bg-card/95 backdrop-blur-xl border-r border-slate-200 dark:border-white/5 transform transition-transform duration-300 lg:transform-none flex-shrink-0",
         sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       )}>
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full overflow-hidden">
           <div className="p-6 border-b border-slate-200 dark:border-white/5">
             <Link to="/admin" className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF4444] to-[#FF6666] flex items-center justify-center">
@@ -96,7 +98,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             </Link>
           </div>
 
-          <nav className="flex-1 p-4 space-y-1">
+          <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
             {sidebarItems.map((item) => {
               const isActive = location.pathname === item.path;
               const badge = item.path === '/admin/support' && supportUnread > 0 ? supportUnread : 0;
@@ -125,6 +127,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           </nav>
 
           <div className="p-4 border-t border-slate-200 dark:border-white/5">
+            {verified && (
             <Link
               to="/"
               className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-slate-600 dark:text-[#A8A29E] hover:bg-slate-100 dark:hover:bg-white/5 hover:text-foreground transition-colors"
@@ -132,12 +135,13 @@ export function AdminLayout({ children }: AdminLayoutProps) {
               <LogOut className="w-4 h-4" />
               Về trang chủ
             </Link>
+            )}
           </div>
         </div>
       </aside>
 
       {/* Main */}
-      <div className="flex-1 flex flex-col min-w-0 relative z-10">
+      <div className="flex-1 flex flex-col min-w-0 relative z-10 lg:ml-64">
         <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl border-b border-slate-200 dark:border-white/5 px-4 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 text-slate-600 dark:text-[#A8A29E]">
