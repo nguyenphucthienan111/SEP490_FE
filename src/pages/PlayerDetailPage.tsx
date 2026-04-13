@@ -85,7 +85,7 @@ export default function PlayerDetailPage() {
       if (foundPlayer.teamId) {
         try { setPlayerTeam(await leagueService.getTeamById(foundPlayer.teamId)); } catch {}
       }
-      const allStats = await leagueService.getPlayerStatsByPlayerId(Number(playerId));
+      const allStats = await leagueService.getPlayerStatsByPlayerId(foundPlayer.playerId);
       setPlayerStats([...allStats].sort((a, b) => (a.seasonId ?? 99) - (b.seasonId ?? 99)));
       if (allStats.length > 0 && allStats[0].leagueId) {
         try { setSeasons(await leagueService.getSeasons(allStats[0].leagueId)); } catch {}

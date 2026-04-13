@@ -269,7 +269,7 @@ export function SupportChatBubble() {
                       </a>
                     )}
                     <p className="text-[10px] text-slate-400 px-1">
-                      {new Date(msg.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                      {new Date(msg.createdAt.endsWith('Z') ? msg.createdAt : msg.createdAt + 'Z').toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Ho_Chi_Minh' })}
                     </p>
                   </div>
                 </div>
