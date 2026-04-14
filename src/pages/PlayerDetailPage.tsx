@@ -246,17 +246,52 @@ export default function PlayerDetailPage() {
   const posLabel = ({'F':'Tiền đạo','M':'Tiền vệ','D':'Hậu vệ','G':'Thủ môn'} as Record<string,string>)[playerPosition ?? ''] ?? playerPosition;
 
   const getRadarData = () => {
-    const s = playerStats[0];
-    if (!s) return null;
+    if (playerStats.length === 0) return null;
+    // Dùng mùa có nhiều data nhất (ưu tiên seasonId nhỏ nhất có đủ chỉ số)
+    const scored = playerStats.map(s => ({
+      s,
+      score: [s.tackles, s.interceptions, s.clearances, s.shotsOnTarget, s.passesAccuracy, s.saves].filter(v => v != null && v > 0).length
+    }));
+    const best = scored.sort((a, b) => b.score - a.score || (a.s.seasonId ?? 99) - (b.s.seasonId ?? 99))[0]?.s;
+    if (!best) return null;
+    const s = best;
     const norm = (v: number | null | undefined, max: number) => Math.min(100, Math.round(((v ?? 0) / max) * 100));
-    const data = [
-      { stat: 'Ghi bàn',     value: norm(s.goals, 20) },
-      { stat: 'Kiến tạo',    value: norm(s.assists, 15) },
-      { stat: 'Sút cầu môn', value: norm(s.shotsOnTarget, 50) },
-      { stat: 'Chuyền bóng', value: norm(s.passesKey, 60) },
-      { stat: 'Rê bóng',     value: norm(s.dribblesSuccess, 60) },
-      { stat: 'Kỷ luật',     value: Math.max(0, 100 - norm((s.yellowCards ?? 0) * 10 + (s.redCards ?? 0) * 30, 100)) },
-    ];
+    const pos = playerPosition ?? '';
+
+    let data;
+    if (pos === 'G') {
+      data = [
+        { stat: 'Cứu thua',    value: norm(s.saves, 60) },
+        { stat: 'Sạch lưới',   value: norm(s.cleanSheets, 15) },
+        { stat: 'Chuyền bóng', value: norm(s.passesAccuracy, 400) },
+        { stat: 'Bắt bóng bổng', value: norm(s.highClaims, 15) },
+        { stat: 'Ra khỏi khung', value: norm(s.runsOut, 30) },
+      ];
+    } else if (pos === 'D') {
+      data = [
+        { stat: 'Tắc bóng',    value: norm(s.tackles, 60) },
+        { stat: 'Cắt bóng',    value: norm(s.interceptions, 50) },
+        { stat: 'Phá bóng',    value: norm(s.clearances, 80) },
+        { stat: 'Chuyền bóng', value: norm(s.passesAccuracy, 400) },
+        { stat: 'Ghi bàn',     value: norm(s.goals, 5) },
+      ];
+    } else if (pos === 'M') {
+      data = [
+        { stat: 'Chuyền bóng', value: norm(s.passesAccuracy, 400) },
+        { stat: 'Kiến tạo',    value: norm(s.assists, 10) },
+        { stat: 'Ghi bàn',     value: norm(s.goals, 10) },
+        { stat: 'Tắc bóng',    value: norm(s.tackles, 50) },
+        { stat: 'Rê bóng',     value: norm(s.dribblesSuccess, 40) },
+      ];
+    } else {
+      data = [
+        { stat: 'Ghi bàn',     value: norm(s.goals, 15) },
+        { stat: 'Kiến tạo',    value: norm(s.assists, 10) },
+        { stat: 'Sút cầu môn', value: norm(s.shotsOnTarget, 30) },
+        { stat: 'Rê bóng',     value: norm(s.dribblesSuccess, 40) },
+        { stat: 'Chuyền bóng', value: norm(s.passesKey, 20) },
+      ];
+    }
     return data.every(d => d.value === 0) ? null : data;
   };
 
@@ -536,12 +571,12 @@ export default function PlayerDetailPage() {
                       const rd = getRadarData();
                       if (!rd) return <div className="h-56 flex items-center justify-center text-slate-400 text-sm">Chưa có đủ dữ liệu</div>;
                       return (
-                        <div className="h-56">
+                        <div className="h-64">
                           <ResponsiveContainer width="100%" height="100%">
-                            <RadarChart data={rd}>
+                            <RadarChart data={rd} outerRadius="55%" margin={{ top: 10, right: 30, bottom: 10, left: 30 }}>
                               <PolarGrid stroke="rgba(255,255,255,0.1)" />
                               <PolarAngleAxis dataKey="stat" tick={{ fill: '#A8A29E', fontSize: 11 }} />
-                              <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fill: '#A8A29E', fontSize: 9 }} />
+                              <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
                               <Radar name="Chỉ số" dataKey="value" stroke="#00D9FF" fill="#00D9FF" fillOpacity={0.25} strokeWidth={2} />
                             </RadarChart>
                           </ResponsiveContainer>
@@ -626,9 +661,18 @@ export default function PlayerDetailPage() {
                       { label: 'Phạm lỗi', val: stat.foulsCommitted }, { label: 'Bị phạm lỗi', val: stat.foulsDrawn },
                     ];
                     const defending: SI[] = [{ label: 'Tắc bóng', val: stat.tackles }, { label: 'Cắt bóng', val: stat.interceptions }];
+                    const gkStats: SI[] = [
+                      { label: 'Cứu thua', val: stat.saves },
+                      { label: 'Cứu thua trong vòng cấm', val: stat.savesInsideBox },
+                      { label: 'Thủng lưới', val: stat.goalsConceded },
+                      { label: 'Sạch lưới', val: stat.cleanSheets },
+                      { label: 'Cản phá penalty', val: stat.penaltiesSaved },
+                      { label: 'Ra khỏi khung thành', val: stat.runsOut },
+                      { label: 'Bắt bóng bổng', val: stat.highClaims },
+                    ];
                     type G = { title: string; color: string; icon: string; items: SI[] };
                     const groups: G[] = pos === 'G'
-                      ? [{ title: 'Tổng quan', color: 'text-slate-500', icon: '📋', items: overview }, { title: 'Chuyền bóng', color: 'text-cyan-500', icon: '🎯', items: passing }]
+                      ? [{ title: 'Tổng quan', color: 'text-slate-500', icon: '📋', items: overview }, { title: 'Thủ môn', color: 'text-purple-500', icon: '🧤', items: gkStats }, { title: 'Chuyền bóng', color: 'text-cyan-500', icon: '🎯', items: passing }]
                       : pos === 'D'
                       ? [{ title: 'Tổng quan', color: 'text-slate-500', icon: '📋', items: overview }, { title: 'Phòng thủ', color: 'text-amber-500', icon: '🛡️', items: defending }, { title: 'Tranh chấp', color: 'text-orange-500', icon: '⚔️', items: dribbling }, { title: 'Chuyền bóng', color: 'text-cyan-500', icon: '🎯', items: passing }]
                       : pos === 'M'
