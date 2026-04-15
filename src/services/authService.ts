@@ -25,27 +25,22 @@ export interface RefreshTokenRequest {
 export interface AuthResponse {
   accessToken: string;
   refreshToken: string;
+  expiresAt?: string;
   user?: {
-    id: string;
+    userId: string;
     username: string;
     email: string;
     fullName: string;
+    avatarUrl?: string;
+    roles?: string[];
+    isEmailVerified: boolean;
   };
 }
 
 export const authService = {
   async register(data: RegisterRequest): Promise<AuthResponse> {
     const response = await apiClient.post<AuthResponse>('/api/auth/register', data);
-    
-    // Save tokens to localStorage
-    if (response.accessToken) {
-      localStorage.setItem('accessToken', response.accessToken);
-      localStorage.setItem('refreshToken', response.refreshToken);
-      if (response.user) {
-        localStorage.setItem('user', JSON.stringify(response.user));
-      }
-    }
-    
+    // Do NOT save tokens here — user must verify email before being considered logged in
     return response;
   },
 
@@ -99,7 +94,9 @@ export const authService = {
   },
 
   isAuthenticated(): boolean {
-    return !!this.getAccessToken();
+    if (!this.getAccessToken()) return false;
+    const user = this.getCurrentUser();
+    return !!user?.isEmailVerified;
   },
 
   getCurrentUser(): AuthResponse['user'] | null {
