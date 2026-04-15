@@ -124,7 +124,7 @@ export default function TeamDetailPage() {
   const [activeTab, setActiveTab] = React.useState<Tab>('Tổng quan');
   const [posFilter, setPosFilter] = React.useState('all');
   const [matchFilter, setMatchFilter] = React.useState('all');
-  const [showRecent, setShowRecent] = React.useState(5);
+  const [showRecent, setShowRecent] = React.useState(10);
   const [showUpcoming, setShowUpcoming] = React.useState(5);
   const [dbTeams, setDbTeams] = React.useState<Team[]>(() => {
     try { return JSON.parse(localStorage.getItem('teams') || '[]'); } catch { return []; }
@@ -140,6 +140,15 @@ export default function TeamDetailPage() {
   const [transfersLoaded, setTransfersLoaded] = React.useState(false);
 
   React.useEffect(() => { window.scrollTo(0, 0); loadData(); }, [teamId]);
+
+  // Auto-load more pages when filtering a specific league and no results found yet
+  const TOURNAMENT_ID_MAP: Record<string, number> = { 'V-League 1': 626, 'V-League 2': 771, 'Vietnam Cup': 3087 };
+  React.useEffect(() => {
+    if (matchFilter === 'all' || !apiTeam || recentLoading) return;
+    const targetId = TOURNAMENT_ID_MAP[matchFilter];
+    const hasResults = recentMatches.some(m => (m as any).tournament?.uniqueTournament?.id === targetId);
+    if (!hasResults && recentHasMore) loadMoreRecent();
+  }, [matchFilter]);
 
   // League → tournamentId + seasonId mapping
   const LEAGUE_TOURNAMENT: Record<number, { tournamentId: number; seasonId: number }> = {
@@ -219,7 +228,7 @@ export default function TeamDetailPage() {
     setLoading(true);
 
     // Check session cache trước
-    const cacheKey = `team-detail-${teamId}`;
+    const cacheKey = `team-detail-v2-${teamId}`;
     try {
       const cached = sessionStorage.getItem(cacheKey);
       if (cached) {
@@ -260,13 +269,13 @@ export default function TeamDetailPage() {
       const r0val = r0.status === 'fulfilled' ? r0.value : [];
       const recent = r0val
         .filter(m => ALLOWED.has((m as any).tournament?.uniqueTournament?.id))
-        .sort((a, b) => b.startTimestamp - a.startTimestamp)
-        .slice(0, 5);
+        .sort((a, b) => b.startTimestamp - a.startTimestamp);
       setRecentMatches(recent);
       setRecentHasMore(r0val.length >= 10);
 
       // Lưu cache (không cache players vì hay thay đổi)
       try {
+        sessionStorage.removeItem(cacheKey); // clear old sliced cache
         sessionStorage.setItem(cacheKey, JSON.stringify({ team, recent, upcoming, recentHasMore: r0val.length >= 10 }));
       } catch (e) {}
 
@@ -287,7 +296,13 @@ export default function TeamDetailPage() {
   );
 
   const leagueName = apiTeam.leagueId === 1 ? 'V.League 1' : apiTeam.leagueId === 2 ? 'V.League 2' : 'Vietnam Cup';
-  const filteredRecent = matchFilter === 'all' ? recentMatches : recentMatches.filter(m => ((m as any).tournament?.uniqueTournament?.name ?? '') === matchFilter);
+  const TOURNAMENT_NAME_MAP: Record<number, string> = { 626: 'V-League 1', 771: 'V-League 2', 3087: 'Vietnam Cup' };
+  const filteredRecent = matchFilter === 'all'
+    ? recentMatches
+    : recentMatches.filter(m => {
+        const tid = (m as any).tournament?.uniqueTournament?.id;
+        return TOURNAMENT_NAME_MAP[tid] === matchFilter;
+      });
   // Normalize position từ API (có thể là "G","D","M","F" hoặc "Goalkeeper" etc.)
   const normalizePos = (pos: string | null | undefined): string => {
     if (!pos) return '';
@@ -898,8 +913,8 @@ export default function TeamDetailPage() {
                           className="w-full py-3 text-sm font-semibold text-slate-500 dark:text-[#A8A29E] hover:text-slate-900 dark:hover:text-foreground hover:bg-slate-50 dark:hover:bg-white/5 transition-colors flex items-center justify-center gap-2 border-t border-slate-100 dark:border-white/5 disabled:opacity-50">
                           <ChevronDown className="w-4 h-4" />{recentLoading ? 'Đang tải...' : 'Tải thêm kết quả'}
                         </button>
-                      ) : showRecent > 5 ? (
-                        <button onClick={() => setShowRecent(5)}
+                      ) : showRecent > 10 ? (
+                        <button onClick={() => setShowRecent(10)}
                           className="w-full py-3 text-sm font-semibold text-slate-500 dark:text-[#A8A29E] hover:bg-slate-50 dark:hover:bg-white/5 transition-colors flex items-center justify-center gap-2 border-t border-slate-100 dark:border-white/5">
                           <ChevronUp className="w-4 h-4" />Thu gọn
                         </button>

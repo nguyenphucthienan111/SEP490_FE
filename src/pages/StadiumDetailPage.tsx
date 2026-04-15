@@ -14,6 +14,8 @@ export default function StadiumDetailPage() {
   const [apiStadium, setApiStadium] = React.useState<Stadium | null>(null);
   const [fromTeamId, setFromTeamId] = React.useState<string | null>(null);
   const [homeTeamsFromApi, setHomeTeamsFromApi] = React.useState<any[]>([]);
+  const [upcomingMatches, setUpcomingMatches] = React.useState<any[]>([]);
+  const [recentMatches, setRecentMatches] = React.useState<any[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const mockStadium = getStadiumById(stadiumId || '');
 
@@ -76,6 +78,29 @@ export default function StadiumDetailPage() {
         if (!state?.fromTeamId) {
           setFromTeamId(teamsWithStadium[0].teamId.toString());
         }
+
+        // Fetch upcoming & recent matches for all home teams
+        const sofaIds = teamsWithStadium.map((t: any) => t.apiTeamId).filter(Boolean);
+        if (sofaIds.length > 0) {
+          const [upcomingResults, recentResults] = await Promise.all([
+            Promise.allSettled(sofaIds.map((id: number) => leagueService.getTeamNextMatches(id, 0))),
+            Promise.allSettled(sofaIds.map((id: number) => leagueService.getTeamLastMatches(id, 0))),
+          ]);
+          const ALLOWED = new Set([626, 771, 3087]);
+          const upcoming = upcomingResults
+            .flatMap(r => r.status === 'fulfilled' ? r.value : [])
+            .filter((m: any) => ALLOWED.has(m?.tournament?.uniqueTournament?.id))
+            .sort((a: any, b: any) => a.startTimestamp - b.startTimestamp)
+            .slice(0, 5);
+          const recent = recentResults
+            .flatMap(r => r.status === 'fulfilled' ? r.value : [])
+            .filter((m: any) => ALLOWED.has(m?.tournament?.uniqueTournament?.id))
+            .sort((a: any, b: any) => b.startTimestamp - a.startTimestamp)
+            .slice(0, 5);
+          // Deduplicate by id
+          setUpcomingMatches([...new Map(upcoming.map((m: any) => [m.id, m])).values()]);
+          setRecentMatches([...new Map(recent.map((m: any) => [m.id, m])).values()]);
+        }
       } else {
         // No team found, try direct stadium endpoint
         try {
@@ -133,13 +158,6 @@ export default function StadiumDetailPage() {
   }
 
   // Find matches played at this stadium
-  const stadiumMatches = stadium ? matches.filter(match => match.stadium?.id === stadiumId_display) : [];
-  const upcomingMatches = stadiumMatches.filter(m => m.status === 'scheduled');
-  const recentMatches = stadiumMatches
-    .filter(m => m.status === 'completed')
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    .slice(0, 5);
-
   const surfaceLabel = stadium?.surface 
     ? (typeof stadium.surface === 'string' 
         ? (stadium.surface === 'grass' ? 'Cỏ tự nhiên' : 
@@ -318,43 +336,23 @@ export default function StadiumDetailPage() {
               Trận đấu sắp tới
             </h3>
             {upcomingMatches.length > 0 ? (
-              <div className="space-y-4">
-                {upcomingMatches.map((match) => (
-                  <Link
-                    key={match.id}
-                    to={`/matches/${match.id}`}
-                    className="block p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
-                  >
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-4 flex-1">
-                        <div className="text-center min-w-[80px]">
-                          <p className="text-xs text-slate-600 dark:text-[#A8A29E] mb-1">
-                            {new Date(match.date).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })}
-                          </p>
-                          <p className="font-mono-data text-lg text-[#00D9FF] font-bold">
-                            {match.time}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-3 flex-1">
-                          <div className="text-right flex-1">
-                            <p className="font-body font-semibold text-slate-900 dark:text-foreground">
-                              {match.homeTeam.name}
-                            </p>
-                          </div>
-                          <span className="text-slate-400 dark:text-[#A8A29E] font-bold">vs</span>
-                          <div className="text-left flex-1">
-                            <p className="font-body font-semibold text-slate-900 dark:text-foreground">
-                              {match.awayTeam.name}
-                            </p>
-                          </div>
-                        </div>
+              <div className="space-y-3">
+                {upcomingMatches.map((match: any) => {
+                  const date = new Date(match.startTimestamp * 1000);
+                  return (
+                    <div key={match.id} className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10">
+                      <div className="text-center min-w-[56px]">
+                        <p className="text-xs text-slate-500 dark:text-[#A8A29E]">{date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })}</p>
+                        <p className="font-mono-data text-sm font-bold text-[#00D9FF]">{date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</p>
                       </div>
-                      <span className="px-3 py-1.5 bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400 rounded-full text-xs font-label font-semibold uppercase">
-                        {match.league}
-                      </span>
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <p className="font-semibold text-sm text-slate-900 dark:text-foreground text-right flex-1 truncate">{match.homeTeam.name}</p>
+                        <span className="text-xs text-slate-400 flex-shrink-0">vs</span>
+                        <p className="font-semibold text-sm text-slate-900 dark:text-foreground text-left flex-1 truncate">{match.awayTeam.name}</p>
+                      </div>
                     </div>
-                  </Link>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="text-center py-8">
@@ -379,48 +377,29 @@ export default function StadiumDetailPage() {
               Trận đấu gần đây
             </h3>
             {recentMatches.length > 0 ? (
-              <div className="space-y-4">
-                {recentMatches.map((match) => (
-                  <Link
-                    key={match.id}
-                    to={`/matches/${match.id}`}
-                    className="block p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
-                  >
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-4 flex-1">
-                        <div className="text-center min-w-[80px]">
-                          <p className="text-xs text-slate-600 dark:text-[#A8A29E]">
-                            {new Date(match.date).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-3 flex-1">
-                          <div className="text-right flex-1">
-                            <p className="font-body font-semibold text-slate-900 dark:text-foreground">
-                              {match.homeTeam.name}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono-data text-xl font-bold text-slate-900 dark:text-foreground">
-                              {match.homeScore}
-                            </span>
-                            <span className="text-slate-400 dark:text-[#A8A29E]">-</span>
-                            <span className="font-mono-data text-xl font-bold text-slate-900 dark:text-foreground">
-                              {match.awayScore}
-                            </span>
-                          </div>
-                          <div className="text-left flex-1">
-                            <p className="font-body font-semibold text-slate-900 dark:text-foreground">
-                              {match.awayTeam.name}
-                            </p>
-                          </div>
-                        </div>
+              <div className="space-y-3">
+                {recentMatches.map((match: any) => {
+                  const date = new Date(match.startTimestamp * 1000);
+                  const finished = match.status?.type === 'finished';
+                  return (
+                    <div key={match.id} className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10">
+                      <div className="text-center min-w-[56px]">
+                        <p className="text-xs text-slate-500 dark:text-[#A8A29E]">{date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: '2-digit' })}</p>
                       </div>
-                      <span className="px-3 py-1.5 bg-slate-200 dark:bg-white/5 text-slate-700 dark:text-[#A8A29E] rounded-full text-xs font-label font-semibold">
-                        Kết thúc
-                      </span>
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <p className="font-semibold text-sm text-slate-900 dark:text-foreground text-right flex-1 truncate">{match.homeTeam.name}</p>
+                        {finished ? (
+                          <span className="font-mono-data font-bold text-sm text-slate-900 dark:text-foreground flex-shrink-0 px-2">
+                            {match.homeScore?.current ?? 0} - {match.awayScore?.current ?? 0}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-slate-400 flex-shrink-0 px-2">vs</span>
+                        )}
+                        <p className="font-semibold text-sm text-slate-900 dark:text-foreground text-left flex-1 truncate">{match.awayTeam.name}</p>
+                      </div>
                     </div>
-                  </Link>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="text-center py-8">

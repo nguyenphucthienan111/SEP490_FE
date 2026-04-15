@@ -157,7 +157,7 @@ export default function MatchesPage() {
         awayScore: { current: m.awayGoals ?? 0, penalties: m.awayPenalties ?? null },
         startTimestamp: m.matchDate ? Math.floor(new Date(m.matchDate.endsWith('Z') ? m.matchDate : m.matchDate + 'Z').getTime() / 1000) : 0,
         status: { type: m.status ?? 'notstarted' },
-        roundInfo: m.round ? { round: Number(m.round) } : undefined,
+        roundInfo: (() => { const n = Number(m.round); return m.round && isFinite(n) ? { round: n } : undefined; })(),
       }));
       matches.sort((a, b) => a.startTimestamp - b.startTimestamp);
       setMatchesByLeague(prev => ({ ...prev, [league.tournamentId]: matches }));
@@ -241,7 +241,7 @@ export default function MatchesPage() {
 
   const grouped: { round: number | null; label: string; matches: SofascoreTeamMatch[] }[] = [];
   for (const m of paged) {
-    const r = m.roundInfo?.round ?? null;
+    const r = (m.roundInfo?.round != null && isFinite(m.roundInfo.round)) ? m.roundInfo.round : null;
     const label = r != null ? `Vòng ${r}` : 'Cup';
     const existing = grouped.find(g => g.round === r);
     if (existing) existing.matches.push(m);
@@ -361,7 +361,7 @@ export default function MatchesPage() {
               )}
 
               {grouped.map(group => (
-                <div key={group.round ?? 'cup'} className="glass-card rounded-2xl overflow-hidden">
+                <div key={group.round != null && isFinite(group.round) ? group.round : 'cup'} className="glass-card rounded-2xl overflow-hidden">
                   <div className="flex items-center gap-2 px-4 py-2.5 bg-slate-50 dark:bg-white/[0.03] border-b border-slate-100 dark:border-white/5">
                     <div className="w-5 h-5 rounded-md bg-[#00D9FF]/15 flex items-center justify-center flex-shrink-0">
                       <Trophy className="w-3 h-3 text-[#00D9FF]" />
