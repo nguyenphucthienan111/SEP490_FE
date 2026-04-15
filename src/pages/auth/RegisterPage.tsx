@@ -338,7 +338,7 @@ export default function RegisterPage() {
                   Đăng nhập
                 </Button>
               </Link>
-              <Link to="/resend-verification">
+              <Link to="/resend-verification" state={{ email: registeredEmail }}>
                 <Button variant="ghost" className="w-full text-slate-600 dark:text-[#A8A29E] font-body">
                   Chưa nhận được email? Gửi lại
                 </Button>

@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { Link, useSearchParams, useNavigate } from "react-router-dom";
+import { Link, useSearchParams, useNavigate, useLocation } from "react-router-dom";
 import { CheckCircle, XCircle, Loader2, ArrowLeft, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { emailVerificationService } from "@/services/emailVerificationService";
@@ -8,9 +8,10 @@ import { toast } from "sonner";
 export default function VerifyEmailPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('');
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState((location.state as any)?.email ?? '');
   const [isResending, setIsResending] = useState(false);
   const hasVerified = useRef(false);
 

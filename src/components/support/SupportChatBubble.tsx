@@ -31,7 +31,7 @@ const QUICK_REPLIES = [
 ];
 
 export function SupportChatBubble() {
-  const [isLoggedIn] = useState(() => authService.isAuthenticated());
+  const [isLoggedIn, setIsLoggedIn] = useState(() => authService.isAuthenticated());
   const [isAdmin] = useState(() => {
     const token = authService.getAccessToken();
     if (!token) return false;
@@ -53,6 +53,18 @@ export function SupportChatBubble() {
   const [showQuickReplies, setShowQuickReplies] = useState(true);
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync auth state on login/logout events
+  useEffect(() => {
+    const onLogin = () => setIsLoggedIn(authService.isAuthenticated());
+    const onLogout = () => { setIsLoggedIn(false); setIsOpen(false); };
+    window.addEventListener('auth:login', onLogin);
+    window.addEventListener('auth:logout', onLogout);
+    return () => {
+      window.removeEventListener('auth:login', onLogin);
+      window.removeEventListener('auth:logout', onLogout);
+    };
+  }, []);
   // Lưu số lượng tin nhắn admin đã thấy lần cuối
   const lastSeenAdminMsgCount = useRef(0);
   // Ref để tránh stale closure trong polling
