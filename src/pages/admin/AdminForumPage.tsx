@@ -99,7 +99,7 @@ export default function AdminForumPage() {
 
   const approve = async (id: number) => {
     await forumService.adminApprove(id);
-    toast.success("Đã duyệt bài");
+    toast.success(tab === "hidden" ? "Đã bỏ ẩn bài viết" : "Đã duyệt bài");
     load();
   };
 
@@ -186,6 +186,11 @@ export default function AdminForumPage() {
                     {tab === "approved" && (
                       <Button size="sm" variant="outline" onClick={() => hide(p.postId)} className="text-slate-500 gap-1">
                         <EyeOff className="w-3 h-3" />Ẩn
+                      </Button>
+                    )}
+                    {tab === "hidden" && (
+                      <Button size="sm" variant="outline" onClick={() => approve(p.postId)} className="text-green-600 border-green-300 gap-1">
+                        <Eye className="w-3 h-3" />Bỏ ẩn
                       </Button>
                     )}
                   </div>
