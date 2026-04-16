@@ -147,7 +147,8 @@ export default function PlayersPage() {
         const cached = localStorage.getItem('teams');
         if (cached && !forceRefresh) {
           const parsed = JSON.parse(cached);
-          allTeams = Array.isArray(parsed) ? parsed : (parsed?.$values ?? []);
+          const data = parsed?.data ?? parsed;
+          allTeams = Array.isArray(data) ? data : ((data as any)?.$values ?? []);
         } else {
           const raw = await leagueService.getTeams();
           allTeams = Array.isArray(raw) ? raw : ((raw as any)?.$values ?? []);

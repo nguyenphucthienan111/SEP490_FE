@@ -84,7 +84,12 @@ export default function LeaguesPage() {
       } catch (e) {
         try {
           const cached = localStorage.getItem('teams');
-          if (cached) setDbTeams(JSON.parse(cached));
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            const data = parsed?.data ?? parsed;
+            const arr = Array.isArray(data) ? data : (data as any)?.$values ?? [];
+            setDbTeams(arr);
+          }
         } catch { }
       }
 

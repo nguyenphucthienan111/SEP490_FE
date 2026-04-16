@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Search, ChevronDown, Loader2, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
@@ -239,7 +239,8 @@ function PlayerSelector({
                   placeholder="Tìm theo tên..."
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  autoFocus
+                  autoFocus={false}
+                  onFocus={e => e.target.focus({ preventScroll: true })}
                   className="w-full h-9 pl-9 pr-3 rounded-xl bg-slate-100 dark:bg-white/5 text-sm text-foreground placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#00D9FF]/30"
                 />
               </div>
@@ -345,7 +346,10 @@ function StatCompRow({ row, s1, s2, color1, color2 }: {
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function ComparePage() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { isPremium } = useSubscription();
+
+  useEffect(() => { window.scrollTo(0, 0); }, []);
   const [allPlayers, setAllPlayers] = useState<PlayerWithStats[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [playersLoading, setPlayersLoading] = useState(true);
@@ -438,10 +442,10 @@ export default function ComparePage() {
       <div className="min-h-screen py-8">
         <div className="container mx-auto px-4 max-w-4xl">
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-            <Link to="/players" className="inline-flex items-center gap-2 text-slate-500 dark:text-[#A8A29E] hover:text-foreground transition-colors mb-6">
+            <button onClick={() => navigate(-1)} className="inline-flex items-center gap-2 text-slate-500 dark:text-[#A8A29E] hover:text-foreground transition-colors mb-6">
               <ArrowLeft className="w-4 h-4" />
-              <span className="text-sm">Quay lại danh sách cầu thủ</span>
-            </Link>
+              <span className="text-sm">Quay lại</span>
+            </button>
           </motion.div>
 
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="mb-8">

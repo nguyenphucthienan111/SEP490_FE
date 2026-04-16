@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, MapPin, User, Loader2, Calendar, Users, ChevronDown, ChevronUp, Shield, FileText } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
@@ -114,6 +114,7 @@ function MatchRow({ match, sofaId, dbTeams }: { match: SofascoreTeamMatch; sofaI
 
 export default function TeamDetailPage() {
   const { teamId } = useParams<{ teamId: string }>();
+  const navigate = useNavigate();
   const [apiTeam, setApiTeam] = React.useState<Team | null>(null);
   const [players, setPlayers] = React.useState<PlayerFromAPI[]>([]);
   const [recentMatches, setRecentMatches] = React.useState<SofascoreTeamMatch[]>([]);
@@ -127,7 +128,15 @@ export default function TeamDetailPage() {
   const [showRecent, setShowRecent] = React.useState(10);
   const [showUpcoming, setShowUpcoming] = React.useState(5);
   const [dbTeams, setDbTeams] = React.useState<Team[]>(() => {
-    try { return JSON.parse(localStorage.getItem('teams') || '[]'); } catch { return []; }
+    try {
+      const raw = localStorage.getItem('teams');
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      // Cache wrapper format: { data: <teams>, ts: <timestamp> }
+      const data = parsed?.data ?? parsed;
+      const arr = Array.isArray(data) ? data : (data as any)?.$values ?? [];
+      return arr;
+    } catch { return []; }
   });
   const [contracts, setContracts] = React.useState<any[]>([]);
   const [contractsLoading, setContractsLoading] = React.useState(false);
@@ -322,9 +331,9 @@ export default function TeamDetailPage() {
     <MainLayout>
       <div className="min-h-screen py-8">
         <div className="container mx-auto px-4 max-w-4xl">
-          <Link to="/leagues" className="inline-flex items-center gap-2 text-slate-500 dark:text-[#A8A29E] hover:text-[#FF4444] transition-colors mb-6 text-sm font-medium">
+          <button onClick={() => navigate(-1)} className="inline-flex items-center gap-2 text-slate-500 dark:text-[#A8A29E] hover:text-[#FF4444] transition-colors mb-6 text-sm font-medium">
             <ArrowLeft className="w-4 h-4" />Quay lại
-          </Link>
+          </button>
 
           {/* Hero Header */}
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}

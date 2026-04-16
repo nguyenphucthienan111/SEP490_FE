@@ -1,7 +1,7 @@
 import { ReactNode, useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
-  LayoutDashboard, Users, FileText, Menu, LogOut, ChevronDown, Target, Headphones
+  LayoutDashboard, Users, FileText, Menu, LogOut, ChevronDown, Target, Headphones, CreditCard
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
@@ -22,6 +22,7 @@ const sidebarItems = [
   { icon: Users,           label: 'Quản lý người dùng', path: '/admin/users' },
   { icon: Target,          label: 'Quản lý dự đoán',    path: '/admin/predictions' },
   { icon: FileText,        label: 'Quản lý diễn đàn',   path: '/admin/forum' },
+  { icon: CreditCard,      label: 'Thanh toán',          path: '/admin/subscriptions' },
   { icon: Headphones,      label: 'Tin nhắn hỗ trợ',    path: '/admin/support' },
 ];
 

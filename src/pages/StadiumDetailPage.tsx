@@ -48,7 +48,9 @@ export default function StadiumDetailPage() {
       try {
         const cached = localStorage.getItem('teams');
         if (cached) {
-          allTeams = JSON.parse(cached);
+          const parsed = JSON.parse(cached);
+          const data = parsed?.data ?? parsed;
+          allTeams = Array.isArray(data) ? data : (data as any)?.$values ?? [];
         } else {
           allTeams = await leagueService.getTeams();
           localStorage.setItem('teams', JSON.stringify(allTeams));

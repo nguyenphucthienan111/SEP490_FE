@@ -53,6 +53,7 @@ export default function AdminDashboard() {
     { label: 'Quản lý người dùng', href: '/admin/users', icon: Users },
     { label: 'Tạo cuộc thi dự đoán', href: '/admin/predictions', icon: Target },
     { label: 'Quản lý diễn đàn', href: '/admin/forum', icon: FileText },
+    { label: 'Quản lý thanh toán', href: '/admin/subscriptions', icon: CreditCard },
   ];
 
   return (

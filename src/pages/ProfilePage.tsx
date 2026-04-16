@@ -206,8 +206,9 @@ export default function ProfilePage() {
       favoriteService.getFavorites()
         .then(res => {
           // apiClient đã unwrap result.data → res = { user, favoritePlayers, totalFavorites }
-          const list = (res as any)?.favoritePlayers ?? [];
-          setFavorites(Array.isArray(list) ? list : []);
+          const rawList = (res as any)?.favoritePlayers ?? [];
+          const list = Array.isArray(rawList) ? rawList : (rawList as any)?.$values ?? [];
+          setFavorites(list);
           setFavoritesLoaded(true);
         })
         .catch(() => setFavoritesLoaded(true))

@@ -73,11 +73,17 @@ export default function PlayerDetailPage() {
         favoriteService.getFavorites()
           .then(res => {
             // apiClient đã unwrap result.data → res = { user, favoritePlayers, totalFavorites }
-            const data: any[] = (res as any)?.favoritePlayers ?? [];
-            const found = data.some((f: any) =>
-              Number(f.player?.apiPlayerId ?? 0) === Number(foundPlayer.apiPlayerId) ||
-              Number(f.player?.playerId ?? 0) === Number(foundPlayer.playerId)
-            );
+            // favoritePlayers items có thể là { player: {...} } hoặc trực tiếp { apiPlayerId, ... }
+            const rawList: any[] = (res as any)?.favoritePlayers ?? [];
+            const list: any[] = Array.isArray(rawList) ? rawList : (rawList as any)?.$values ?? [];
+            const found = list.some((f: any) => {
+              const fApiId = f.player?.apiPlayerId ?? f.apiPlayerId ?? 0;
+              const fDbId  = f.player?.playerId   ?? f.playerId   ?? 0;
+              return (
+                Number(fApiId) === Number(foundPlayer.apiPlayerId) ||
+                Number(fDbId)  === Number(foundPlayer.playerId)
+              );
+            });
             setIsFavorite(found);
           })
           .catch(() => {});
@@ -1026,7 +1032,7 @@ export default function PlayerDetailPage() {
                             const date = rawDate ? new Date(rawDate).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
                             const fee = (t.transferFee && t.transferFee !== '') ? t.transferFee : null;
                             let cachedTeams: any[] = [];
-                            try { const raw = JSON.parse(localStorage.getItem('teams') || '[]'); cachedTeams = Array.isArray(raw) ? raw : (raw?.data ?? raw?.teams ?? []); } catch {}
+                            try { const raw = JSON.parse(localStorage.getItem('teams') || '{}'); const data = raw?.data ?? raw; cachedTeams = Array.isArray(data) ? data : (data?.$values ?? []); } catch {}
                             const getTeamName = (id: number) => cachedTeams.find((x: any) => x.teamId === id)?.teamName ?? (id ? `Đội #${id}` : '—');
                             const fromTeamName = (typeof t.fromTeam === 'string' ? t.fromTeam : null) ?? t.fromTeamName ?? getTeamName(t.fromTeamId);
                             const toTeamName   = (typeof t.toTeam   === 'string' ? t.toTeam   : null) ?? t.toTeamName   ?? getTeamName(t.toTeamId);

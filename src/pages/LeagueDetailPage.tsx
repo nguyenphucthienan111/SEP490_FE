@@ -107,7 +107,11 @@ export default function LeagueDetailPage() {
       // Fallback to cache
       try {
         const cached = localStorage.getItem('teams');
-        if (cached) return JSON.parse(cached);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          const data = parsed?.data ?? parsed;
+          return Array.isArray(data) ? data : (data as any)?.$values ?? [];
+        }
       } catch { }
       return [];
     }

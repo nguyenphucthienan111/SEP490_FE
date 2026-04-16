@@ -820,6 +820,8 @@ export default function MatchDetailPage() {
   const [incidents, setIncidents] = useState<any[] | null>(null);
   const [matchStats, setMatchStats] = useState<{ home: MatchStat | null; away: MatchStat | null }>({ home: null, away: null });
   const [loading, setLoading] = useState(true);
+  const [homeDbTeamId, setHomeDbTeamId] = useState<number | null>(null);
+  const [awayDbTeamId, setAwayDbTeamId] = useState<number | null>(null);
   const [lineupLoading, setLineupLoading] = useState(false);
   const [incidentsLoading, setIncidentsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<TabId>('overview');
@@ -948,7 +950,7 @@ export default function MatchDetailPage() {
         try { localStorage.setItem(key, JSON.stringify({ data, ts: now })); } catch { /* quota */ }
       }
 
-      const [allStats, dbTeams] = await Promise.all([
+      const [allStats, dbTeamsRaw] = await Promise.all([
         (async () => {
           const cached = getCachedData('match-statistics');
           if (cached) return cached as MatchStat[];
@@ -958,16 +960,23 @@ export default function MatchDetailPage() {
         })(),
         (async () => {
           const cached = getCachedData('teams');
-          if (cached) return cached as any[];
+          if (cached) return cached;
           const data = await leagueService.getAllTeams();
           setCacheData('teams', data);
           return data;
         })(),
       ]);
 
+      // Normalize: handle both plain array and { $values: [...] } format
+      const dbTeams: any[] = Array.isArray(dbTeamsRaw) ? dbTeamsRaw : (dbTeamsRaw as any)?.$values ?? [];
+
       const homeDbTeam = dbTeams.find((t: any) => t.apiTeamId === homeSofaId);
       const awayDbTeam = dbTeams.find((t: any) => t.apiTeamId === awaySofaId);
       if (!homeDbTeam || !awayDbTeam) return;
+
+      // Lưu DB teamIds để dùng cho link
+      if (homeDbTeam?.teamId) setHomeDbTeamId(homeDbTeam.teamId);
+      if (awayDbTeam?.teamId) setAwayDbTeamId(awayDbTeam.teamId);
 
       // Match trực tiếp bằng matchId từ DB (apiFixtureId = eventId)
       const dbMatchRecord = await leagueService.getMatchByFixtureId(eventId).catch(() => null);
@@ -1142,7 +1151,9 @@ export default function MatchDetailPage() {
                   )}
                 </div>
                 <h3 className="font-display font-bold text-base sm:text-lg text-foreground text-center leading-tight">
-                  {match?.homeTeam.name ?? '—'}
+                  {homeDbTeamId
+                    ? <Link to={`/teams/${homeDbTeamId}`} className="hover:text-[#00D9FF] transition-colors">{match?.homeTeam.name ?? '—'}</Link>
+                    : match?.homeTeam.name ?? '—'}
                 </h3>
                 <span className="text-xs text-slate-500 dark:text-[#A8A29E]">Chủ nhà</span>
               </div>
@@ -1190,7 +1201,9 @@ export default function MatchDetailPage() {
                   )}
                 </div>
                 <h3 className="font-display font-bold text-base sm:text-lg text-foreground text-center leading-tight">
-                  {match?.awayTeam.name ?? '—'}
+                  {awayDbTeamId
+                    ? <Link to={`/teams/${awayDbTeamId}`} className="hover:text-[#00D9FF] transition-colors">{match?.awayTeam.name ?? '—'}</Link>
+                    : match?.awayTeam.name ?? '—'}
                 </h3>
                 <span className="text-xs text-slate-500 dark:text-[#A8A29E]">Khách</span>
               </div>
