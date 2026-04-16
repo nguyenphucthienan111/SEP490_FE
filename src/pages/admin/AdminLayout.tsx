@@ -22,7 +22,7 @@ const sidebarItems = [
   { icon: Users,           label: 'Quản lý người dùng', path: '/admin/users' },
   { icon: Target,          label: 'Quản lý dự đoán',    path: '/admin/predictions' },
   { icon: FileText,        label: 'Quản lý diễn đàn',   path: '/admin/forum' },
-  { icon: CreditCard,      label: 'Thanh toán',          path: '/admin/subscriptions' },
+  { icon: CreditCard,      label: 'Quản lý thanh toán',          path: '/admin/subscriptions' },
   { icon: Headphones,      label: 'Tin nhắn hỗ trợ',    path: '/admin/support' },
 ];
 

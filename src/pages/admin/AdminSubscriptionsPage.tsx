@@ -66,6 +66,15 @@ const STATUS_SUB: Record<string, { label: string; cls: string }> = {
   Expired:  { label: 'Hết hạn', cls: 'bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400' },
 };
 
+const PLAN_NAME_VI: Record<string, string> = {
+  TRIAL:            'Gói dùng thử',
+  MONTHLY:          'Gói tháng',
+  QUARTERLY:        'Gói quý',
+  TOPUP_AI_VIDEO:   'Nạp AI Video',
+  TOPUP_FORUM_POST: 'Nạp bài đăng',
+  TOPUP_AI_MATCH:   'Nạp AI Phân tích',
+};
+
 // ─── Stat card ────────────────────────────────────────────────────────────────
 function StatCard({ icon: Icon, label, value, sub, color }: { icon: any; label: string; value: string; sub?: string; color: string }) {
   return (
@@ -359,7 +368,7 @@ export default function AdminSubscriptionsPage() {
       const paged = raw.slice(start, start + PAGE_SIZE);
       setSubs(paged.map(s => normalizeSub(s, umap)));
       setSubTotal(total);
-    } catch { toast.error('Không thể tải subscription'); }
+    } catch { toast.error('Không thể tải gói đăng ký'); }
     finally { setSubLoading(false); }
   };
 
@@ -374,7 +383,7 @@ export default function AdminSubscriptionsPage() {
   const TABS: { id: TabId; label: string }[] = [
     { id: 'stats',         label: 'Thống kê' },
     { id: 'payments',      label: 'Giao dịch' },
-    { id: 'subscriptions', label: 'Subscription' },
+    { id: 'subscriptions', label: 'Gói đăng ký' },
   ];
 
   return (
@@ -383,7 +392,7 @@ export default function AdminSubscriptionsPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="font-display font-bold text-2xl text-foreground">Quản lý thanh toán</h1>
-            <p className="text-sm text-slate-500 dark:text-[#A8A29E] mt-1">Giao dịch, subscription và doanh thu</p>
+            <p className="text-sm text-slate-500 dark:text-[#A8A29E] mt-1">Giao dịch, gói đăng ký và doanh thu</p>
           </div>
         </div>
 
@@ -427,7 +436,7 @@ export default function AdminSubscriptionsPage() {
                       <tbody className="divide-y divide-slate-100 dark:divide-white/5">
                         {stats.byPlan.map(p => (
                           <tr key={p.planCode} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
-                            <td className="py-3 px-3 font-semibold text-foreground">{p.planName ?? p.planCode}</td>
+                            <td className="py-3 px-3 font-semibold text-foreground">{PLAN_NAME_VI[p.planCode] ?? p.planName ?? p.planCode}</td>
                             <td className="py-3 px-3 text-right font-mono-data text-foreground">{p.count}</td>
                             <td className="py-3 px-3 text-right font-mono-data text-green-600 dark:text-green-400 font-semibold">{fmtMoney(p.revenue)}</td>
                           </tr>
@@ -508,7 +517,7 @@ export default function AdminSubscriptionsPage() {
                               <p className="font-semibold text-foreground truncate max-w-[140px]">{p.userName ?? '—'}</p>
                               <p className="text-xs text-slate-400 truncate max-w-[140px]">{p.userEmail ?? ''}</p>
                             </td>
-                            <td className="py-3 px-4 text-foreground">{p.planName ?? p.planCode}</td>
+                            <td className="py-3 px-4 text-foreground">{PLAN_NAME_VI[p.planCode] ?? p.planName ?? p.planCode}</td>
                             <td className="py-3 px-4 font-mono-data font-semibold text-green-600 dark:text-green-400 whitespace-nowrap">{fmtMoney(p.amount)}</td>
                             <td className="py-3 px-4">
                               <span className={cn('px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap', st.cls)}>{st.label}</span>
@@ -554,7 +563,7 @@ export default function AdminSubscriptionsPage() {
               {subLoading ? (
                 <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 text-[#00D9FF] animate-spin" /></div>
               ) : subs.length === 0 ? (
-                <div className="text-center py-16 text-slate-400">Không có subscription</div>
+                <div className="text-center py-16 text-slate-400">Không có gói đăng ký</div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
@@ -574,7 +583,7 @@ export default function AdminSubscriptionsPage() {
                               <p className="font-semibold text-foreground truncate max-w-[160px]">{s.userName ?? '—'}</p>
                               <p className="text-xs text-slate-400 truncate max-w-[160px]">{s.userEmail ?? ''}</p>
                             </td>
-                            <td className="py-3 px-4 text-foreground">{s.planName ?? s.planCode}</td>
+                            <td className="py-3 px-4 text-foreground">{PLAN_NAME_VI[s.planCode] ?? s.planName ?? s.planCode}</td>
                             <td className="py-3 px-4">
                               <span className={cn('px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap', st.cls)}>{st.label}</span>
                             </td>

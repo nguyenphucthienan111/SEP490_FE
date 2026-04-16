@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   User, Mail, Calendar, Shield, Bell, Star, Clock, ChevronRight,
   Edit2, Camera, LogOut, ArrowLeft, Flame, Package, Check,
-  CreditCard, CheckCircle2, XCircle, AlertTriangle, Heart, Loader2, Trash2,
+  CreditCard, CheckCircle2, XCircle, AlertTriangle, Heart, Loader2, Trash2, Eye, EyeOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { apiClient } from "@/services/api";
@@ -189,6 +189,11 @@ export default function ProfilePage() {
   const [favorites, setFavorites] = useState<any[]>([]);
   const [favoritesLoading, setFavoritesLoading] = useState(false);
   const [favoritesLoaded, setFavoritesLoaded] = useState(false);
+  const [showChangePwd, setShowChangePwd] = useState(false);
+  const [changePwdForm, setChangePwdForm] = useState({ current: '', newPwd: '', confirm: '' });
+  const [changePwdLoading, setChangePwdLoading] = useState(false);
+  const [changePwdError, setChangePwdError] = useState('');
+  const [showPwd, setShowPwd] = useState({ current: false, newPwd: false, confirm: false });
 
   useEffect(() => {
     if (activeTab === 'payments' && payments.length === 0 && !paymentsLoading) {
@@ -488,14 +493,130 @@ export default function ProfilePage() {
                 <h3 className="font-display font-bold text-lg text-red-400">Bảo mật</h3>
               </div>
               <p className="text-slate-500 dark:text-[#A8A29E] text-sm mb-5">Quản lý mật khẩu và bảo mật tài khoản.</p>
-              <div className="flex flex-wrap gap-3">
-                <Button variant="outline" className="border-red-500/30 text-red-400 hover:bg-red-500/10">
+
+              {!showChangePwd ? (
+                <Button
+                  variant="outline"
+                  className="border-red-500/30 text-red-400 hover:bg-red-500/10"
+                  onClick={() => { setShowChangePwd(true); setChangePwdError(''); setChangePwdForm({ current: '', newPwd: '', confirm: '' }); }}
+                >
                   Đổi mật khẩu
                 </Button>
-                <Button variant="outline" className="border-red-500/30 text-red-400 hover:bg-red-500/10">
-                  Xóa tài khoản
-                </Button>
-              </div>
+              ) : (
+                <div className="space-y-4 max-w-sm">
+                  {changePwdError && (
+                    <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">{changePwdError}</div>
+                  )}
+                  <div className="space-y-1.5">
+                    <Label className="text-sm text-slate-600 dark:text-[#A8A29E]">Mật khẩu hiện tại</Label>
+                    <div className="relative">
+                      <Input
+                        type={showPwd.current ? 'text' : 'password'}
+                        value={changePwdForm.current}
+                        onChange={e => setChangePwdForm(f => ({ ...f, current: e.target.value }))}
+                        placeholder="••••••••"
+                        className="h-10 pr-10"
+                      />
+                      <button type="button" tabIndex={-1} onClick={() => setShowPwd(s => ({ ...s, current: !s.current }))}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+                        {showPwd.current ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-sm text-slate-600 dark:text-[#A8A29E]">Mật khẩu mới</Label>
+                    <div className="relative">
+                      <Input
+                        type={showPwd.newPwd ? 'text' : 'password'}
+                        value={changePwdForm.newPwd}
+                        onChange={e => setChangePwdForm(f => ({ ...f, newPwd: e.target.value }))}
+                        placeholder="••••••••"
+                        className="h-10 pr-10"
+                      />
+                      <button type="button" tabIndex={-1} onClick={() => setShowPwd(s => ({ ...s, newPwd: !s.newPwd }))}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+                        {showPwd.newPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    {changePwdForm.newPwd && (() => {
+                      const p = changePwdForm.newPwd;
+                      const reqs = [
+                        { label: 'Ít nhất 8 ký tự', met: p.length >= 8 },
+                        { label: 'Chứa chữ hoa', met: /[A-Z]/.test(p) },
+                        { label: 'Chứa chữ thường', met: /[a-z]/.test(p) },
+                        { label: 'Chứa số', met: /[0-9]/.test(p) },
+                        { label: 'Chứa ký tự đặc biệt', met: /[^A-Za-z0-9]/.test(p) },
+                      ];
+                      return (
+                        <div className="grid grid-cols-2 gap-1.5 mt-2">
+                          {reqs.map(r => (
+                            <div key={r.label} className="flex items-center gap-1.5">
+                              <div className={`w-3.5 h-3.5 rounded-full flex items-center justify-center flex-shrink-0 ${r.met ? 'bg-green-500' : 'bg-slate-200 dark:bg-white/10'}`}>
+                                {r.met && <span className="text-white text-[8px] font-bold">✓</span>}
+                              </div>
+                              <span className={`text-xs ${r.met ? 'text-green-600 dark:text-green-400' : 'text-slate-400'}`}>{r.label}</span>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-sm text-slate-600 dark:text-[#A8A29E]">Xác nhận mật khẩu mới</Label>
+                    <div className="relative">
+                      <Input
+                        type={showPwd.confirm ? 'text' : 'password'}
+                        value={changePwdForm.confirm}
+                        onChange={e => setChangePwdForm(f => ({ ...f, confirm: e.target.value }))}
+                        placeholder="••••••••"
+                        className={`h-10 pr-10 ${changePwdForm.confirm && changePwdForm.newPwd !== changePwdForm.confirm ? 'border-red-400 focus-visible:ring-red-400' : changePwdForm.confirm && changePwdForm.newPwd === changePwdForm.confirm ? 'border-green-400 focus-visible:ring-green-400' : ''}`}
+                      />
+                      <button type="button" tabIndex={-1} onClick={() => setShowPwd(s => ({ ...s, confirm: !s.confirm }))}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+                        {showPwd.confirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    {changePwdForm.confirm && changePwdForm.newPwd !== changePwdForm.confirm && (
+                      <p className="text-xs text-red-400">Mật khẩu không khớp</p>
+                    )}
+                    {changePwdForm.confirm && changePwdForm.newPwd === changePwdForm.confirm && (
+                      <p className="text-xs text-green-500">✓ Mật khẩu khớp</p>
+                    )}
+                  </div>
+                  <div className="flex gap-3">
+                    <Button
+                      disabled={changePwdLoading || (() => {
+                        const p = changePwdForm.newPwd;
+                        return !changePwdForm.current || p.length < 8 || !/[A-Z]/.test(p) || !/[a-z]/.test(p) || !/[0-9]/.test(p) || !/[^A-Za-z0-9]/.test(p) || p !== changePwdForm.confirm;
+                      })()}
+                      onClick={async () => {
+                        setChangePwdError('');
+                        if (!changePwdForm.current) return setChangePwdError('Vui lòng nhập mật khẩu hiện tại.');
+                        if (changePwdForm.newPwd !== changePwdForm.confirm) return setChangePwdError('Mật khẩu xác nhận không khớp.');
+                        setChangePwdLoading(true);
+                        try {
+                          await apiClient.post('/api/auth/change-password', {
+                            currentPassword: changePwdForm.current,
+                            newPassword: changePwdForm.newPwd,
+                            confirmNewPassword: changePwdForm.confirm,
+                          });
+                          toast.success('Đổi mật khẩu thành công!');
+                          setShowChangePwd(false);
+                          setChangePwdForm({ current: '', newPwd: '', confirm: '' });
+                        } catch (err: any) {
+                          setChangePwdError(err.message || 'Đổi mật khẩu thất bại.');
+                        } finally {
+                          setChangePwdLoading(false);
+                        }
+                      }}
+                      className="bg-[#FF4444] hover:bg-[#FF5555] text-white"
+                    >
+                      {changePwdLoading ? 'Đang lưu...' : 'Lưu mật khẩu'}
+                    </Button>
+                    <Button variant="outline" onClick={() => { setShowChangePwd(false); setChangePwdError(''); setChangePwdForm({ current: '', newPwd: '', confirm: '' }); setShowPwd({ current: false, newPwd: false, confirm: false }); }}>Huỷ</Button>
+                  </div>
+                </div>
+              )}
             </div>
           </TabsContent>
 
