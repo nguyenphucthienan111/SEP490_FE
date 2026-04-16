@@ -125,6 +125,7 @@ export interface PlayerStats {
   duelsWonRate: number | null;
   tackles: number | null;
   interceptions: number | null;
+  clearances: number | null;
   foulsDrawn: number | null;
   foulsCommitted: number | null;
   penaltiesScored: number | null;
@@ -718,6 +719,7 @@ export const leagueService = {
       duelsWonRate: x.DuelsWonRate ?? x.duelsWonRate ?? null,
       tackles: x.Tackles ?? x.tackles ?? null,
       interceptions: x.Interceptions ?? x.interceptions ?? null,
+      clearances: x.Clearances ?? x.clearances ?? null,
       foulsDrawn: x.FoulsDrawn ?? x.foulsDrawn ?? null,
       foulsCommitted: x.FoulsCommitted ?? x.foulsCommitted ?? null,
       penaltiesScored: x.PenaltiesScored ?? x.penaltiesScored ?? null,
@@ -831,6 +833,7 @@ export const leagueService = {
         duelsWonRate: x.duelsWonRate ?? x.DuelsWonRate ?? null,
         tackles: x.tackles ?? x.Tackles ?? null,
         interceptions: x.interceptions ?? x.Interceptions ?? null,
+        clearances: x.clearances ?? x.Clearances ?? null,
         foulsDrawn: x.foulsDrawn ?? x.FoulsDrawn ?? null,
         foulsCommitted: x.foulsCommitted ?? x.FoulsCommitted ?? null,
         penaltiesScored: x.penaltiesScored ?? x.PenaltiesScored ?? null,
