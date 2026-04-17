@@ -140,7 +140,7 @@ export default function LeaguesPage() {
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
               {dbLeagues.map((league, index) => {
                 const tournamentId = league.apiLeagueId;
-                const logoUrl = league.logoUrl || sofaTournamentLogo(tournamentId);
+                const logoUrl = sofaTournamentLogo(tournamentId);
                 // Season label from STANDINGS_LEAGUES config
                 const seasonCfg = STANDINGS_LEAGUES.find(l => l.tournamentId === tournamentId);
                 return (

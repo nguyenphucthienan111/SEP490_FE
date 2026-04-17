@@ -606,7 +606,7 @@ export const leagueService = {
             id: apiTeamId,
             dbTeamId,
             name: x.teamName ?? x.TeamName ?? '',
-            logo: x.teamLogo ?? x.TeamLogo ?? (apiTeamId > 0 ? sofaTeamLogo(apiTeamId) : ''),
+            logo: apiTeamId > 0 ? sofaTeamLogo(apiTeamId) : '',
           },
           matches: x.played ?? x.Played ?? 0,
           wins: x.win ?? x.Win ?? 0,

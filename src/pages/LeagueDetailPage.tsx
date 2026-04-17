@@ -78,7 +78,7 @@ export default function LeagueDetailPage() {
             currentSeasonId: selectedSeason?.seasonId ?? 0,
             seasonName: '',
             url: '',
-            logoUrl: dbLeague.logoUrl || sofaTournamentLogo(tournamentId),
+            logoUrl: sofaTournamentLogo(tournamentId),
           });
         }
         setDbTeams(allDbTeams);
@@ -167,7 +167,7 @@ export default function LeagueDetailPage() {
               sofaId,
               dbTeamId: t.teamId ?? getDbTeamId(sofaId, allDbTeams),
               name: t.teamName ?? t.name,
-              logo: t.logoUrl ?? sofaTeamLogo(sofaId),
+              logo: sofaTeamLogo(sofaId),
             });
           });
         });
