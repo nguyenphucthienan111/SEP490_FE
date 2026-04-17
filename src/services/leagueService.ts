@@ -1,5 +1,5 @@
 import { apiClient } from './api';
-import { sofaTournamentLogo, sofaTeamLogo } from '@/utils/sofascoreImages';
+import { sofaTournamentLogo, sofaTeamLogo, sofaPlayerPhoto } from '@/utils/sofascoreImages';
 
 export interface League {
   leagueId: number;
@@ -680,7 +680,7 @@ export const leagueService = {
       birthCountry: p.BirthCountry ?? p.birthCountry,
       heightCm: p.HeightCm ?? p.heightCm ?? null,
       weightKg: p.WeightKg ?? p.weightKg ?? null,
-      photoUrl: p.PhotoUrl ?? p.photoUrl,
+      photoUrl: (p.ApiPlayerId ?? p.apiPlayerId) ? sofaPlayerPhoto(p.ApiPlayerId ?? p.apiPlayerId) : (p.PhotoUrl ?? p.photoUrl),
       isInjured: p.IsInjured ?? p.isInjured ?? false,
       teamId: p.TeamId ?? p.teamId,
       position: p.Position ?? p.position,
@@ -789,7 +789,7 @@ export const leagueService = {
       birthCountry: p.BirthCountry ?? p.birthCountry,
       heightCm: p.HeightCm ?? p.heightCm ?? null,
       weightKg: p.WeightKg ?? p.weightKg ?? null,
-      photoUrl: p.PhotoUrl ?? p.photoUrl,
+      photoUrl: (p.ApiPlayerId ?? p.apiPlayerId) ? sofaPlayerPhoto(p.ApiPlayerId ?? p.apiPlayerId) : (p.PhotoUrl ?? p.photoUrl),
       isInjured: p.IsInjured ?? p.isInjured ?? false,
       teamId: p.TeamId ?? p.teamId,
       position: p.Position ?? p.position,
@@ -862,7 +862,7 @@ export const leagueService = {
       birthCountry: p.birthCountry ?? p.BirthCountry ?? '',
       heightCm: p.heightCm ?? p.HeightCm ?? null,
       weightKg: p.weightKg ?? p.WeightKg ?? null,
-      photoUrl: p.photoUrl ?? p.PhotoUrl ?? '',
+      photoUrl: (p.apiPlayerId ?? p.ApiPlayerId) ? sofaPlayerPhoto(p.apiPlayerId ?? p.ApiPlayerId) : (p.photoUrl ?? p.PhotoUrl ?? ''),
       isInjured: p.isInjured ?? p.IsInjured ?? false,
       teamId: p.teamId ?? p.TeamId ?? null,
       position: p.position ?? p.Position ?? '',
