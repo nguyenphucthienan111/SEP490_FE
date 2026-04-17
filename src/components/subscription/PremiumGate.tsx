@@ -10,7 +10,14 @@ interface Props {
 }
 
 export function PremiumGate({ children, locked, message, compact = false }: Props) {
-  if (!locked) return <>{children}</>;
+  const isAdmin = (() => {
+    try {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      return user?.roles?.some((r: string) => r.toLowerCase() === 'admin') ?? false;
+    } catch { return false; }
+  })();
+
+  if (!locked || isAdmin) return <>{children}</>;
 
   if (compact) {
     return (

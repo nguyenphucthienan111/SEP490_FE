@@ -1030,7 +1030,7 @@ export default function PlayerDetailPage() {
                             const tType = t.transferType ?? t.type;
                             const rawDate = t.transferDate ?? t.date;
                             const date = rawDate ? new Date(rawDate).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
-                            const fee = (t.transferFee && t.transferFee !== '') ? t.transferFee : null;
+                            const fee = (t.transferFee && t.transferFee !== '' && t.transferFee !== '0') ? t.transferFee : null;
                             let cachedTeams: any[] = [];
                             try { const raw = JSON.parse(localStorage.getItem('teams') || '{}'); const data = raw?.data ?? raw; cachedTeams = Array.isArray(data) ? data : (data?.$values ?? []); } catch {}
                             const getTeamName = (id: number) => cachedTeams.find((x: any) => x.teamId === id)?.teamName ?? (id ? `Đội #${id}` : '—');
