@@ -8,13 +8,14 @@ import { leagueService, SofascoreTeamMatch, MatchLineups, LineupPlayer, MatchSta
 import { toast } from 'sonner';
 import { useLiveMatch } from '@/hooks/useLiveMatch';
 import { formatMinute } from '@/lib/utils';
+import { sofaTeamLogo, sofaPlayerPhoto } from '@/utils/sofascoreImages';
 
 function teamLogo(id: number) {
-  return `https://api.sofascore.app/api/v1/team/${id}/image`;
+  return sofaTeamLogo(id);
 }
 
 function playerPhoto(id: number) {
-  return `https://api.sofascore.app/api/v1/player/${id}/image`;
+  return sofaPlayerPhoto(id);
 }
 
 const POSITION_ORDER: Record<string, number> = { G: 0, D: 1, M: 2, F: 3 };

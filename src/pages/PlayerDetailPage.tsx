@@ -12,6 +12,7 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { PremiumGate } from '@/components/subscription/PremiumGate';
 import { favoriteService } from '@/services/favoriteService';
 import { authService } from '@/services/authService';
+import { sofaTeamLogo } from '@/utils/sofascoreImages';
 import {
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
   ResponsiveContainer, LineChart, Line, BarChart, Bar,
@@ -369,7 +370,7 @@ export default function PlayerDetailPage() {
 
             {/* Header trận đấu */}
             <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100 dark:border-white/10 flex-shrink-0">
-              <img src={`https://api.sofascore.app/api/v1/team/${opponent?.apiTeamId ?? opponent?.id}/image`}
+              <img src={sofaTeamLogo(opponent?.apiTeamId ?? opponent?.id)}
                 alt={opponent?.teamName ?? ''} className="w-8 h-8 object-contain"
                 onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
               <div className="flex-1 min-w-0">
@@ -956,7 +957,7 @@ export default function PlayerDetailPage() {
                                   {/* Đối thủ */}
                                   <div className="flex items-center gap-2 flex-1 min-w-0">
                                     <img
-                                      src={`https://api.sofascore.app/api/v1/team/${opponent?.apiTeamId ?? opponent?.id}/image`}
+                                      src={sofaTeamLogo(opponent?.apiTeamId ?? opponent?.id)}
                                       alt={opponent?.teamName ?? opponent?.name ?? ''}
                                       className="w-6 h-6 object-contain flex-shrink-0"
                                       onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}

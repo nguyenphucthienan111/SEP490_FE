@@ -4,6 +4,7 @@ import { ArrowRight, Radio, Calendar } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { leagueService, SofascoreTeamMatch } from '@/services/leagueService';
 import { cn } from '@/lib/utils';
+import { sofaTeamLogo } from '@/utils/sofascoreImages';
 
 const LEAGUES = [
   { tournamentId: 626, seasonId: 78589, name: 'V-League 1', color: '#FF4444' },
@@ -11,7 +12,7 @@ const LEAGUES = [
 ];
 
 function teamLogo(id: number) {
-  return `https://api.sofascore.app/api/v1/team/${id}/image`;
+  return sofaTeamLogo(id);
 }
 
 function MatchRow({ match, index }: { match: SofascoreTeamMatch; index: number }) {

@@ -1,4 +1,5 @@
 import { apiClient } from './api';
+import { sofaTournamentLogo, sofaTeamLogo } from '@/utils/sofascoreImages';
 
 export interface League {
   leagueId: number;
@@ -501,7 +502,7 @@ export const leagueService = {
     const raw: Omit<SofascoreLeague, 'logoUrl'>[] = result?.leagues ?? [];
     return raw.map((l) => ({
       ...l,
-      logoUrl: `https://api.sofascore.app/api/v1/unique-tournament/${l.uniqueTournamentId}/image/dark`,
+      logoUrl: sofaTournamentLogo(l.uniqueTournamentId),
     }));
   },
 
@@ -605,7 +606,7 @@ export const leagueService = {
             id: apiTeamId,
             dbTeamId,
             name: x.teamName ?? x.TeamName ?? '',
-            logo: x.teamLogo ?? x.TeamLogo ?? (apiTeamId > 0 ? `https://api.sofascore.app/api/v1/team/${apiTeamId}/image` : ''),
+            logo: x.teamLogo ?? x.TeamLogo ?? (apiTeamId > 0 ? sofaTeamLogo(apiTeamId) : ''),
           },
           matches: x.played ?? x.Played ?? 0,
           wins: x.win ?? x.Win ?? 0,
@@ -630,7 +631,7 @@ export const leagueService = {
       team: {
         id: row.team.id,
         name: row.team.name,
-        logo: `https://api.sofascore.app/api/v1/team/${row.team.id}/image`,
+        logo: sofaTeamLogo(row.team.id),
       },
     }));
   },

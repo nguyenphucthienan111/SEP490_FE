@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { contestService, ContestDto, ContestType, CreateContestRequest, TeamPickerDto, PlayerPickerDto } from '@/services/contestService';
 import { leagueService, League, Season } from '@/services/leagueService';
 import { toast } from 'sonner';
+import { sofaTeamLogo, sofaPlayerPhoto } from '@/utils/sofascoreImages';
 
 const CONTEST_TYPES: { value: ContestType; label: string; icon: React.ReactNode; desc: string; defaultExact: number; defaultPartial: number }[] = [
   { value: 'TOP4',       label: 'Top 4 vòng đấu', icon: <Trophy className="w-4 h-4" />,  desc: 'Dự đoán 4 đội dẫn đầu theo thứ tự',    defaultExact: 5, defaultPartial: 2 },
@@ -50,7 +51,7 @@ function Top4RankPicker({ rank, teams, selected, otherSelected, onChange, onClea
         <button onClick={() => setOpen(v => !v)}
           className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg border text-sm text-left transition-all ${selected ? 'border-[#FF4444] bg-[#FF4444]/5' : 'border-slate-200 dark:border-slate-700 hover:border-slate-400'}`}>
           {selectedTeam?.apiTeamId && (
-            <img src={`https://api.sofascore.app/api/v1/team/${selectedTeam.apiTeamId}/image`}
+            <img src={sofaTeamLogo(selectedTeam.apiTeamId)}
               className="w-5 h-5 object-contain flex-shrink-0"
               onError={e => (e.target as HTMLImageElement).style.display='none'} />
           )}
@@ -74,7 +75,7 @@ function Top4RankPicker({ rank, teams, selected, otherSelected, onChange, onClea
                     ${disabled ? 'opacity-40 cursor-not-allowed' : 'hover:bg-slate-50 dark:hover:bg-slate-800'}
                   `}>
                   {t.apiTeamId
-                    ? <img src={`https://api.sofascore.app/api/v1/team/${t.apiTeamId}/image`} className="w-5 h-5 object-contain flex-shrink-0" onError={e => (e.target as HTMLImageElement).style.display='none'} />
+                    ? <img src={sofaTeamLogo(t.apiTeamId)} className="w-5 h-5 object-contain flex-shrink-0" onError={e => (e.target as HTMLImageElement).style.display='none'} />
                     : <div className="w-5 h-5 flex-shrink-0" />
                   }
                   {t.teamName}
@@ -440,7 +441,7 @@ export default function AdminPredictionsPage() {
                     {teams.map(t => (
                       <button key={t.teamId} onClick={() => setSingleTeam(t.teamId)}
                         className={`p-3 rounded-xl border-2 text-sm font-semibold transition-all flex items-center gap-2 ${singleTeam === t.teamId ? 'border-[#FF4444] bg-red-50 dark:bg-red-500/10 text-[#FF4444]' : 'border-slate-200 dark:border-slate-700'}`}>
-                        {t.apiTeamId && <img src={`https://api.sofascore.app/api/v1/team/${t.apiTeamId}/image`} className="w-5 h-5 object-contain" onError={e => (e.target as HTMLImageElement).style.display='none'} />}
+                        {t.apiTeamId && <img src={sofaTeamLogo(t.apiTeamId)} className="w-5 h-5 object-contain" onError={e => (e.target as HTMLImageElement).style.display='none'} />}
                         {t.teamName}
                       </button>
                     ))}
@@ -456,7 +457,7 @@ export default function AdminPredictionsPage() {
                       {teams.map(t => (
                         <button key={t.teamId} onClick={() => selectTeamForPlayer(t.teamId)}
                           className={`p-2.5 rounded-xl border-2 text-sm font-semibold transition-all flex items-center gap-2 ${selectedTeamId === t.teamId ? 'border-[#00D9FF] bg-cyan-50 dark:bg-cyan-500/10 text-[#00D9FF]' : 'border-slate-200 dark:border-slate-700'}`}>
-                          {t.apiTeamId && <img src={`https://api.sofascore.app/api/v1/team/${t.apiTeamId}/image`} className="w-5 h-5 object-contain" onError={e => (e.target as HTMLImageElement).style.display='none'} />}
+                          {t.apiTeamId && <img src={sofaTeamLogo(t.apiTeamId)} className="w-5 h-5 object-contain" onError={e => (e.target as HTMLImageElement).style.display='none'} />}
                           {t.teamName}
                         </button>
                       ))}
@@ -506,7 +507,7 @@ export default function AdminPredictionsPage() {
                   {detailContest.officialResults?.map((r: any) => (
                     <span key={r.rank} className="flex items-center gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-300">
                       {detailContest.contestType === 'TOP4' && <span className="text-slate-400">#{r.rank}</span>}
-                      {r.apiTeamId && <img src={`https://api.sofascore.app/api/v1/team/${r.apiTeamId}/image`} className="w-5 h-5 object-contain" onError={e => (e.target as HTMLImageElement).style.display='none'} />}
+                      {r.apiTeamId && <img src={sofaTeamLogo(r.apiTeamId)} className="w-5 h-5 object-contain" onError={e => (e.target as HTMLImageElement).style.display='none'} />}
                       {r.teamName ?? r.playerName}
                     </span>
                   ))}
@@ -530,7 +531,7 @@ export default function AdminPredictionsPage() {
                       {u.picks?.map((p: any) => (
                         <span key={p.rank} className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${p.isCorrect === 2 ? 'bg-green-100 text-green-700' : p.isCorrect === 1 ? 'bg-yellow-100 text-yellow-700' : 'bg-slate-100 text-slate-500'}`}>
                           {detailContest.contestType === 'TOP4' && <span className="font-bold">#{p.rank}</span>}
-                          {p.apiTeamId && <img src={`https://api.sofascore.app/api/v1/team/${p.apiTeamId}/image`} className="w-4 h-4 object-contain" onError={e => (e.target as HTMLImageElement).style.display='none'} />}
+                          {p.apiTeamId && <img src={sofaTeamLogo(p.apiTeamId)} className="w-4 h-4 object-contain" onError={e => (e.target as HTMLImageElement).style.display='none'} />}
                           {p.teamName ?? p.playerName}
                         </span>
                       ))}

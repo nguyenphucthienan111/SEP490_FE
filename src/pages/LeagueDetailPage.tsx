@@ -6,6 +6,7 @@ import React from 'react';
 import { leagueService, SofascoreLeague, Team, SofascoreTeamMatch } from '@/services/leagueService';
 import { cn } from '@/lib/utils';
 import { KnockoutBracket } from '@/components/standings/KnockoutBracket';
+import { sofaTournamentLogo, sofaTeamLogo } from '@/utils/sofascoreImages';
 
 const SEASONS: Record<number, { label: string; seasonId: number; cupTreeId?: number }[]> = {
   626: [
@@ -77,7 +78,7 @@ export default function LeagueDetailPage() {
             currentSeasonId: selectedSeason?.seasonId ?? 0,
             seasonName: '',
             url: '',
-            logoUrl: dbLeague.logoUrl || `https://api.sofascore.app/api/v1/unique-tournament/${tournamentId}/image/dark`,
+            logoUrl: dbLeague.logoUrl || sofaTournamentLogo(tournamentId),
           });
         }
         setDbTeams(allDbTeams);
@@ -166,7 +167,7 @@ export default function LeagueDetailPage() {
               sofaId,
               dbTeamId: t.teamId ?? getDbTeamId(sofaId, allDbTeams),
               name: t.teamName ?? t.name,
-              logo: t.logoUrl ?? `https://api.sofascore.app/api/v1/team/${sofaId}/image`,
+              logo: t.logoUrl ?? sofaTeamLogo(sofaId),
             });
           });
         });
@@ -182,7 +183,7 @@ export default function LeagueDetailPage() {
               [m.homeTeam, m.awayTeam].forEach(t => {
                 if (!teamMap.has(t.id)) teamMap.set(t.id, {
                   sofaId: t.id, dbTeamId: getDbTeamId(t.id, allDbTeams),
-                  name: t.name, logo: `https://api.sofascore.app/api/v1/team/${t.id}/image`,
+                  name: t.name, logo: sofaTeamLogo(t.id),
                 });
               });
             });

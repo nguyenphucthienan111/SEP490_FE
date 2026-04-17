@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import React from 'react';
 import { Team, PlayerFromAPI, SofascoreTeamMatch, leagueService } from '@/services/leagueService';
 import { toast } from 'sonner';
+import { sofaTeamLogo, sofaPlayerPhoto } from '@/utils/sofascoreImages';
 
 const ALLOWED = new Set([626, 771, 3087]);
 const TABS = ['Tổng quan', 'Đội hình', 'Lịch thi đấu', 'Kết quả'] as const;
@@ -42,7 +43,7 @@ function MatchRow({ match, sofaId, dbTeams }: { match: SofascoreTeamMatch; sofaI
 
   const oppInner = (
     <>
-      <img src={`https://api.sofascore.app/api/v1/team/${opp.id}/image`} alt={opp.name}
+      <img src={sofaTeamLogo(opp.id)} alt={opp.name}
         className="w-8 h-8 object-contain flex-shrink-0"
         onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
       <div className="flex-1 min-w-0">
@@ -739,7 +740,7 @@ export default function TeamDetailPage() {
                             rawDate: t.transferDate ?? t.date,
                             fee: (t.transferFee && t.transferFee !== "") ? t.transferFee : (t.fee && t.fee !== "") ? t.fee : null,
                             playerName: t.playerName ?? t.player?.name ?? t.player?.shortName,
-                            photoUrl: (t.apiPlayerId ?? t.player?.id) ? `https://api.sofascore.app/api/v1/player/${t.apiPlayerId ?? t.player?.id}/image` : null,
+                            photoUrl: (t.apiPlayerId ?? t.player?.id) ? sofaPlayerPhoto(t.apiPlayerId ?? t.player?.id) : null,
                             teamName: isIn
                               ? (typeof t.fromTeam === "string" ? t.fromTeam : null) ?? t.fromTeamName ?? t.fromTeamShortName ?? t.fromTeam?.name
                               : (typeof t.toTeam === "string" ? t.toTeam : null) ?? t.toTeamName ?? t.toTeamShortName ?? t.toTeam?.name,

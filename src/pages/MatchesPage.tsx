@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { leagueService, SofascoreTeamMatch } from '@/services/leagueService';
 import { useLiveMatch, LiveMatchUpdate } from '@/hooks/useLiveMatch';
 import { formatMinute } from '@/lib/utils';
+import { sofaTeamLogo } from '@/utils/sofascoreImages';
 
 const LEAGUES = [
   { name: 'V-League 1', tournamentId: 626, seasonId: 78589 },
@@ -17,7 +18,7 @@ const LEAGUES = [
 const PAGE_SIZE = 10;
 
 function teamLogo(id: number) {
-  return `https://api.sofascore.app/api/v1/team/${id}/image`;
+  return sofaTeamLogo(id);
 }
 
 function fmtDate(ts: number) {

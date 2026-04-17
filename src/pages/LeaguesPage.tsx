@@ -7,6 +7,7 @@ import React from 'react';
 import { leagueService, SofascoreStandingRow, League, Team } from '@/services/leagueService';
 import { FormCell } from '@/components/standings/FormCell';
 import { toast } from 'sonner';
+import { sofaTournamentLogo, sofaTeamLogo } from '@/utils/sofascoreImages';
 
 // Only V-League 1 & 2 have standings (Cup is knockout)
 const STANDINGS_LEAGUES = [
@@ -139,7 +140,7 @@ export default function LeaguesPage() {
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
               {dbLeagues.map((league, index) => {
                 const tournamentId = league.apiLeagueId;
-                const logoUrl = league.logoUrl || `https://api.sofascore.app/api/v1/unique-tournament/${tournamentId}/image/dark`;
+                const logoUrl = league.logoUrl || sofaTournamentLogo(tournamentId);
                 // Season label from STANDINGS_LEAGUES config
                 const seasonCfg = STANDINGS_LEAGUES.find(l => l.tournamentId === tournamentId);
                 return (

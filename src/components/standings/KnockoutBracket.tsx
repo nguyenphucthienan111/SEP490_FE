@@ -2,6 +2,7 @@
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { leagueService, SofascoreTeamMatch } from "@/services/leagueService";
+import { sofaTeamLogo } from "@/utils/sofascoreImages";
 
 interface Props { tournamentId: number; seasonId: number; }
 
@@ -15,7 +16,7 @@ type Slot = SofascoreTeamMatch | null;
 interface Column { label: string; slots: Slot[]; }
 
 function teamLogo(id: number) {
-  return `https://api.sofascore.app/api/v1/team/${id}/image`;
+  return sofaTeamLogo(id);
 }
 
 function MatchCard({ h, a, matchId, empty }: {
