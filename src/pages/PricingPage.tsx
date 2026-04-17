@@ -84,6 +84,14 @@ export default function PricingPage() {
   const [showHistory, setShowHistory] = useState(false);
   const navigate = useNavigate();
   const isLoggedIn = !!localStorage.getItem('accessToken');
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      setIsAdmin(user?.roles?.some((r: string) => r.toLowerCase() === 'admin') ?? false);
+    }
+  }, [isLoggedIn]);
 
   // Plan upgrade order
   const PLAN_ORDER: Record<string, number> = { TRIAL: 1, MONTHLY: 2, QUARTERLY: 3 };
@@ -139,6 +147,7 @@ export default function PricingPage() {
 
   const handleSubscribe = async (planCode: string) => {
     if (!isLoggedIn) { navigate('/login'); return; }
+    if (isAdmin) { toast.error('Admin không thể mua gói đăng ký'); return; }
     setPaying(planCode);
     try {
       const payment = await subscriptionService.createPayment(planCode);

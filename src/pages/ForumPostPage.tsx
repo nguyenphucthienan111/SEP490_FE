@@ -203,6 +203,7 @@ function CommentItem({ c, onReply, currentUserId, userIdLoaded, onRefresh, isRep
 export default function ForumPostPage() {
   const { id } = useParams<{ id: string }>();
   const isLoggedIn = authService.isAuthenticated();
+  const [isAdmin, setIsAdmin] = useState(false);
   const [post, setPost] = useState<PostDetail | null>(null);
   const [comments, setComments] = useState<CommentDto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -247,7 +248,11 @@ export default function ForumPostPage() {
       .finally(() => setLoading(false));
 
     if (isLoggedIn) {
-      userService.getMe().then(u => { setCurrentUserId(u.userId); setUserIdLoaded(true); }).catch(() => setUserIdLoaded(true));
+      userService.getMe().then(u => {
+        setCurrentUserId(u.userId);
+        setIsAdmin(u.roles?.some(r => r.toLowerCase() === 'admin') ?? false);
+        setUserIdLoaded(true);
+      }).catch(() => setUserIdLoaded(true));
     } else {
       setUserIdLoaded(true);
     }
@@ -261,6 +266,7 @@ export default function ForumPostPage() {
 
   const handleComment = async () => {
     if (!comment.trim()) return;
+    if (isAdmin) { toast.error("Admin không thể bình luận"); return; }
     setSubmitting(true);
     try {
       await forumService.addComment(Number(id), comment, replyTo?.id);
@@ -279,6 +285,7 @@ export default function ForumPostPage() {
 
   const handleReaction = async (type: string) => {
     if (!isLoggedIn) { toast.error("Vui lòng đăng nhập"); return; }
+    if (isAdmin) { toast.error("Admin không thể reaction bài đăng"); return; }
     setShowReactions(false);
     try {
       const res = await forumService.toggleReaction(Number(id), type);
@@ -352,6 +359,7 @@ export default function ForumPostPage() {
               )}
 
               {/* Reaction button */}
+              {!isAdmin && (
               <div className="relative ml-auto">
                 <button
                   onMouseEnter={showReactionPicker}
@@ -380,6 +388,7 @@ export default function ForumPostPage() {
                   </div>
                 )}
               </div>
+              )}
             </div>
           </div>
 
@@ -414,7 +423,8 @@ export default function ForumPostPage() {
               }
             </div>
 
-            {isLoggedIn ? (
+            {isLoggedIn && !isAdmin ? (
+
               <div className="space-y-2">
                 {replyTo && (
                   <div className="flex items-center gap-2 text-xs text-slate-500 bg-slate-50 dark:bg-slate-800 rounded-lg px-3 py-1.5">
@@ -435,11 +445,11 @@ export default function ForumPostPage() {
                   </Button>
                 </div>
               </div>
-            ) : (
+            ) : !isLoggedIn ? (
               <p className="text-sm text-slate-500 text-center py-3">
                 <Link to="/login" className="text-[#00D9FF] hover:underline">Đăng nhập</Link> để bình luận
               </p>
-            )}
+            ) : null}
           </div>
         </motion.div>
       </div>

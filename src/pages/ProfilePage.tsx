@@ -194,6 +194,7 @@ export default function ProfilePage() {
   const [changePwdLoading, setChangePwdLoading] = useState(false);
   const [changePwdError, setChangePwdError] = useState('');
   const [showPwd, setShowPwd] = useState({ current: false, newPwd: false, confirm: false });
+  const isAdmin = user?.roles?.some(r => r.toLowerCase() === 'admin') ?? false;
 
   useEffect(() => {
     if (activeTab === 'payments' && payments.length === 0 && !paymentsLoading) {
@@ -428,24 +429,28 @@ export default function ProfilePage() {
             <TabsTrigger value="profile" className="data-[state=active]:bg-blue-100 dark:bg-[#00D9FF]/10 data-[state=active]:text-[#00D9FF] rounded-lg px-6">
               <User className="w-4 h-4 mr-2" />Thông tin
             </TabsTrigger>
-            <TabsTrigger value="favorites" className="data-[state=active]:bg-blue-100 dark:bg-[#00D9FF]/10 data-[state=active]:text-[#00D9FF] rounded-lg px-6">
-              <Star className="w-4 h-4 mr-2" />Yêu thích
-            </TabsTrigger>
-            <TabsTrigger value="payments" className="data-[state=active]:bg-blue-100 dark:bg-[#00D9FF]/10 data-[state=active]:text-[#00D9FF] rounded-lg px-6"
-              onClick={() => {
-                if (payments.length === 0 && !paymentsLoading) {
-                  setPaymentsLoading(true);
-                  apiClient.get<any>('/api/subscriptions/my-payments')
-                    .then(res => setPayments(res?.data ?? []))
-                    .catch(() => {})
-                    .finally(() => setPaymentsLoading(false));
-                }
-              }}>
-              <CreditCard className="w-4 h-4 mr-2" />Thanh toán
-            </TabsTrigger>
-            <TabsTrigger value="wardrobe" className="data-[state=active]:bg-blue-100 dark:bg-[#00D9FF]/10 data-[state=active]:text-[#00D9FF] rounded-lg px-6">
-              <Package className="w-4 h-4 mr-2" />Tủ đồ
-            </TabsTrigger>
+            {!isAdmin && (
+              <>
+                <TabsTrigger value="favorites" className="data-[state=active]:bg-blue-100 dark:bg-[#00D9FF]/10 data-[state=active]:text-[#00D9FF] rounded-lg px-6">
+                  <Star className="w-4 h-4 mr-2" />Yêu thích
+                </TabsTrigger>
+                <TabsTrigger value="payments" className="data-[state=active]:bg-blue-100 dark:bg-[#00D9FF]/10 data-[state=active]:text-[#00D9FF] rounded-lg px-6"
+                  onClick={() => {
+                    if (payments.length === 0 && !paymentsLoading) {
+                      setPaymentsLoading(true);
+                      apiClient.get<any>('/api/subscriptions/my-payments')
+                        .then(res => setPayments(res?.data ?? []))
+                        .catch(() => {})
+                        .finally(() => setPaymentsLoading(false));
+                    }
+                  }}>
+                  <CreditCard className="w-4 h-4 mr-2" />Thanh toán
+                </TabsTrigger>
+                <TabsTrigger value="wardrobe" className="data-[state=active]:bg-blue-100 dark:bg-[#00D9FF]/10 data-[state=active]:text-[#00D9FF] rounded-lg px-6">
+                  <Package className="w-4 h-4 mr-2" />Tủ đồ
+                </TabsTrigger>
+              </>
+            )}
           </TabsList>
 
           {/* Profile Tab */}
