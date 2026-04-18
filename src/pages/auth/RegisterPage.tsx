@@ -32,6 +32,7 @@ export default function RegisterPage() {
     { label: "Chứa chữ hoa", met: /[A-Z]/.test(formData.password) },
     { label: "Chứa chữ thường", met: /[a-z]/.test(formData.password) },
     { label: "Chứa số", met: /[0-9]/.test(formData.password) },
+    { label: "Chứa ký tự đặc biệt", met: /[^A-Za-z0-9]/.test(formData.password) },
   ];
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
