@@ -58,11 +58,14 @@ export function SupportChatBubble() {
   useEffect(() => {
     const onLogin = () => setIsLoggedIn(authService.isAuthenticated());
     const onLogout = () => { setIsLoggedIn(false); setIsOpen(false); };
+    const onCloseSupport = () => setIsOpen(false);
     window.addEventListener('auth:login', onLogin);
     window.addEventListener('auth:logout', onLogout);
+    window.addEventListener('chat:close-support', onCloseSupport);
     return () => {
       window.removeEventListener('auth:login', onLogin);
       window.removeEventListener('auth:logout', onLogout);
+      window.removeEventListener('chat:close-support', onCloseSupport);
     };
   }, []);
   // Lưu số lượng tin nhắn admin đã thấy lần cuối
@@ -82,10 +85,13 @@ export function SupportChatBubble() {
 
   const handleOpen = () => {
     setIsOpen(true);
+    // Đóng AI chat nếu đang mở
+    window.dispatchEvent(new CustomEvent('chat:close-ai'));
     // Mark all as read khi mở chat
     const adminMsgs = messages.filter(m => m.senderRole === 'admin').length;
     lastSeenAdminMsgCount.current = adminMsgs;
     setUnreadCount(0);
+    setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'instant' }), 50);
   };
 
   // Load ticket + messages khi mount (nếu đã login)
@@ -200,7 +206,7 @@ export function SupportChatBubble() {
       {/* Bubble button - positioned above AI bubble */}
       <motion.button
         onClick={handleOpen}
-        className="fixed bottom-[88px] right-6 z-[60] w-12 h-12 rounded-full bg-gradient-to-br from-[#FF4444] to-[#FF6666] shadow-lg shadow-[#FF4444]/30 flex items-center justify-center hover:scale-110 transition-transform"
+        className="fixed bottom-[148px] right-6 z-[60] w-12 h-12 rounded-full bg-gradient-to-br from-[#FF4444] to-[#FF6666] shadow-lg shadow-[#FF4444]/30 flex items-center justify-center hover:scale-110 transition-transform"
         whileTap={{ scale: 0.95 }}
         title="Chat với Admin hỗ trợ"
         style={{ position: 'fixed', bottom: '88px', right: '24px' }}

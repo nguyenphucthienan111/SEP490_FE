@@ -79,8 +79,15 @@ export function AIChatBubble() {
   useEffect(() => {
     const onLogin = () => { setIsLoggedIn(true); };
     const onLogout = () => { setIsLoggedIn(false); setIsOpen(false); };
+    const onCloseAI = () => setIsOpen(false);
     window.addEventListener('auth:login', onLogin);
     window.addEventListener('auth:logout', onLogout);
+    window.addEventListener('chat:close-ai', onCloseAI);
+    return () => {
+      window.removeEventListener('auth:login', onLogin);
+      window.removeEventListener('auth:logout', onLogout);
+      window.removeEventListener('chat:close-ai', onCloseAI);
+    };
     return () => {
       window.removeEventListener('auth:login', onLogin);
       window.removeEventListener('auth:logout', onLogout);
@@ -123,7 +130,10 @@ export function AIChatBubble() {
   }, []); // chỉ chạy 1 lần khi mount
 
   useEffect(() => {
-    if (isOpen) setTimeout(() => inputRef.current?.focus(), 100);
+    if (isOpen) {
+      setTimeout(() => inputRef.current?.focus(), 100);
+      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'instant' }), 50);
+    }
   }, [isOpen]);
 
   useEffect(() => {
@@ -183,7 +193,7 @@ export function AIChatBubble() {
       {!isLoggedIn || isAdmin ? null : (
       <>
       <motion.button
-        onClick={() => setIsOpen(v => !v)}
+        onClick={() => { setIsOpen(v => { if (!v) window.dispatchEvent(new CustomEvent('chat:close-support')); return !v; }); }}
         className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-gradient-to-br from-[#00D9FF] to-[#0099BB] shadow-lg shadow-[#00D9FF]/30 flex items-center justify-center hover:scale-110 transition-transform"
         whileTap={{ scale: 0.95 }}
       >
@@ -202,7 +212,7 @@ export function AIChatBubble() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed bottom-24 right-6 z-50 w-[360px] max-h-[520px] flex flex-col rounded-2xl overflow-hidden shadow-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0f0f1a]"
+            className="fixed bottom-24 right-6 z-[70] w-[360px] max-h-[520px] flex flex-col rounded-2xl overflow-hidden shadow-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0f0f1a]"
           >
             {/* Header */}
             <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-[#00D9FF]/20 to-[#0099BB]/10 border-b border-slate-200 dark:border-white/10">
