@@ -176,7 +176,11 @@ export default function TeamDetailPage() {
       const res = await leagueService.getTeamContracts(mapping.tournamentId, mapping.seasonId);
       const byTeam: any[] = res?.contractsByTeam ?? res?.data?.contractsByTeam ?? [];
       const teamData = byTeam.find((t: any) => t.teamId === team.teamId || t.apiTeamId === team.apiTeamId);
-      setContracts(teamData?.contracts ?? []);
+      const rawContracts: any[] = teamData?.contracts ?? [];
+      setContracts(rawContracts.map((c: any) => ({
+        ...c,
+        playerPhotoUrl: (c.apiPlayerId ?? c.ApiPlayerId) ? sofaPlayerPhoto(c.apiPlayerId ?? c.ApiPlayerId) : (c.playerPhotoUrl ?? c.PlayerPhotoUrl),
+      })));
       setContractsLoaded(true);
     } catch { /* ignore */ }
     setContractsLoading(false);
