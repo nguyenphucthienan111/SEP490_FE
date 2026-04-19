@@ -270,7 +270,7 @@ export default function PlayerDetailPage() {
       data = [
         { stat: 'Cứu thua',    value: norm(s.saves, 60) },
         { stat: 'Sạch lưới',   value: norm(s.cleanSheets, 15) },
-        { stat: 'Chuyền bóng', value: norm(s.passesAccuracy, 400) },
+        { stat: 'Chuyền bóng', value: norm(s.passesAccuracy, 150) },
         { stat: 'Bắt bóng bổng', value: norm(s.highClaims, 15) },
         { stat: 'Ra khỏi khung', value: norm(s.runsOut, 30) },
       ];
@@ -278,7 +278,7 @@ export default function PlayerDetailPage() {
       data = [
         { stat: 'Tắc bóng',    value: norm(s.tackles, 60) },
         { stat: 'Cắt bóng',    value: norm(s.interceptions, 50) },
-        { stat: 'Phá bóng',    value: norm(s.clearances, 80) },
+        { stat: 'Tranh chấp',  value: norm(s.duelsWon, 100) },
         { stat: 'Chuyền bóng', value: norm(s.passesAccuracy, 400) },
         { stat: 'Ghi bàn',     value: norm(s.goals, 5) },
       ];
