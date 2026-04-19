@@ -598,13 +598,21 @@ export default function PlayerDetailPage() {
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                         {[
                           { label: 'Trận đấu',     value: playerStats.reduce((s, x) => s + x.appearances, 0) },
-                          { label: 'Bàn thắng',    value: playerStats.reduce((s, x) => s + x.goals, 0) },
-                          { label: 'Kiến tạo',     value: playerStats.reduce((s, x) => s + x.assists, 0) },
+                          ...(playerPosition === 'G' ? [
+                            { label: 'Sạch lưới',  value: playerStats.reduce((s, x) => s + (x.cleanSheets ?? 0), 0) },
+                            { label: 'Cứu thua',   value: playerStats.reduce((s, x) => s + (x.saves ?? 0), 0) },
+                          ] : playerPosition === 'D' ? [
+                            { label: 'Tắc bóng',   value: playerStats.reduce((s, x) => s + (x.tackles ?? 0), 0) },
+                            { label: 'Cắt bóng',   value: playerStats.reduce((s, x) => s + (x.interceptions ?? 0), 0) },
+                          ] : [
+                            { label: 'Bàn thắng',  value: playerStats.reduce((s, x) => s + x.goals, 0) },
+                            { label: 'Kiến tạo',   value: playerStats.reduce((s, x) => s + x.assists, 0) },
+                          ]),
                           { label: 'Phút thi đấu', value: playerStats.reduce((s, x) => s + x.minutes, 0).toLocaleString('vi-VN') },
                           { label: 'Thẻ vàng',     value: playerStats.reduce((s, x) => s + x.yellowCards, 0) },
                           { label: 'Thẻ đỏ',       value: playerStats.reduce((s, x) => s + x.redCards, 0) },
                           { label: 'Mùa giải',     value: playerStats.length },
-                          { label: 'Đánh Giá TB',    value: playerStats.filter(s => s.rating).length > 0 ? (playerStats.reduce((s, x) => s + (x.rating ?? 0), 0) / playerStats.filter(s => s.rating).length).toFixed(1) : '—' },
+                          { label: 'Đánh Giá TB',  value: playerStats.filter(s => s.rating).length > 0 ? (playerStats.reduce((s, x) => s + (x.rating ?? 0), 0) / playerStats.filter(s => s.rating).length).toFixed(1) : '—' },
                         ].map(item => (
                           <div key={item.label} className="bg-slate-50 dark:bg-white/5 rounded-xl p-3">
                             <p className="text-[11px] text-slate-400 dark:text-[#A8A29E] mb-1">{item.label}</p>
@@ -667,7 +675,12 @@ export default function PlayerDetailPage() {
                       { label: 'Tranh chấp tổng', val: stat.duelsTotal },
                       { label: 'Phạm lỗi', val: stat.foulsCommitted }, { label: 'Bị phạm lỗi', val: stat.foulsDrawn },
                     ];
-                    const defending: SI[] = [{ label: 'Tắc bóng', val: stat.tackles }, { label: 'Cắt bóng', val: stat.interceptions }];
+                    const defending: SI[] = [
+                      { label: 'Tắc bóng', val: stat.tackles },
+                      { label: 'Cắt bóng', val: stat.interceptions },
+                      { label: 'Phạm lỗi', val: stat.foulsCommitted },
+                      { label: 'Bị phạm lỗi', val: stat.foulsDrawn },
+                    ];
                     const gkStats: SI[] = [
                       { label: 'Cứu thua', val: stat.saves },
                       { label: 'Cứu thua trong vòng cấm', val: stat.savesInsideBox },
@@ -675,7 +688,9 @@ export default function PlayerDetailPage() {
                       { label: 'Sạch lưới', val: stat.cleanSheets },
                       { label: 'Cản phá penalty', val: stat.penaltiesSaved },
                       { label: 'Ra khỏi khung thành', val: stat.runsOut },
+                      { label: 'Ra khỏi khung (thành công)', val: stat.runsOutSuccessful, sub: stat.runsOut ? `${pct(stat.runsOutSuccessful, stat.runsOut) ?? '—'}%` : undefined, pct: pct(stat.runsOutSuccessful, stat.runsOut) },
                       { label: 'Bắt bóng bổng', val: stat.highClaims },
+                      { label: 'Đấm bóng', val: stat.punches },
                     ];
                     type G = { title: string; color: string; icon: string; items: SI[] };
                     const groups: G[] = pos === 'G'

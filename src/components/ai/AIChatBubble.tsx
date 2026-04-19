@@ -165,7 +165,7 @@ export function AIChatBubble() {
       });
       const responseText = data.response;
       // Filter raw API error messages
-      const isApiError = responseText?.includes('Lỗi API:') || responseText?.includes('"error"') || responseText?.includes('ServiceUnavailable') || responseText?.includes('UNAVAILABLE');
+      const isApiError = responseText?.startsWith('⚠️') || responseText?.includes('Lỗi API:') || responseText?.includes('"error"') || responseText?.includes('ServiceUnavailable') || responseText?.includes('UNAVAILABLE');
       const displayText = isApiError
         ? '⚠️ AI đang bận, vui lòng thử lại sau ít phút.'
         : responseText;
