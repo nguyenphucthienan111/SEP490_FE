@@ -133,10 +133,15 @@ function MatchCard({ match, liveUpdate, index }: { match: SofascoreTeamMatch; li
 }
 
 export default function MatchesPage() {
-  const [activeLeagueIdx, setActiveLeagueIdx] = useState(0);
+  const [activeLeagueIdx, setActiveLeagueIdx] = useState(() => {
+    const saved = sessionStorage.getItem('matches-league-idx');
+    return saved ? Number(saved) : 0;
+  });
   const [matchesByLeague, setMatchesByLeague] = useState<Record<number, SofascoreTeamMatch[]>>({});
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedStatus, setSelectedStatus] = useState<'all' | 'finished' | 'inprogress' | 'notstarted'>('all');
+  const [selectedStatus, setSelectedStatus] = useState<'all' | 'finished' | 'inprogress' | 'notstarted'>(() => {
+    return (sessionStorage.getItem('matches-status') as any) ?? 'all';
+  });
   const [selectedRound, setSelectedRound] = useState<number | null>(null);
   const [teamSearch, setTeamSearch] = useState('');
   const [page, setPage] = useState(0);
@@ -178,6 +183,7 @@ export default function MatchesPage() {
     loadMatches(activeLeague);
     setSelectedRound(null);
     setSelectedStatus('all');
+    sessionStorage.setItem('matches-status', 'all');
     setTeamSearch('');
     setPage(0);
   }, [activeLeagueIdx]);
@@ -274,7 +280,7 @@ export default function MatchesPage() {
             </div>
             <div className="flex border-t border-slate-100 dark:border-white/5 px-2">
               {LEAGUES.map((l, i) => (
-                <button key={l.tournamentId} onClick={() => setActiveLeagueIdx(i)}
+                <button key={l.tournamentId} onClick={() => { setActiveLeagueIdx(i); sessionStorage.setItem('matches-league-idx', String(i)); }}
                   className={cn('relative px-4 py-3.5 text-sm font-semibold transition-colors whitespace-nowrap',
                     activeLeagueIdx === i ? 'text-[#FF4444]' : 'text-slate-500 dark:text-[#A8A29E] hover:text-slate-700 dark:hover:text-foreground')}>
                   {l.name}
@@ -298,7 +304,7 @@ export default function MatchesPage() {
                 { value: 'notstarted', label: 'Sắp diễn ra', live: false },
               ] as const).map(tab => (
                 <button key={tab.value}
-                  onClick={() => { setSelectedStatus(tab.value); setPage(0); }}
+                  onClick={() => { setSelectedStatus(tab.value); sessionStorage.setItem('matches-status', tab.value); setPage(0); }}
                   className={cn('relative flex items-center gap-1.5 px-4 py-3 text-sm font-semibold transition-colors whitespace-nowrap',
                     selectedStatus === tab.value ? 'text-[#00D9FF]' : 'text-slate-500 dark:text-[#A8A29E] hover:text-slate-700 dark:hover:text-foreground')}>
                   {tab.live && <Radio className="w-3.5 h-3.5" />}
