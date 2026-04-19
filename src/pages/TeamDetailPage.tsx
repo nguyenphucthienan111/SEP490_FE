@@ -193,6 +193,7 @@ export default function TeamDetailPage() {
       const mapping = LEAGUE_TOURNAMENT[team.leagueId];
       if (!mapping) { setTransfersLoading(false); return; }
       const res = await leagueService.getLeagueTransfers(mapping.tournamentId, mapping.seasonId);
+      console.log('[Transfers] raw response:', JSON.stringify(res)?.slice(0, 500));
       const inByTeam: any[] = res?.transfersInByTeam ?? res?.data?.transfersInByTeam ?? res?.TransfersInByTeam ?? [];
       const outByTeam: any[] = res?.transfersOutByTeam ?? res?.data?.transfersOutByTeam ?? res?.TransfersOutByTeam ?? [];
       const inData = inByTeam.find((t: any) =>
