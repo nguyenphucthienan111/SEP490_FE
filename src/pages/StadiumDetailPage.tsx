@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import React from 'react';
 import { Stadium, League, leagueService } from '@/services/leagueService';
+import { sofaTeamLogo } from '@/utils/sofascoreImages';
 
 export default function StadiumDetailPage() {
   const { stadiumId } = useParams<{ stadiumId: string }>();
@@ -296,8 +297,8 @@ export default function StadiumDetailPage() {
                     className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
                   >
                     <div className="w-16 h-16 rounded-xl bg-slate-200 dark:bg-white/5 flex items-center justify-center border border-slate-300 dark:border-white/10 overflow-hidden">
-                      {team.logoUrl ? (
-                        <img src={team.logoUrl} alt={safeString(team.teamName || team.name, 'Team')} className="w-12 h-12 object-contain" />
+                      {(team.apiTeamId || team.ApiTeamId) ? (
+                        <img src={sofaTeamLogo(team.apiTeamId || team.ApiTeamId)} alt={safeString(team.teamName || team.name, 'Team')} className="w-12 h-12 object-contain" onError={e => (e.target as HTMLImageElement).style.display='none'} />
                       ) : (
                         <span className="font-display font-bold text-2xl text-slate-900 dark:text-foreground">
                           {safeString(team.teamName || team.name, 'T').charAt(0)}

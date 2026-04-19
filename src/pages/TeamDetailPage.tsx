@@ -345,8 +345,8 @@ export default function TeamDetailPage() {
               <div className="flex items-start gap-5">
                 {/* Logo */}
                 <div className="w-24 h-24 rounded-2xl bg-white dark:bg-white/5 shadow-lg flex items-center justify-center overflow-hidden flex-shrink-0 border border-slate-200 dark:border-white/10">
-                  {apiTeam.logoUrl
-                    ? <img src={apiTeam.logoUrl} alt={apiTeam.teamName} className="w-20 h-20 object-contain" />
+                  {apiTeam.apiTeamId
+                    ? <img src={sofaTeamLogo(apiTeam.apiTeamId)} alt={apiTeam.teamName} className="w-20 h-20 object-contain" onError={e => (e.target as HTMLImageElement).style.display='none'} />
                     : <Shield className="w-10 h-10 text-slate-400" />
                   }
                 </div>
