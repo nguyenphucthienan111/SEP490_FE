@@ -5,6 +5,7 @@ import { apiClient } from '@/services/api';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import { useSubscription } from '@/hooks/useSubscription';
+import { sofaTournamentLogo, sofaPlayerPhoto } from '@/utils/sofascoreImages';
 
 interface League { leagueId: number; leagueName: string; logoUrl?: string; }
 interface Season { seasonId: number; year: string; }
@@ -65,7 +66,13 @@ export function AIMatchAnalysis() {
   useEffect(() => {
     setLoadingLeagues(true);
     apiClient.get<any>('/api/Football/leagues')
-      .then(r => setLeagues(Array.isArray(r) ? r : (r?.data ?? [])))
+      .then(r => {
+        const list: any[] = Array.isArray(r) ? r : (r?.data ?? []);
+        setLeagues(list.map(l => ({
+          ...l,
+          logoUrl: sofaTournamentLogo(l.apiLeagueId ?? l.ApiLeagueId),
+        })));
+      })
       .catch(() => {})
       .finally(() => setLoadingLeagues(false));
   }, []);
@@ -139,7 +146,7 @@ export function AIMatchAnalysis() {
           fullName: p.fullName ?? p.FullName ?? `#${p.playerId}`,
           position: p.position ?? p.Position ?? '',
           teamName: p.teamName ?? p.TeamName ?? '',
-          photoUrl: p.photoUrl ?? p.PhotoUrl,
+          photoUrl: (p.apiPlayerId ?? p.ApiPlayerId) ? sofaPlayerPhoto(p.apiPlayerId ?? p.ApiPlayerId) : (p.photoUrl ?? p.PhotoUrl),
         })));
       })
       .catch(() => {})
