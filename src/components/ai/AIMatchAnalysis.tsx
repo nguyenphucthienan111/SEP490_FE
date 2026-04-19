@@ -5,11 +5,11 @@ import { apiClient } from '@/services/api';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import { useSubscription } from '@/hooks/useSubscription';
-import { sofaTournamentLogo, sofaPlayerPhoto } from '@/utils/sofascoreImages';
+import { sofaTournamentLogo, sofaPlayerPhoto, sofaTeamLogo } from '@/utils/sofascoreImages';
 
 interface League { leagueId: number; leagueName: string; logoUrl?: string; }
 interface Season { seasonId: number; year: string; }
-interface MatchItem { matchId: number; homeTeam?: { teamName: string }; awayTeam?: { teamName: string }; homeTeamName?: string; awayTeamName?: string; matchDate: string; round: string; homeGoals?: number; awayGoals?: number; status?: string; }
+interface MatchItem { matchId: number; homeTeam?: { teamName: string }; awayTeam?: { teamName: string }; homeTeamName?: string; awayTeamName?: string; matchDate: string; round: string; homeGoals?: number; awayGoals?: number; status?: string; homeApiTeamId?: number; awayApiTeamId?: number; }
 interface PlayerItem { playerId: number; fullName: string; position: string; teamName: string; photoUrl?: string; }
 interface HistoryItem { id: string; analysisType: string; matchId: number; playerId?: number; analysisVi: string; createdAt: string; }
 
@@ -127,7 +127,11 @@ export function AIMatchAnalysis() {
       .then(r => {
         const list: any[] = Array.isArray(r) ? r : (r?.data ?? []);
         // Lọc bỏ trận chưa có đội (vòng chưa diễn ra)
-        setMatches(list.filter(m => (m?.homeTeam?.teamName || m?.homeTeamName) && (m?.awayTeam?.teamName || m?.awayTeamName)));
+        setMatches(list.filter(m => (m?.homeTeam?.teamName || m?.homeTeamName) && (m?.awayTeam?.teamName || m?.awayTeamName)).map(m => ({
+          ...m,
+          homeApiTeamId: m.homeApiTeamId ?? m.HomeApiTeamId,
+          awayApiTeamId: m.awayApiTeamId ?? m.AwayApiTeamId,
+        })));
       })
       .catch(() => {})
       .finally(() => setLoadingMatches(false));
@@ -358,6 +362,7 @@ export function AIMatchAnalysis() {
                           : 'border-transparent hover:bg-slate-50 dark:hover:bg-white/5')}>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
+                          {m.homeApiTeamId && <img src={sofaTeamLogo(m.homeApiTeamId)} className="w-5 h-5 object-contain flex-shrink-0" onError={e => (e.target as HTMLImageElement).style.display='none'} />}
                           <span className={cn('text-sm font-semibold truncate', selectedMatch?.matchId === m.matchId ? 'text-[#FF4444]' : 'text-foreground')}>
                             {getHomeName(m)}
                           </span>
@@ -367,6 +372,7 @@ export function AIMatchAnalysis() {
                           <span className={cn('text-sm font-semibold truncate', selectedMatch?.matchId === m.matchId ? 'text-[#FF4444]' : 'text-foreground')}>
                             {getAwayName(m)}
                           </span>
+                          {m.awayApiTeamId && <img src={sofaTeamLogo(m.awayApiTeamId)} className="w-5 h-5 object-contain flex-shrink-0" onError={e => (e.target as HTMLImageElement).style.display='none'} />}
                         </div>
                         <div className="flex items-center gap-2 mt-0.5">
                           <p className="text-xs text-slate-400">{fmtDate(m.matchDate)}</p>
