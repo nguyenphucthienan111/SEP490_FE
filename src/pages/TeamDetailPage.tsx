@@ -194,15 +194,17 @@ export default function TeamDetailPage() {
       if (!mapping) { setTransfersLoading(false); return; }
       const res = await leagueService.getLeagueTransfers(mapping.tournamentId, mapping.seasonId);
       console.log('[Transfers] raw response:', JSON.stringify(res)?.slice(0, 500));
-      const inByTeam: any[] = res?.transfersInByTeam ?? res?.data?.transfersInByTeam ?? res?.TransfersInByTeam ?? [];
-      const outByTeam: any[] = res?.transfersOutByTeam ?? res?.data?.transfersOutByTeam ?? res?.TransfersOutByTeam ?? [];
+      const inByTeam: any[] = res?.data?.transfersInByTeam ?? res?.transfersInByTeam ?? [];
+      const outByTeam: any[] = res?.data?.transfersOutByTeam ?? res?.transfersOutByTeam ?? [];
       const inData = inByTeam.find((t: any) =>
         t.teamId === team.teamId || t.apiTeamId === team.apiTeamId ||
-        t.TeamId === team.teamId || t.ApiTeamId === team.apiTeamId
+        t.TeamId === team.teamId || t.ApiTeamId === team.apiTeamId ||
+        t.teamName === team.teamName || t.teamName === team.shortName
       );
       const outData = outByTeam.find((t: any) =>
         t.teamId === team.teamId || t.apiTeamId === team.apiTeamId ||
-        t.TeamId === team.teamId || t.ApiTeamId === team.apiTeamId
+        t.TeamId === team.teamId || t.ApiTeamId === team.apiTeamId ||
+        t.teamName === team.teamName || t.teamName === team.shortName
       );
       const inPlayers = inData?.players ?? inData?.transfers ?? inData?.Transfers ?? [];
       const outPlayers = outData?.players ?? outData?.transfers ?? outData?.Transfers ?? [];
