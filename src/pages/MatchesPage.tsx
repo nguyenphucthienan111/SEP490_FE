@@ -179,7 +179,14 @@ export default function MatchesPage() {
     }
   }, [liveUpdates]);
 
+  const isFirstMount = useRef(true);
+
   useEffect(() => {
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      loadMatches(activeLeague);
+      return;
+    }
     loadMatches(activeLeague);
     setSelectedRound(null);
     setSelectedStatus('all');
