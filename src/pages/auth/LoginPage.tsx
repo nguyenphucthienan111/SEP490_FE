@@ -163,7 +163,7 @@ export default function LoginPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
-              {error && (
+              {error && !showResendButton && (
                 <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
                   {error}
                 </div>
