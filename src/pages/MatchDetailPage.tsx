@@ -1,5 +1,5 @@
   import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Radio, Loader2, Users, Swords, LayoutGrid, X, Ruler, Flag, Calendar, BarChart2 } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
@@ -815,6 +815,7 @@ type TabId = 'overview' | 'info' | 'lineup';
 export default function MatchDetailPage() {
   const { matchId } = useParams<{ matchId: string }>();
   const eventId = Number(matchId);
+  const navigate = useNavigate();
 
   const [match, setMatch] = useState<SofascoreTeamMatch | null>(null);
   const [lineups, setLineups] = useState<MatchLineups | null>(null);
@@ -1105,10 +1106,10 @@ export default function MatchDetailPage() {
         <div className="container mx-auto px-4 max-w-4xl">
           {/* Back */}
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3 }}>
-            <Link to="/matches" className="inline-flex items-center gap-2 text-slate-600 dark:text-[#A8A29E] hover:text-foreground transition-colors mb-8">
+            <button onClick={() => navigate(-1)} className="inline-flex items-center gap-2 text-slate-600 dark:text-[#A8A29E] hover:text-foreground transition-colors mb-8">
               <ArrowLeft className="w-4 h-4" />
               <span className="font-label text-sm font-medium">Quay lại lịch thi đấu</span>
-            </Link>
+            </button>
           </motion.div>
 
           {/* Match header card */}
