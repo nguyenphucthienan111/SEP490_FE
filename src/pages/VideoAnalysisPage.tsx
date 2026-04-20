@@ -184,6 +184,14 @@ export default function VideoAnalysisPage() {
               <span key={l} className="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-[#A8A29E]">{l}</span>
             ))}
           </div>
+
+          {/* Warning banner */}
+          <div className="flex items-start gap-3 px-4 py-3 mb-5 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20">
+            <span className="text-amber-500 text-base flex-shrink-0 mt-0.5">⚠️</span>
+            <p className="text-xs text-amber-700 dark:text-amber-400 leading-relaxed">
+              Chỉ upload video thuộc <span className="font-semibold">V-League 1, V-League 2 hoặc Vietnam Cup</span>. Video không liên quan đến 3 giải này sẽ không được AI chấp nhận phân tích, nhưng credit vẫn bị trừ.
+            </p>
+          </div>
           <div className="space-y-5">            {/* Drop zone */}
             {!result && (
               <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
