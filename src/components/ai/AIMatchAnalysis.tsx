@@ -17,41 +17,115 @@ type AnalysisMode = 'match' | 'player';
 type Step = 'league' | 'season' | 'round' | 'match' | 'player' | 'result';
 
 function renderMarkdown(text: string) {
-  // Process line by line to handle bullet lists properly
+  const sectionIcons: Record<string, string> = {
+    'tổng quan': '📋',
+    'phân tích chi tiết': '🔍',
+    'tấn công': '⚽',
+    'chuyền bóng': '🎯',
+    'phòng thủ': '🛡️',
+    'tranh chấp': '💪',
+    'tiêu cực': '⚠️',
+    'thẻ phạt': '🟨',
+    'thủ môn': '🧤',
+    'bonus': '🏆',
+    'kết quả': '🏆',
+    'kết luận': '✅',
+    'thống kê': '📊',
+    'diễn biến': '⏱️',
+    'nhận định': '💬',
+  };
+
+  const getIcon = (title: string) => {
+    const lower = title.toLowerCase();
+    for (const [key, icon] of Object.entries(sectionIcons)) {
+      if (lower.includes(key)) return icon;
+    }
+    return '📌';
+  };
+
+  const parseTableRow = (line: string) => line.split('|').map(c => c.trim()).filter((_, i, arr) => i > 0 && i < arr.length - 1);
+  const isTableRow = (line: string) => /^\|.+\|$/.test(line.trim());
+  const isSeparatorRow = (line: string) => /^\|[\s\-:|]+\|$/.test(line.trim());
+
   const lines = text.split('\n');
   const result: string[] = [];
   let inList = false;
+  let tableLines: string[] = [];
+
+  const flushTable = () => {
+    if (tableLines.length === 0) return;
+    const rows = tableLines.filter(l => !isSeparatorRow(l));
+    if (rows.length === 0) { tableLines = []; return; }
+    const [header, ...body] = rows;
+    const headers = parseTableRow(header);
+    result.push(`<div class="overflow-x-auto my-3 rounded-xl border border-slate-200 dark:border-white/10">
+      <table class="w-full text-sm border-collapse">
+        <thead>
+          <tr class="bg-slate-100 dark:bg-white/5">
+            ${headers.map(h => `<th class="px-3 py-2 text-left text-xs font-semibold text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-white/10">${h}</th>`).join('')}
+          </tr>
+        </thead>
+        <tbody>
+          ${body.map((row, i) => {
+            const cells = parseTableRow(row);
+            return `<tr class="${i % 2 === 0 ? 'bg-white dark:bg-transparent' : 'bg-slate-50 dark:bg-white/[0.02]'}">
+              ${cells.map((c, ci) => `<td class="px-3 py-2 text-slate-700 dark:text-slate-300 border-b border-slate-100 dark:border-white/5 ${ci === 0 ? 'font-medium' : ''}">${c}</td>`).join('')}
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>`);
+    tableLines = [];
+  };
 
   for (const line of lines) {
-    // h2
+    if (isTableRow(line)) {
+      if (inList) { result.push('</ul>'); inList = false; }
+      tableLines.push(line);
+      continue;
+    } else {
+      flushTable();
+    }
+
     if (/^## (.+)$/.test(line)) {
       if (inList) { result.push('</ul>'); inList = false; }
-      result.push(line.replace(/^## (.+)$/, '<h2 class="text-base font-bold text-foreground mt-5 mb-2 border-b border-slate-100 dark:border-white/5 pb-1">$1</h2>'));
+      const title = line.replace(/^## /, '');
+      const icon = getIcon(title);
+      result.push(`<div class="flex items-center gap-2 mt-6 mb-3 pb-2 border-b-2 border-slate-100 dark:border-white/10">
+        <span class="text-lg">${icon}</span>
+        <h2 class="text-base font-bold text-foreground">${title}</h2>
+      </div>`);
     }
-    // h3
     else if (/^### (.+)$/.test(line)) {
       if (inList) { result.push('</ul>'); inList = false; }
-      result.push(line.replace(/^### (.+)$/, '<h3 class="text-sm font-semibold text-[#FF4444] mt-3 mb-1.5">$1</h3>'));
+      const title = line.replace(/^### /, '');
+      const icon = getIcon(title);
+      result.push(`<div class="flex items-center gap-2 mt-4 mb-2 pl-3 border-l-2 border-[#FF4444]/60">
+        <span class="text-sm">${icon}</span>
+        <h3 class="text-sm font-semibold text-[#FF4444]">${title}</h3>
+      </div>`);
     }
-    // bullet: - or *
     else if (/^[-*] (.+)$/.test(line)) {
-      if (!inList) { result.push('<ul class="space-y-1 my-1.5 pl-1">'); inList = true; }
+      if (!inList) { result.push('<ul class="space-y-1.5 my-2 ml-2">'); inList = true; }
       const content = line.replace(/^[-*] /, '').replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-foreground">$1</strong>');
-      result.push(`<li class="flex gap-2 text-sm text-slate-700 dark:text-slate-300"><span class="text-[#FF4444] mt-0.5 flex-shrink-0">·</span><span>${content}</span></li>`);
+      const highlighted = content.replace(/(→\s*)?([+\-]\d+\.?\d*đ)/g, (match, arrow, score) => {
+        const isPositive = score.startsWith('+');
+        const colorClass = isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400';
+        return `${arrow ?? ''}<span class="font-bold ${colorClass}">${score}</span>`;
+      });
+      result.push(`<li class="flex gap-2 text-sm text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-white/[0.03] rounded-lg px-3 py-1.5"><span class="text-slate-300 dark:text-slate-600 flex-shrink-0">▸</span><span>${highlighted}</span></li>`);
     }
-    // empty line
     else if (line.trim() === '') {
       if (inList) { result.push('</ul>'); inList = false; }
-      result.push('<div class="h-1"></div>');
     }
-    // normal paragraph
     else {
       if (inList) { result.push('</ul>'); inList = false; }
       const content = line.replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-foreground">$1</strong>');
-      result.push(`<p class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">${content}</p>`);
+      result.push(`<p class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed my-1">${content}</p>`);
     }
   }
 
+  flushTable();
   if (inList) result.push('</ul>');
   return result.join('\n');
 }
@@ -86,6 +160,7 @@ export function AIMatchAnalysis() {
   // Analysis
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState('');
+  const [resultTitle, setResultTitle] = useState('');
   const [fromCache, setFromCache] = useState(false);
   const [error, setError] = useState('');
 
@@ -205,24 +280,21 @@ export function AIMatchAnalysis() {
         });
       }
       setResult(res?.analysisVi ?? res?.AnalysisVi ?? '');
+      setResultTitle(mode === 'match'
+        ? `${getHomeName(selectedMatch)} vs ${getAwayName(selectedMatch)}`
+        : (selectedPlayer?.fullName ?? 'Cầu thủ'));
       setFromCache(res?.warning === 'Kết quả từ cache');
       if (res?.creditsRemaining != null) setCreditsRemaining(res.creditsRemaining);
       refreshSub();
     } catch (e: any) {
       const msg = e.message ?? '';
-      if (msg.includes('503') || msg.includes('UNAVAILABLE') || msg.includes('high demand')) {
-        setError('Gemini AI đang quá tải, vui lòng thử lại sau ít phút.');
-      } else if (msg.includes('502') || msg.includes('Bad Gateway')) {
-        setError('Không thể kết nối đến AI. Vui lòng thử lại.');
-      } else {
-        setError(msg || 'Có lỗi xảy ra');
-      }
+      setError(msg || 'Có lỗi xảy ra');
     } finally {
       setAnalyzing(false);
     }
   };
 
-  const reset = () => { setResult(''); setError(''); setFromCache(false); };
+  const reset = () => { setResult(''); setResultTitle(''); setError(''); setFromCache(false); };
 
   const getHomeName = (m: MatchItem) => m.homeTeam?.teamName ?? m.homeTeamName ?? '?';
   const getAwayName = (m: MatchItem) => m.awayTeam?.teamName ?? m.awayTeamName ?? '?';
@@ -296,7 +368,7 @@ export function AIMatchAnalysis() {
               <div className="flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-[#FF4444]" />
                 <span className="font-bold text-sm text-foreground">
-                  {mode === 'match' ? `Phân tích: ${selectedMatch ? getHomeName(selectedMatch) : ''} vs ${selectedMatch ? getAwayName(selectedMatch) : ''}` : `Phân tích: ${selectedPlayer?.fullName}`}
+                  {`Phân tích: ${resultTitle}`}
                 </span>
                 {fromCache && <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-white/10 text-slate-400">Cache</span>}
               </div>
