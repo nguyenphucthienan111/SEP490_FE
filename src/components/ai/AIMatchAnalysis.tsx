@@ -17,11 +17,43 @@ type AnalysisMode = 'match' | 'player';
 type Step = 'league' | 'season' | 'round' | 'match' | 'player' | 'result';
 
 function renderMarkdown(text: string) {
-  return text
-    .replace(/^## (.+)$/gm, '<h2 class="text-base font-bold text-foreground mt-4 mb-1.5 border-b border-slate-100 dark:border-white/5 pb-1">$1</h2>')
-    .replace(/^### (.+)$/gm, '<h3 class="text-sm font-semibold text-[#FF4444] mt-3 mb-1">$1</h3>')
-    .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-foreground">$1</strong>')
-    .replace(/\n/g, '<br/>');
+  // Process line by line to handle bullet lists properly
+  const lines = text.split('\n');
+  const result: string[] = [];
+  let inList = false;
+
+  for (const line of lines) {
+    // h2
+    if (/^## (.+)$/.test(line)) {
+      if (inList) { result.push('</ul>'); inList = false; }
+      result.push(line.replace(/^## (.+)$/, '<h2 class="text-base font-bold text-foreground mt-5 mb-2 border-b border-slate-100 dark:border-white/5 pb-1">$1</h2>'));
+    }
+    // h3
+    else if (/^### (.+)$/.test(line)) {
+      if (inList) { result.push('</ul>'); inList = false; }
+      result.push(line.replace(/^### (.+)$/, '<h3 class="text-sm font-semibold text-[#FF4444] mt-3 mb-1.5">$1</h3>'));
+    }
+    // bullet: - or *
+    else if (/^[-*] (.+)$/.test(line)) {
+      if (!inList) { result.push('<ul class="space-y-1 my-1.5 pl-1">'); inList = true; }
+      const content = line.replace(/^[-*] /, '').replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-foreground">$1</strong>');
+      result.push(`<li class="flex gap-2 text-sm text-slate-700 dark:text-slate-300"><span class="text-[#FF4444] mt-0.5 flex-shrink-0">·</span><span>${content}</span></li>`);
+    }
+    // empty line
+    else if (line.trim() === '') {
+      if (inList) { result.push('</ul>'); inList = false; }
+      result.push('<div class="h-1"></div>');
+    }
+    // normal paragraph
+    else {
+      if (inList) { result.push('</ul>'); inList = false; }
+      const content = line.replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-foreground">$1</strong>');
+      result.push(`<p class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">${content}</p>`);
+    }
+  }
+
+  if (inList) result.push('</ul>');
+  return result.join('\n');
 }
 
 const POSITION_MAP: Record<string, string> = { F: 'Tiền đạo', M: 'Tiền vệ', D: 'Hậu vệ', G: 'Thủ môn' };
