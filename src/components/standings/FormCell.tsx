@@ -1,5 +1,6 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { leagueService, SofascoreTeamMatch } from '@/services/leagueService';
 
@@ -32,6 +33,7 @@ interface TooltipData {
 export function FormCell({ teamId }: FormCellProps) {
   const [matches, setMatches] = React.useState<SofascoreTeamMatch[] | null>(null);
   const [tooltip, setTooltip] = React.useState<TooltipData | null>(null);
+  const navigate = useNavigate();
 
   React.useEffect(() => {
     leagueService.getTeamLastMatchesFromDb(teamId).then((data) => {
@@ -66,25 +68,23 @@ export function FormCell({ teamId }: FormCellProps) {
         const date = formatDate(match.startTimestamp);
 
         return (
-          <a
+          <button
             key={match.id}
-            href={`/matches/${match.id}`}
-            target="_blank"
-            rel="noopener noreferrer"
+            onClick={() => navigate(`/matches/${match.id}`)}
             onMouseEnter={(e) => {
               const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
               setTooltip({ label, date, rect });
             }}
             onMouseLeave={() => setTooltip(null)}
             className={cn(
-              'w-6 h-6 rounded flex items-center justify-center text-xs font-bold transition-transform hover:scale-110',
+              'w-6 h-6 rounded flex items-center justify-center text-xs font-bold transition-transform hover:scale-110 cursor-pointer',
               result === 'W' && 'bg-green-500 text-white',
               result === 'D' && 'bg-slate-400 text-white',
               result === 'L' && 'bg-red-500 text-white'
             )}
           >
             {result}
-          </a>
+          </button>
         );
       })}
 

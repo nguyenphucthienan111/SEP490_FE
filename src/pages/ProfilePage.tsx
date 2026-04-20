@@ -55,7 +55,7 @@ function PaymentsTabContent({ payments, paymentsLoading }: { payments: any[]; pa
   };
 
   const fmtPrice = (n: number) => n.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
-  const fmtDate = (d: string) => new Date(d).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const fmtDate = (d: string) => new Date(d.endsWith('Z') ? d : d + 'Z').toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
   const filtered = payments.filter(p => {
     if (statusFilter !== 'all' && p.status !== statusFilter) return false;
