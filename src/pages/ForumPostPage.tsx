@@ -29,13 +29,14 @@ function timeAgo(dateStr: string) {
   return d.toLocaleDateString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
-function CommentItem({ c, onReply, currentUserId, userIdLoaded, onRefresh, isReply = false }: {
+function CommentItem({ c, onReply, currentUserId, userIdLoaded, onRefresh, isReply = false, isAdmin = false }: {
   c: CommentDto;
   onReply: (name: string, id: number) => void;
   currentUserId: string | null;
   userIdLoaded: boolean;
   onRefresh: () => void;
   isReply?: boolean;
+  isAdmin?: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const [editContent, setEditContent] = useState(c.content);
@@ -156,7 +157,7 @@ function CommentItem({ c, onReply, currentUserId, userIdLoaded, onRefresh, isRep
               <button onClick={() => setConfirmDelete(true)} className="text-xs text-slate-500 hover:text-red-500 transition-colors">Xóa</button>
             </>
           )}
-          {!isOwner && userIdLoaded && currentUserId && c.status !== "warned" && (
+          {!isOwner && userIdLoaded && currentUserId && c.status !== "warned" && !isAdmin && (
             <button onClick={() => setShowReport(true)} className="text-xs text-slate-400 hover:text-orange-500 transition-colors">Báo cáo</button>
           )}
         </div>
@@ -413,9 +414,9 @@ export default function ForumPostPage() {
                     };
                     return topLevel.map(c => (
                       <div key={c.commentId} className="space-y-2">
-                        <CommentItem c={c} onReply={handleReply} currentUserId={currentUserId} userIdLoaded={userIdLoaded} onRefresh={refreshComments} />
+                        <CommentItem c={c} onReply={handleReply} currentUserId={currentUserId} userIdLoaded={userIdLoaded} onRefresh={refreshComments} isAdmin={isAdmin} />
                         {replies.filter(r => getRootId(r.parentCommentId!) === c.commentId).map(r => (
-                          <CommentItem key={r.commentId} c={r} onReply={handleReply} currentUserId={currentUserId} userIdLoaded={userIdLoaded} onRefresh={refreshComments} isReply />
+                          <CommentItem key={r.commentId} c={r} onReply={handleReply} currentUserId={currentUserId} userIdLoaded={userIdLoaded} onRefresh={refreshComments} isReply isAdmin={isAdmin} />
                         ))}
                       </div>
                     ));
