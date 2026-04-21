@@ -197,7 +197,7 @@ export default function PricingPage() {
                       <Crown className="w-5 h-5 text-emerald-500" />
                     </div>
                     <div>
-                      <p className="font-bold text-slate-900 dark:text-white text-sm">Gói {subscription.planName} đang hoạt động</p>
+                      <p className="font-bold text-slate-900 dark:text-white text-sm">{subscription.planName} đang hoạt động</p>
                       <p className="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5">
                         <Calendar className="w-3 h-3" />
                         Hết hạn: {fmtDate(subscription.expiresAt)}
