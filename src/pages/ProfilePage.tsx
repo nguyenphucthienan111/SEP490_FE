@@ -18,6 +18,7 @@ import { cosmeticService, CosmeticItemDto, LoadoutDto } from "@/services/cosmeti
 import { CosmeticPreview } from "@/components/cosmetics/CosmeticPreview";
 import { UserAvatar, UserDisplayName } from "@/components/cosmetics/UserAvatar";
 import { invalidateLoadoutCache } from "@/hooks/useMyLoadout";
+import { sofaPlayerPhoto } from "@/utils/sofascoreImages";
 import { toast } from "sonner";
 
 // Mock user data
@@ -650,13 +651,14 @@ export default function ProfilePage() {
                     const playerId = fav.playerId ?? player.playerId;
                     const name = player.fullName ?? player.name ?? '—';
                     const photo = player.photoUrl ?? player.photo;
+                    const proxyPhoto = apiPlayerId ? sofaPlayerPhoto(apiPlayerId) : photo;
                     const pos: Record<string, string> = { G: 'Thủ môn', D: 'Hậu vệ', M: 'Tiền vệ', F: 'Tiền đạo' };
                     const posLabel = pos[player.position] ?? player.position ?? '';
                     return (
                       <div key={apiPlayerId ?? playerId} className="flex items-center gap-4 px-5 py-3 hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors group">
                         <div className="w-11 h-11 rounded-xl overflow-hidden bg-slate-100 dark:bg-white/5 flex-shrink-0">
-                          {photo
-                            ? <img src={photo} alt={name} className="w-full h-full object-cover object-top" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                          {proxyPhoto
+                            ? <img src={proxyPhoto} alt={name} className="w-full h-full object-cover object-top" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                             : <div className="w-full h-full flex items-center justify-center text-slate-400"><User className="w-5 h-5" /></div>
                           }
                         </div>
