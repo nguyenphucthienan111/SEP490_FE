@@ -56,8 +56,10 @@ export function CosmeticPreview({ item, size = "md" }: Props) {
       "bg-animated-stars": "linear-gradient(135deg,#0f172a,#4c1d95)",
       "bg-holographic": "linear-gradient(135deg,#FF4444,#F59E0B,#22C55E,#3B82F6,#A855F7)",
     };
+    const bg = gradients[preview]
+      ?? (preview.startsWith("linear-gradient") || preview.startsWith("#") || preview.startsWith("rgb") ? preview : "#334155");
     return (
-      <div className="w-full h-full rounded-lg" style={{ background: gradients[preview] ?? "#334155", minHeight: 40 }} />
+      <div className="w-full h-full rounded-lg" style={{ background: bg, minHeight: 40 }} />
     );
   }
 
