@@ -328,6 +328,18 @@ export function AIMatchAnalysis() {
 
   return (
     <div className="space-y-4">
+      {/* Processing overlay */}
+      {analyzing && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center">
+          <div className="bg-white dark:bg-card rounded-2xl p-6 flex flex-col items-center gap-4 shadow-2xl mx-4 max-w-sm w-full">
+            <Loader2 className="w-10 h-10 text-[#FF4444] animate-spin" />
+            <div className="text-center">
+              <p className="font-bold text-slate-900 dark:text-foreground">Gemini đang phân tích...</p>
+              <p className="text-sm text-slate-500 mt-1">Vui lòng không thao tác trong lúc này</p>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Mode toggle */}
       <div className="flex gap-2 p-1 bg-slate-100 dark:bg-white/5 rounded-xl">
         {([['match', Trophy, 'Phân tích trận đấu'], ['player', User, 'Phân tích cầu thủ']] as const).map(([m, Icon, label]) => (

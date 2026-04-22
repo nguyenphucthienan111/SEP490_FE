@@ -159,13 +159,15 @@ export default function VideoAnalysisPage() {
             </div>
             {/* Tab switcher */}
             <div className="flex gap-1 p-1 bg-slate-100 dark:bg-white/5 rounded-2xl">
-              <button onClick={() => setActiveTab('video')}
+              <button onClick={() => !isProcessing && setActiveTab('video')}
                 className={cn('flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all duration-200',
+                  isProcessing && 'cursor-not-allowed opacity-50',
                   activeTab === 'video' ? 'bg-white dark:bg-white/10 text-[#FF4444] shadow-md' : 'text-slate-500 dark:text-slate-400 hover:text-foreground')}>
                 <Video className="w-4 h-4" />AI Phân tích Video
               </button>
-              <button onClick={() => setActiveTab('match')}
+              <button onClick={() => !isProcessing && setActiveTab('match')}
                 className={cn('flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all duration-200',
+                  isProcessing && 'cursor-not-allowed opacity-50',
                   activeTab === 'match' ? 'bg-white dark:bg-white/10 text-[#FF4444] shadow-md' : 'text-slate-500 dark:text-slate-400 hover:text-foreground')}>
                 <BarChart2 className="w-4 h-4" />AI Phân tích Trận/Cầu thủ
               </button>
@@ -179,6 +181,28 @@ export default function VideoAnalysisPage() {
             </motion.div>
           ) : (
             <motion.div key="video" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.2 }}>
+          {/* Processing overlay */}
+          {isProcessing && (
+            <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center">
+              <div className="bg-white dark:bg-card rounded-2xl p-6 flex flex-col items-center gap-4 shadow-2xl mx-4 max-w-sm w-full">
+                <Loader2 className="w-10 h-10 text-[#FF4444] animate-spin" />
+                <div className="text-center">
+                  <p className="font-bold text-slate-900 dark:text-foreground">
+                    {uploading ? 'Đang upload video...' : 'Gemini đang phân tích...'}
+                  </p>
+                  <p className="text-sm text-slate-500 mt-1">Vui lòng không thao tác trong lúc này</p>
+                  {uploading && (
+                    <div className="mt-3 w-full">
+                      <div className="h-2 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-[#FF4444] to-[#FF6666] rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%` }} />
+                      </div>
+                      <p className="text-xs text-[#FF4444] font-bold mt-1">{uploadProgress}%</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
           <div className="flex flex-wrap gap-2 mb-5">
             {['V-League 1', 'V-League 2', 'Vietnam Cup'].map(l => (
               <span key={l} className="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-[#A8A29E]">{l}</span>
