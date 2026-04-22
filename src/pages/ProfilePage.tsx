@@ -379,8 +379,22 @@ export default function ProfilePage() {
 
       <div className="max-w-6xl mx-auto px-6 py-8">
         {/* Profile Header */}
-          <div className="bg-card/5 border border-slate-200 dark:border-white/[0.08] rounded-2xl p-8">
-          <div className="flex flex-col md:flex-row items-center gap-6">
+          <div className="bg-card/5 border border-slate-200 dark:border-white/[0.08] rounded-2xl overflow-hidden">
+          {/* Banner */}
+          {(fullLoadout?.bannerPreview || (fullLoadout as any)?.BannerPreview) && (() => {
+            const preview = fullLoadout?.bannerPreview || (fullLoadout as any)?.BannerPreview;
+            const bannerCssMap: Record<string, string> = {
+              'bg-green-field':        'linear-gradient(135deg, #16a34a 0%, #15803d 40%, #166534 100%)',
+              'bg-stadium-night':      'linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%)',
+              'bg-confetti-win':       'linear-gradient(135deg, #FF4444 0%, #F59E0B 33%, #22C55E 66%, #3B82F6 100%)',
+              'card-animated':         'linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%)',
+              'banner-holographic':    'linear-gradient(135deg, #00D9FF 0%, #FF4444 25%, #F59E0B 50%, #22C55E 75%, #A855F7 100%)',
+            };
+            const css = bannerCssMap[preview] ?? (preview.startsWith('linear-gradient') || preview.startsWith('#') || preview.startsWith('rgb') ? preview : null);
+            if (!css) return null;
+            return <div className="w-full h-24" style={{ background: css }} />;
+          })()}
+          <div className="flex flex-col md:flex-row items-center gap-6 p-8">
             {/* Avatar */}
             <div className="relative group">
               <UserAvatar avatarUrl={user.avatarUrl} username={user.username} size={128} loadout={fullLoadout} className="rounded-2xl" />
