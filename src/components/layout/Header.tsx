@@ -128,7 +128,7 @@ export function Header() {
               </div>
               <div className="hidden sm:block">
                 <h1 className="font-display font-bold text-lg text-white leading-tight">
-                  Player Rating
+                  Football Analytics
                 </h1>
                 <p className="text-xs text-slate-400 font-label uppercase tracking-wider">
                   Bóng đá Việt Nam

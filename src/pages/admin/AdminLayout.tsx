@@ -94,7 +94,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
               </div>
               <div>
                 <h1 className="font-display font-bold text-foreground text-sm">Admin Portal</h1>
-                <p className="text-xs text-slate-500 dark:text-[#A8A29E]">Player Rating System</p>
+                <p className="text-xs text-slate-500 dark:text-[#A8A29E]">Football Analytics</p>
               </div>
             </Link>
           </div>

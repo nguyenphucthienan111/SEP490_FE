@@ -312,7 +312,7 @@ export default function PricingPage() {
                         </div>
                         <div>
                           <p className="font-bold text-slate-900 dark:text-foreground text-base">
-                            {plan.code === 'TRIAL' ? 'Dùng thử' : plan.code === 'MONTHLY' ? 'Hàng tháng' : 'Hàng quý'}
+                            {plan.code === 'TRIAL' ? 'Gói dùng thử' : plan.code === 'MONTHLY' ? 'Gói tháng' : 'Gói quý'}
                           </p>
                           <p className="text-xs text-slate-400">{plan.durationDays} ngày</p>
                         </div>
@@ -398,7 +398,7 @@ export default function PricingPage() {
                     amount: '5 lượt',
                     price: 50000,
                     perUnit: '10.000đ/lượt',
-                    compare: 'Gói hàng tháng: 6.600đ/lượt',
+                    compare: 'Gói tháng: 6.600đ/lượt',
                     color: 'text-[#00D9FF]',
                     bg: 'bg-[#00D9FF]/10',
                     border: 'border-[#00D9FF]/20',
@@ -410,7 +410,7 @@ export default function PricingPage() {
                     amount: '10 bài',
                     price: 50000,
                     perUnit: '5.000đ/bài',
-                    compare: 'Gói hàng tháng: 6.600đ/bài',
+                    compare: 'Gói tháng: 6.600đ/bài',
                     color: 'text-[#FF4444]',
                     bg: 'bg-[#FF4444]/10',
                     border: 'border-[#FF4444]/20',
@@ -422,7 +422,7 @@ export default function PricingPage() {
                     amount: '10 lượt',
                     price: 50000,
                     perUnit: '5.000đ/lượt',
-                    compare: 'Gói hàng tháng: 3.300đ/lượt',
+                    compare: 'Gói tháng: 3.300đ/lượt',
                     color: 'text-[#FF4444]',
                     bg: 'bg-[#FF4444]/10',
                     border: 'border-[#FF4444]/20',

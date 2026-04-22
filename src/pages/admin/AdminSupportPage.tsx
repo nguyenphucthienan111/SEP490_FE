@@ -53,8 +53,8 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
 
 const PLAN_OPTIONS = [
   { code: 'TRIAL',            label: 'Gói Dùng thử (3 ngày)' },
-  { code: 'MONTHLY',          label: 'Gói Hàng tháng (30 ngày)' },
-  { code: 'QUARTERLY',        label: 'Gói Hàng quý (90 ngày)' },
+  { code: 'MONTHLY',          label: 'Gói tháng (30 ngày)' },
+  { code: 'QUARTERLY',        label: 'Gói quý (90 ngày)' },
   { code: 'TOPUP_AI_VIDEO',   label: 'Nạp thêm AI Video Analysis (5 lượt)' },
   { code: 'TOPUP_FORUM_POST', label: 'Nạp thêm bài đăng diễn đàn (10 bài)' },
   { code: 'TOPUP_AI_MATCH',   label: 'Nạp thêm AI Phân tích (10 lượt)' },

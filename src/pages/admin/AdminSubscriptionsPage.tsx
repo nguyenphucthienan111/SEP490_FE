@@ -467,9 +467,9 @@ export default function AdminSubscriptionsPage() {
               <select value={payPlan} onChange={e => { setPayPlan(e.target.value); loadPayments(1, payStatus, e.target.value, payDateFrom, payDateTo); }}
                 className="px-3 py-2 rounded-lg bg-card border border-slate-200 dark:border-white/10 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-[#00D9FF]/40 h-10">
                 <option value="">Tất cả gói</option>
-                <option value="TRIAL">Dùng thử</option>
-                <option value="MONTHLY">Hàng tháng</option>
-                <option value="QUARTERLY">Hàng quý</option>
+                <option value="TRIAL">Gói Dùng thử</option>
+                <option value="MONTHLY">Gói Tháng</option>
+                <option value="QUARTERLY">Gói Quý</option>
                 <option value="TOPUP_AI_VIDEO">Nạp thêm AI Video</option>
                 <option value="TOPUP_FORUM_POST">Nạp thêm bài đăng</option>
                 <option value="TOPUP_AI_MATCH">Nạp thêm AI Phân tích</option>
