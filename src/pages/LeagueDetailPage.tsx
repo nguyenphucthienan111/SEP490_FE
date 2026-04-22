@@ -130,6 +130,9 @@ export default function LeagueDetailPage() {
         .then(rows => setStandingsRows(rows))
         .catch(() => setStandingsRows([]))
         .finally(() => setStandingsLoading(false));
+      // Also reload teams tab data when season changes
+      setTeamsLoading(true);
+      loadTeams(selectedSeason.seasonId, dbTeams).finally(() => setTeamsLoading(false));
     } else {
       setTeamsLoading(true);
       loadTeams(selectedSeason.seasonId, dbTeams).finally(() => setTeamsLoading(false));
@@ -147,12 +150,12 @@ export default function LeagueDetailPage() {
     setTeams([]);
     if (hasStandings) {
       const rows = await leagueService.getHybridStandings(tournamentId, seasonId);
-      setTeams(rows.map(r => ({
+      setTeams(rows.map((r, idx) => ({
         sofaId: r.team.id,
         dbTeamId: r.team.dbTeamId || getDbTeamId(r.team.id, allDbTeams),
         name: r.team.name,
         logo: r.team.logo,
-        position: r.position,
+        position: r.position > 0 ? r.position : idx + 1,
       })));
     } else {
       // For cup tournaments — use DB teams directly (fast, no scraping)
@@ -414,7 +417,7 @@ export default function LeagueDetailPage() {
                               }
                             </div>
                             <h4 className="font-body font-semibold text-sm text-center text-slate-900 dark:text-foreground truncate" title={team.name}>{team.name}</h4>
-                            {team.position && <p className="text-xs text-center text-slate-500 dark:text-[#A8A29E] mt-0.5">#{team.position}</p>}
+                            {team.position > 0 && <p className="text-xs text-center text-slate-500 dark:text-[#A8A29E] mt-0.5">#{team.position}</p>}
                           </>
                         );
                         return (
