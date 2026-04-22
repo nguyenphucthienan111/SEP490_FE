@@ -82,7 +82,7 @@ export default function StadiumDetailPage() {
           setFromTeamId(teamsWithStadium[0].teamId.toString());
         }
 
-        // Fetch upcoming & recent matches for all home teams
+        // Fetch upcoming & recent matches for all home teams - only home matches at this stadium
         const sofaIds = teamsWithStadium.map((t: any) => t.apiTeamId).filter(Boolean);
         if (sofaIds.length > 0) {
           const [upcomingResults, recentResults] = await Promise.all([
@@ -90,14 +90,15 @@ export default function StadiumDetailPage() {
             Promise.allSettled(sofaIds.map((id: number) => leagueService.getTeamLastMatches(id, 0))),
           ]);
           const ALLOWED = new Set([626, 771, 3087]);
+          const sofaIdsSet = new Set(sofaIds);
           const upcoming = upcomingResults
             .flatMap(r => r.status === 'fulfilled' ? r.value : [])
-            .filter((m: any) => ALLOWED.has(m?.tournament?.uniqueTournament?.id))
+            .filter((m: any) => ALLOWED.has(m?.tournament?.uniqueTournament?.id) && sofaIdsSet.has(m?.homeTeam?.id))
             .sort((a: any, b: any) => a.startTimestamp - b.startTimestamp)
             .slice(0, 5);
           const recent = recentResults
             .flatMap(r => r.status === 'fulfilled' ? r.value : [])
-            .filter((m: any) => ALLOWED.has(m?.tournament?.uniqueTournament?.id))
+            .filter((m: any) => ALLOWED.has(m?.tournament?.uniqueTournament?.id) && sofaIdsSet.has(m?.homeTeam?.id))
             .sort((a: any, b: any) => b.startTimestamp - a.startTimestamp)
             .slice(0, 5);
           // Deduplicate by id
