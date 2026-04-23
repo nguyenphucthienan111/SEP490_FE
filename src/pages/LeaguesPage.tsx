@@ -73,8 +73,9 @@ export default function LeaguesPage() {
     setIsLoading(true);
     try {
       // Use DB leagues — fast, no Sofascore scraping
+      const ALLOWED_IDS = new Set([626, 771, 3087]);
       const leagues = await leagueService.getLeagues();
-      setDbLeagues(leagues);
+      setDbLeagues(leagues.filter(l => ALLOWED_IDS.has(l.apiLeagueId)));
 
       // Load DB teams for ID mapping — always fresh
       try {
