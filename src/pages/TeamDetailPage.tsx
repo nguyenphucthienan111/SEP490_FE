@@ -229,7 +229,7 @@ export default function TeamDetailPage() {
         ...(r1.status === 'fulfilled' ? r1.value : []),
         ...(r2.status === 'fulfilled' ? r2.value : []),
         ...(r3.status === 'fulfilled' ? r3.value : []),
-      ].filter(m => ALLOWED_SET.has((m as any).tournament?.uniqueTournament?.id));
+      ].filter(m => !recentMatches.some(r => r.id === m.id)); // chỉ lọc duplicate
       setRecentMatches(prev => {
         const ids = new Set(prev.map(m => m.id));
         const merged = [...prev, ...extra.filter(m => !ids.has(m.id))].sort((a, b) => b.startTimestamp - a.startTimestamp);
@@ -250,14 +250,19 @@ export default function TeamDetailPage() {
       const cached = sessionStorage.getItem(cacheKey);
       if (cached) {
         const { team, recent, upcoming, recentHasMore: hasMore } = JSON.parse(cached);
-        setApiTeam(team);
-        setRecentMatches(recent);
-        setUpcomingMatches(upcoming);
-        setRecentHasMore(hasMore ?? false);
-        setLoading(false);
-        // Vẫn fetch players mới nhất (không cache vì hay thay đổi)
-        leagueService.getPlayers(team.teamId).then(p => setPlayers(p)).catch(() => {});
-        return;
+        // Invalidate cache nếu cả recent lẫn upcoming đều rỗng (có thể là cache lỗi cũ)
+        if (recent?.length === 0 && upcoming?.length === 0) {
+          sessionStorage.removeItem(cacheKey);
+        } else {
+          setApiTeam(team);
+          setRecentMatches(recent);
+          setUpcomingMatches(upcoming);
+          setRecentHasMore(hasMore ?? false);
+          setLoading(false);
+          // Vẫn fetch players mới nhất (không cache vì hay thay đổi)
+          leagueService.getPlayers(team.teamId).then(p => setPlayers(p)).catch(() => {});
+          return;
+        }
       }
     } catch (e) {}
 
@@ -279,13 +284,12 @@ export default function TeamDetailPage() {
       setPlayers(p);
 
       const upcomingRaw = upcomingRes.status === 'fulfilled' ? upcomingRes.value as SofascoreTeamMatch[] : [];
-      const upcoming = upcomingRaw.filter(m => ALLOWED.has((m as any).tournament?.uniqueTournament?.id)).sort((a, b) => a.startTimestamp - b.startTimestamp);
+      const upcoming = upcomingRaw.sort((a, b) => a.startTimestamp - b.startTimestamp);
       setUpcomingMatches(upcoming);
 
       // Recent — chỉ fetch page 0 ban đầu
       const r0val = r0.status === 'fulfilled' ? r0.value : [];
       const recent = r0val
-        .filter(m => ALLOWED.has((m as any).tournament?.uniqueTournament?.id))
         .sort((a, b) => b.startTimestamp - a.startTimestamp);
       setRecentMatches(recent);
       setRecentHasMore(r0val.length >= 10);

@@ -507,19 +507,23 @@ export const leagueService = {
   },
 
   async getTournamentLastMatches(uniqueTournamentId: number, seasonId: number, page = 0): Promise<{ events: SofascoreTeamMatch[]; hasNextPage: boolean }> {
-    const result = await apiClient.get<any>(
-      `/api/Sofascore/tournament/last-matches?uniqueTournamentId=${uniqueTournamentId}&seasonId=${seasonId}&page=${page}`
-    );
-    const events: SofascoreTeamMatch[] = Array.isArray(result?.events) ? result.events : Array.isArray(result) ? result : [];
-    return { events, hasNextPage: result?.hasNextPage === true };
+    try {
+      const res = await fetch(`https://www.sofascore.com/api/v1/unique-tournament/${uniqueTournamentId}/season/${seasonId}/events/last/${page}`);
+      if (!res.ok) return { events: [], hasNextPage: false };
+      const result = await res.json();
+      const events: SofascoreTeamMatch[] = Array.isArray(result?.events) ? result.events : [];
+      return { events, hasNextPage: result?.hasNextPage === true };
+    } catch { return { events: [], hasNextPage: false }; }
   },
 
   async getTournamentNextMatches(uniqueTournamentId: number, seasonId: number, page = 0): Promise<{ events: SofascoreTeamMatch[]; hasNextPage: boolean }> {
-    const result = await apiClient.get<any>(
-      `/api/Sofascore/tournament/next-matches?uniqueTournamentId=${uniqueTournamentId}&seasonId=${seasonId}&page=${page}`
-    );
-    const events: SofascoreTeamMatch[] = Array.isArray(result?.events) ? result.events : Array.isArray(result) ? result : [];
-    return { events, hasNextPage: result?.hasNextPage === true };
+    try {
+      const res = await fetch(`https://www.sofascore.com/api/v1/unique-tournament/${uniqueTournamentId}/season/${seasonId}/events/next/${page}`);
+      if (!res.ok) return { events: [], hasNextPage: false };
+      const result = await res.json();
+      const events: SofascoreTeamMatch[] = Array.isArray(result?.events) ? result.events : [];
+      return { events, hasNextPage: result?.hasNextPage === true };
+    } catch { return { events: [], hasNextPage: false }; }
   },
 
   async getTournamentCupTrees(uniqueTournamentId: number, seasonId: number): Promise<any> {
@@ -573,19 +577,38 @@ export const leagueService = {
   },
 
   async getTeamLastMatches(teamId: number, page = 0): Promise<SofascoreTeamMatch[]> {
-    const result = await apiClient.get<any>(
-      `/api/Sofascore/team/last-matches?teamId=${teamId}&page=${page}`
+    // Dùng DB thay vì Sofascore trực tiếp (Sofascore block fetch() từ JS)
+    const count = 10;
+    const data = await apiClient.get<any[]>(
+      `/api/SofascoreHybrid/team-last-matches-db?apiTeamId=${teamId}&count=${count + page * count}`
     );
-    const raw = result?.events ?? result?.matches ?? result ?? [];
-    return Array.isArray(raw) ? raw : [];
+    if (!Array.isArray(data)) return [];
+    return data.slice(page * count).map((x) => ({
+      id: x.apiFixtureId ?? x.matchId,
+      homeTeam: { id: x.homeTeam?.apiTeamId ?? 0, name: x.homeTeam?.teamName ?? '' },
+      awayTeam: { id: x.awayTeam?.apiTeamId ?? 0, name: x.awayTeam?.teamName ?? '' },
+      homeScore: { current: x.homeGoals ?? 0, penalties: x.homePenalties ?? null },
+      awayScore: { current: x.awayGoals ?? 0, penalties: x.awayPenalties ?? null },
+      startTimestamp: x.matchDate ? Math.floor(new Date(x.matchDate.endsWith('Z') ? x.matchDate : x.matchDate + 'Z').getTime() / 1000) : 0,
+      status: { type: x.status ?? 'finished' },
+    }));
   },
 
   async getTeamNextMatches(teamId: number, page = 0): Promise<SofascoreTeamMatch[]> {
-    const result = await apiClient.get<any>(
-      `/api/Sofascore/team/next-matches?teamId=${teamId}&page=${page}`
+    // Dùng DB thay vì Sofascore trực tiếp (Sofascore block fetch() từ JS)
+    const data = await apiClient.get<any[]>(
+      `/api/SofascoreHybrid/team-next-matches-db?apiTeamId=${teamId}&count=10`
     );
-    const raw = result?.events ?? result?.matches ?? result ?? [];
-    return Array.isArray(raw) ? raw : [];
+    if (!Array.isArray(data)) return [];
+    return data.map((x) => ({
+      id: x.apiFixtureId ?? x.matchId,
+      homeTeam: { id: x.homeTeam?.apiTeamId ?? 0, name: x.homeTeam?.teamName ?? '' },
+      awayTeam: { id: x.awayTeam?.apiTeamId ?? 0, name: x.awayTeam?.teamName ?? '' },
+      homeScore: { current: x.homeGoals ?? 0, penalties: x.homePenalties ?? null },
+      awayScore: { current: x.awayGoals ?? 0, penalties: x.awayPenalties ?? null },
+      startTimestamp: x.matchDate ? Math.floor(new Date(x.matchDate.endsWith('Z') ? x.matchDate : x.matchDate + 'Z').getTime() / 1000) : 0,
+      status: { type: x.status ?? 'notstarted' },
+    }));
   },
 
   async getHybridStandings(tournamentId: number, seasonId: number): Promise<SofascoreStandingRow[]> {

@@ -73,8 +73,10 @@ export default function LeaguesPage() {
     setIsLoading(true);
     try {
       // Use DB leagues — fast, no Sofascore scraping
-      const leagues = await leagueService.getLeagues();
-      setDbLeagues(leagues);
+      const allLeagues = await leagueService.getLeagues();
+      // Filter chỉ lấy 3 giải chính (V-League 1: 626, V-League 2: 771, Vietnam Cup: 3087)
+      const mainLeagues = allLeagues.filter(l => [626, 771, 3087].includes(l.apiLeagueId));
+      setDbLeagues(mainLeagues);
 
       // Load DB teams for ID mapping — always fresh
       try {
