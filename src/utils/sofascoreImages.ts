@@ -32,11 +32,28 @@ async function cacheToBackend(type: string, id: string, theme?: string) {
   cachingInProgress.add(key);
 
   try {
-    // Gửi type+id lên BE, để BE tự fetch từ Sofascore và cache lên Cloudinary
-    await fetch(`${API_BASE}/api/ImageProxy/sofascore/cache-by-id`, {
+    const url =
+      type === 'team' ? sofaTeamLogo(id) :
+      type === 'player' ? sofaPlayerPhoto(id) :
+      sofaTournamentLogo(id, (theme ?? 'dark') as 'dark' | 'light');
+
+    // Browser fetch với no-referrer — không bị Sofascore block
+    const res = await fetch(url, { referrerPolicy: 'no-referrer' });
+    if (!res.ok) return;
+
+    const blob = await res.blob();
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+
+    // Gửi base64 lên BE để upload lên Cloudinary
+    await fetch(`${API_BASE}/api/ImageProxy/sofascore/cache`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type, id, theme: theme ?? null }),
+      body: JSON.stringify({ type, id, theme: theme ?? null, dataUrl }),
     });
   } catch {
     // silent — caching is best-effort
