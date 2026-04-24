@@ -9,23 +9,15 @@
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '';
 
-// Dùng thẳng Sofascore URL — browser load được khi có referrerPolicy="no-referrer"
-const isDev = import.meta.env.DEV;
-
+// Dùng thẳng Sofascore URL — browser fetch với referrerPolicy="no-referrer" không bị block
 export const sofaTeamLogo = (apiTeamId: number | string) =>
-  isDev
-    ? `https://api.sofascore.app/api/v1/team/${apiTeamId}/image`
-    : `/api/image-proxy?type=team&id=${apiTeamId}`;
+  `https://api.sofascore.app/api/v1/team/${apiTeamId}/image`;
 
 export const sofaPlayerPhoto = (apiPlayerId: number | string) =>
-  isDev
-    ? `https://api.sofascore.app/api/v1/player/${apiPlayerId}/image`
-    : `/api/image-proxy?type=player&id=${apiPlayerId}`;
+  `https://api.sofascore.app/api/v1/player/${apiPlayerId}/image`;
 
 export const sofaTournamentLogo = (uniqueTournamentId: number | string, theme: 'dark' | 'light' = 'dark') =>
-  isDev
-    ? `https://api.sofascore.app/api/v1/unique-tournament/${uniqueTournamentId}/image/${theme}`
-    : `/api/image-proxy?type=tournament&id=${uniqueTournamentId}&theme=${theme}`;
+  `https://api.sofascore.app/api/v1/unique-tournament/${uniqueTournamentId}/image/${theme}`;
 
 // Track which IDs are being cached to avoid duplicate requests
 const cachingInProgress = new Set<string>();
