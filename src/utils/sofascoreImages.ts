@@ -9,11 +9,11 @@
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '';
 
-// Trên localhost dùng direct URL (không bị block), trên production dùng Vercel proxy
+// Trên localhost dùng direct URL (không bị block), trên production dùng Vercel serverless proxy
 const isDev = import.meta.env.DEV;
 const sofaBase = isDev
   ? 'https://api.sofascore.app/api/v1'
-  : '/sofascore-proxy';
+  : '/api/sofascore-proxy';
 
 export const sofaTeamLogo = (apiTeamId: number | string) =>
   `${sofaBase}/team/${apiTeamId}/image`;
