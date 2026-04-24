@@ -1,4 +1,4 @@
-import { onSofaImgError } from '@/utils/sofascoreImages';
+import { sofaTeamLogo, sofaPlayerPhoto, sofaTournamentLogo } from '@/utils/sofascoreImages';
 
 interface SofaImgProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   sofaType: 'team' | 'player' | 'tournament';
@@ -6,18 +6,20 @@ interface SofaImgProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   sofaTheme?: 'dark' | 'light';
 }
 
-/**
- * Drop-in replacement cho <img src={sofaTeamLogo(...)} />.
- * Tự động fallback + cache lên Cloudinary khi ảnh bị 403.
- */
 export function SofaImg({ sofaType, sofaId, sofaTheme, onError, ...props }: SofaImgProps) {
+  const src =
+    sofaType === 'team' ? sofaTeamLogo(sofaId) :
+    sofaType === 'player' ? sofaPlayerPhoto(sofaId) :
+    sofaTournamentLogo(sofaId, sofaTheme ?? 'dark');
+
   return (
     <img
-      {...props}
+      src={src}
       onError={(e) => {
-        onSofaImgError(sofaType, sofaId, sofaTheme)(e);
+        (e.currentTarget as HTMLImageElement).style.display = 'none';
         onError?.(e);
       }}
+      {...props}
     />
   );
 }
