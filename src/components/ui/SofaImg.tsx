@@ -15,8 +15,8 @@ export function SofaImg({ sofaType, sofaId, sofaTheme, onError, onLoad, ...props
   return (
     <img
       src={src}
+      referrerPolicy="no-referrer"
       onLoad={(e) => {
-        // Cache lên Cloudinary ngầm sau khi ảnh load thành công
         cacheSofaImage(sofaType, sofaId, sofaTheme);
         onLoad?.(e);
       }}

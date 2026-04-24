@@ -9,20 +9,15 @@
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '';
 
-// Trên localhost dùng direct URL (không bị block), trên production dùng Vercel serverless proxy
-const isDev = import.meta.env.DEV;
-const sofaBase = isDev
-  ? 'https://api.sofascore.app/api/v1'
-  : '/api/sofascore-proxy';
-
+// Dùng thẳng Sofascore URL — browser load được khi có referrerPolicy="no-referrer"
 export const sofaTeamLogo = (apiTeamId: number | string) =>
-  `${sofaBase}/team/${apiTeamId}/image`;
+  `https://api.sofascore.app/api/v1/team/${apiTeamId}/image`;
 
 export const sofaPlayerPhoto = (apiPlayerId: number | string) =>
-  `${sofaBase}/player/${apiPlayerId}/image`;
+  `https://api.sofascore.app/api/v1/player/${apiPlayerId}/image`;
 
 export const sofaTournamentLogo = (uniqueTournamentId: number | string, theme: 'dark' | 'light' = 'dark') =>
-  `${sofaBase}/unique-tournament/${uniqueTournamentId}/image/${theme}`;
+  `https://api.sofascore.app/api/v1/unique-tournament/${uniqueTournamentId}/image/${theme}`;
 
 // Track which IDs are being cached to avoid duplicate requests
 const cachingInProgress = new Set<string>();
@@ -37,27 +32,11 @@ async function cacheToBackend(type: string, id: string, theme?: string) {
   cachingInProgress.add(key);
 
   try {
-    const url =
-      type === 'team' ? sofaTeamLogo(id) :
-      type === 'player' ? sofaPlayerPhoto(id) :
-      sofaTournamentLogo(id, (theme ?? 'dark') as 'dark' | 'light');
-
-    // Dùng no-referrer để tránh bị block khi fetch lại
-    const res = await fetch(url, { referrerPolicy: 'no-referrer' });
-    if (!res.ok) return;
-
-    const blob = await res.blob();
-    const dataUrl = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-
-    await fetch(`${API_BASE}/api/ImageProxy/sofascore/cache`, {
+    // Gửi type+id lên BE, để BE tự fetch từ Sofascore và cache lên Cloudinary
+    await fetch(`${API_BASE}/api/ImageProxy/sofascore/cache-by-id`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type, id, theme: theme ?? null, dataUrl }),
+      body: JSON.stringify({ type, id, theme: theme ?? null }),
     });
   } catch {
     // silent — caching is best-effort
