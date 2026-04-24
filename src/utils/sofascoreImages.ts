@@ -10,14 +10,22 @@
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '';
 
 // Dùng thẳng Sofascore URL — browser load được khi có referrerPolicy="no-referrer"
+const isDev = import.meta.env.DEV;
+
 export const sofaTeamLogo = (apiTeamId: number | string) =>
-  `https://api.sofascore.app/api/v1/team/${apiTeamId}/image`;
+  isDev
+    ? `https://api.sofascore.app/api/v1/team/${apiTeamId}/image`
+    : `/api/image-proxy?type=team&id=${apiTeamId}`;
 
 export const sofaPlayerPhoto = (apiPlayerId: number | string) =>
-  `https://api.sofascore.app/api/v1/player/${apiPlayerId}/image`;
+  isDev
+    ? `https://api.sofascore.app/api/v1/player/${apiPlayerId}/image`
+    : `/api/image-proxy?type=player&id=${apiPlayerId}`;
 
 export const sofaTournamentLogo = (uniqueTournamentId: number | string, theme: 'dark' | 'light' = 'dark') =>
-  `https://api.sofascore.app/api/v1/unique-tournament/${uniqueTournamentId}/image/${theme}`;
+  isDev
+    ? `https://api.sofascore.app/api/v1/unique-tournament/${uniqueTournamentId}/image/${theme}`
+    : `/api/image-proxy?type=tournament&id=${uniqueTournamentId}&theme=${theme}`;
 
 // Track which IDs are being cached to avoid duplicate requests
 const cachingInProgress = new Set<string>();
