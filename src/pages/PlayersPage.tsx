@@ -69,7 +69,7 @@ function PlayerCard({ player, rating }: { player: PlayerFromAPI & { teamName?: s
         <div className="relative flex-shrink-0">
           <div className="w-14 h-14 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800">
             {player.photoUrl && !imgError
-              ? <img src={player.photoUrl} alt={player.fullName} className="w-full h-full object-cover object-top" referrerPolicy="no-referrer" onError={() => setImgError(true)} />
+              ? <img src={player.photoUrl} alt={player.fullName} className="w-full h-full object-cover object-top" onError={() => setImgError(true)} />
               : <div className="w-full h-full flex items-center justify-center"><User className="w-7 h-7 text-slate-400" /></div>
             }
           </div>
@@ -163,8 +163,15 @@ export default function PlayersPage() {
         const cached = sessionStorage.getItem('all-players');
         if (cached && !forceRefresh) {
           const parsed = JSON.parse(cached);
-          players = Array.isArray(parsed) ? parsed : (parsed?.$values ?? []);
-        } else {
+          const arr: PlayerFromAPI[] = Array.isArray(parsed) ? parsed : (parsed?.$values ?? []);
+          // Invalidate cache if photoUrl still points to old BE proxy
+          if (arr.length > 0 && arr[0].photoUrl?.includes('/api/ImageProxy/')) {
+            sessionStorage.removeItem('all-players');
+          } else {
+            players = arr;
+          }
+        }
+        if (players.length === 0) {
           const raw = await leagueService.getAllPlayers();
           players = Array.isArray(raw) ? raw : ((raw as any)?.$values ?? []);
           sessionStorage.setItem('all-players', JSON.stringify(players));

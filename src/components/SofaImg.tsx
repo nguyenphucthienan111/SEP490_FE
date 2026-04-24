@@ -2,8 +2,7 @@ import React from "react";
 
 /**
  * Wrapper for Sofascore images.
- * Adds referrerPolicy="no-referrer" automatically so Sofascore's
- * hotlink protection doesn't block images on production (Vercel).
+ * Browser loads <img> directly from Sofascore without referrer issues.
  */
 interface SofaImgProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   src: string;
@@ -18,7 +17,6 @@ export const SofaImg: React.FC<SofaImgProps> = ({ src, onError, ...props }) => {
   return (
     <img
       src={src}
-      referrerPolicy="no-referrer"
       onError={handleError}
       {...props}
     />

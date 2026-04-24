@@ -186,7 +186,7 @@ export function AIMatchAnalysis() {
 
   // Load history
   useEffect(() => {
-    apiClient.get<any>('/api/ai-analysis/history?pageSize=10')
+    apiClient.get<any>('/api/ai-analysis/history?pageSize=10&type=player-rating,match')
       .then(r => {
         const list = Array.isArray(r) ? r : (r?.data ?? []);
         setHistory(list);

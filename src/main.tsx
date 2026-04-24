@@ -6,6 +6,10 @@ import { BrowserRouter } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { AIChatBubble } from "@/components/ai/AIChatBubble";
 import { SupportChatBubble } from "@/components/support/SupportChatBubble";
+import { setupSofascoreImageFallback } from "@/utils/sofascoreImages";
+
+// Global fallback: khi ảnh từ BE proxy bị 403, tự fetch từ Sofascore trực tiếp + cache Cloudinary
+setupSofascoreImageFallback();
 
 const basename = import.meta.env.BASE_URL;
 

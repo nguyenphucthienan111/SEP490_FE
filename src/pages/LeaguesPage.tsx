@@ -1,18 +1,29 @@
-import { motion } from 'framer-motion';
-import { Trophy, Calendar, Users, TrendingUp, TrendingDown } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { MainLayout } from '@/components/layout/MainLayout';
-import { cn } from '@/lib/utils';
-import React from 'react';
-import { leagueService, SofascoreStandingRow, League, Team } from '@/services/leagueService';
-import { FormCell } from '@/components/standings/FormCell';
-import { toast } from 'sonner';
-import { sofaTournamentLogo, sofaTeamLogo } from '@/utils/sofascoreImages';
+import { motion } from "framer-motion";
+import {
+  Trophy,
+  Calendar,
+  Users,
+  TrendingUp,
+  TrendingDown,
+} from "lucide-react";
+import { Link } from "react-router-dom";
+import { MainLayout } from "@/components/layout/MainLayout";
+import { cn } from "@/lib/utils";
+import React from "react";
+import {
+  leagueService,
+  SofascoreStandingRow,
+  League,
+  Team,
+} from "@/services/leagueService";
+import { FormCell } from "@/components/standings/FormCell";
+import { toast } from "sonner";
+import { sofaTournamentLogo, sofaTeamLogo } from "@/utils/sofascoreImages";
 
 // Only V-League 1 & 2 have standings (Cup is knockout)
 const STANDINGS_LEAGUES = [
-  { name: 'V-League 1', tournamentId: 626, seasonId: 78589 },
-  { name: 'V-League 2', tournamentId: 771, seasonId: 80926 },
+  { name: "V-League 1", tournamentId: 626, seasonId: 78589 },
+  { name: "V-League 2", tournamentId: 771, seasonId: 80926 },
 ];
 
 export default function LeaguesPage() {
@@ -23,9 +34,13 @@ export default function LeaguesPage() {
 
   // Standings state
   const [activeStandingsIndex, setActiveStandingsIndex] = React.useState(0);
-  const [standingsData, setStandingsData] = React.useState<Record<number, SofascoreStandingRow[]>>({});
+  const [standingsData, setStandingsData] = React.useState<
+    Record<number, SofascoreStandingRow[]>
+  >({});
   const [standingsLoading, setStandingsLoading] = React.useState(false);
-  const [standingsError, setStandingsError] = React.useState<string | null>(null);
+  const [standingsError, setStandingsError] = React.useState<string | null>(
+    null,
+  );
   const [cupMatchCount, setCupMatchCount] = React.useState<number | null>(null);
 
   const activeLeague = STANDINGS_LEAGUES[activeStandingsIndex];
@@ -47,17 +62,27 @@ export default function LeaguesPage() {
     try {
       const results = await Promise.all(
         STANDINGS_LEAGUES.map(({ tournamentId, seasonId }) =>
-          leagueService.getHybridStandings(tournamentId, seasonId)
-            .then(rows => rows.length > 0 ? rows : leagueService.getSofascoreStandings(tournamentId, seasonId))
-            .then(rows => ({ tournamentId, rows }))
-            .catch(() => ({ tournamentId, rows: [] as typeof results[0]['rows'] }))
-        )
+          leagueService
+            .getHybridStandings(tournamentId, seasonId)
+            .then((rows) =>
+              rows.length > 0
+                ? rows
+                : leagueService.getSofascoreStandings(tournamentId, seasonId),
+            )
+            .then((rows) => ({ tournamentId, rows }))
+            .catch(() => ({
+              tournamentId,
+              rows: [] as (typeof results)[0]["rows"],
+            })),
+        ),
       );
-      const map: Record<number, typeof results[0]['rows']> = {};
-      results.forEach(({ tournamentId, rows }) => { map[tournamentId] = rows; });
+      const map: Record<number, (typeof results)[0]["rows"]> = {};
+      results.forEach(({ tournamentId, rows }) => {
+        map[tournamentId] = rows;
+      });
       setStandingsData(map);
     } catch {
-      setStandingsError('Không thể tải bảng xếp hạng');
+      setStandingsError("Không thể tải bảng xếp hạng");
     } finally {
       setStandingsLoading(false);
     }
@@ -67,44 +92,51 @@ export default function LeaguesPage() {
 
   // Map Sofascore team ID → DB teamId
   const getDbTeamId = (sofascoreId: number): number | undefined =>
-    (dbTeamsRef.current.length ? dbTeamsRef.current : dbTeams).find(t => t.apiTeamId === sofascoreId)?.teamId;
+    (dbTeamsRef.current.length ? dbTeamsRef.current : dbTeams).find(
+      (t) => t.apiTeamId === sofascoreId,
+    )?.teamId;
 
   const loadData = async () => {
     setIsLoading(true);
     try {
       // Use DB leagues — fast, no Sofascore scraping
-      const ALLOWED_IDS = new Set([626, 771, 3087]);
-      const leagues = await leagueService.getLeagues();
-      setDbLeagues(leagues.filter(l => ALLOWED_IDS.has(l.apiLeagueId)));
+      const allLeagues = await leagueService.getLeagues();
+      // Filter chỉ lấy 3 giải chính (V-League 1: 626, V-League 2: 771, Vietnam Cup: 3087)
+      const mainLeagues = allLeagues.filter((l) =>
+        [626, 771, 3087].includes(l.apiLeagueId),
+      );
+      setDbLeagues(mainLeagues);
 
       // Load DB teams for ID mapping — always fresh
       try {
         const data = await leagueService.getAllTeams();
-        localStorage.setItem('teams', JSON.stringify(data));
+        localStorage.setItem("teams", JSON.stringify(data));
         dbTeamsRef.current = data;
         setDbTeams(data);
       } catch (e) {
         try {
-          const cached = localStorage.getItem('teams');
+          const cached = localStorage.getItem("teams");
           if (cached) {
             const parsed = JSON.parse(cached);
             const data = parsed?.data ?? parsed;
-            const arr = Array.isArray(data) ? data : (data as any)?.$values ?? [];
+            const arr = Array.isArray(data)
+              ? data
+              : ((data as any)?.$values ?? []);
             setDbTeams(arr);
           }
-        } catch { }
+        } catch {}
       }
 
       // Pre-load standings for all leagues in parallel
       loadAllStandings();
 
       // Load cup match count
-      leagueService.getAllMatchesFromDb(3087, 81023)
-        .then(matches => setCupMatchCount(matches.length))
+      leagueService
+        .getAllMatchesFromDb(3087, 81023)
+        .then((matches) => setCupMatchCount(matches.length))
         .catch(() => {});
-
     } catch {
-      toast.error('Không thể tải dữ liệu');
+      toast.error("Không thể tải dữ liệu");
     } finally {
       setIsLoading(false);
     }
@@ -134,7 +166,9 @@ export default function LeaguesPage() {
             <div className="flex items-center justify-center py-12 mb-16">
               <div className="text-center">
                 <div className="w-12 h-12 border-4 border-[#00D9FF] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                <p className="text-slate-600 dark:text-[#A8A29E]">Đang tải dữ liệu...</p>
+                <p className="text-slate-600 dark:text-[#A8A29E]">
+                  Đang tải dữ liệu...
+                </p>
               </div>
             </div>
           ) : (
@@ -143,89 +177,110 @@ export default function LeaguesPage() {
                 const tournamentId = league.apiLeagueId;
                 const logoUrl = sofaTournamentLogo(tournamentId);
                 // Season label from STANDINGS_LEAGUES config
-                const seasonCfg = STANDINGS_LEAGUES.find(l => l.tournamentId === tournamentId);
+                const seasonCfg = STANDINGS_LEAGUES.find(
+                  (l) => l.tournamentId === tournamentId,
+                );
                 return (
-                <motion.div
-                  key={league.leagueId}
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                >
-                  <Link
-                    to={`/leagues/${tournamentId}`}
-                    className="block group glass-card rounded-2xl p-8 hover:translate-y-[-4px] hover:shadow-xl transition-all duration-300 h-full border border-transparent hover:border-[#FF4444]/20"
+                  <motion.div
+                    key={league.leagueId}
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: index * 0.1 }}
                   >
-                    <div className="flex items-start justify-between mb-6">
-                      <div className="w-16 h-16 rounded-2xl flex items-center justify-center overflow-hidden bg-gradient-to-br from-red-200 dark:from-[#FF4444]/20 to-blue-200 dark:to-[#00D9FF]/20">
-                        <img
-                          src={logoUrl}
-                          alt={league.leagueName}
-                          className="w-12 h-12 object-contain"
-                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                        />
-                      </div>
-                      <span className="px-4 py-1.5 rounded-full bg-blue-100 dark:bg-[#00D9FF]/10 text-[#00D9FF] text-sm font-label font-semibold">
-                        {seasonCfg ? '25/26' : '25/26'}
-                      </span>
-                    </div>
-
-                    <h3 className="font-display font-bold text-2xl mb-2 text-slate-900 dark:text-foreground group-hover:text-[#FF4444] transition-colors">
-                      {league.leagueName}
-                    </h3>
-                    <p className="text-slate-600 dark:text-[#A8A29E] mb-6">Việt Nam</p>
-
-                    <div className="grid grid-cols-2 gap-4 pt-6 border-t border-slate-200 dark:border-white/5">
-                      {tournamentId !== 3087 ? (
-                        <>
-                          <div>
-                            <div className="flex items-center gap-2 mb-1">
-                              <Users className="w-4 h-4 text-slate-600 dark:text-[#A8A29E]" />
-                              <span className="font-mono-data text-xl font-bold text-slate-900 dark:text-foreground">
-                                {standingsData[tournamentId]?.length ||
-                                  dbTeams.filter(t => t.leagueId === league.leagueId).length || '-'}
-                              </span>
-                            </div>
-                            <p className="text-xs text-slate-600 dark:text-[#A8A29E]">Đội</p>
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2 mb-1">
-                              <Calendar className="w-4 h-4 text-slate-600 dark:text-[#A8A29E]" />
-                              <span className="font-mono-data text-xl font-bold text-slate-900 dark:text-foreground">
-                                {(() => {
-                                  const rows = standingsData[tournamentId];
-                                  if (rows && rows.length > 0) {
-                                    const total = rows.reduce((sum, r) => sum + r.matches, 0) / 2;
-                                    return Math.round(total);
-                                  }
-                                  return '-';
-                                })()}
-                              </span>
-                            </div>
-                            <p className="text-xs text-slate-600 dark:text-[#A8A29E]">Trận đấu</p>
-                          </div>
-                        </>
-                      ) : (
-                        <div className="col-span-2 flex flex-col gap-3">
-                          <div className="flex flex-wrap gap-2">
-                            <span className="px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 text-xs font-semibold">
-                              🏆 Knockout
-                            </span>
-                            <div className="flex items-center gap-2">
-                              <Calendar className="w-4 h-4 text-slate-600 dark:text-[#A8A29E]" />
-                              <span className="font-mono-data text-xl font-bold text-slate-900 dark:text-foreground">
-                                {cupMatchCount ?? '-'}
-                              </span>
-                              <p className="text-xs text-slate-600 dark:text-[#A8A29E]">Trận đấu</p>
-                            </div>
-                          </div>
-                          <p className="text-xs text-slate-500 dark:text-[#A8A29E] leading-relaxed">
-                            Cúp Quốc gia Việt Nam — giải đấu cúp theo thể thức loại trực tiếp dành cho các CLB chuyên nghiệp.
-                          </p>
+                    <Link
+                      to={`/leagues/${tournamentId}`}
+                      className="block group glass-card rounded-2xl p-8 hover:translate-y-[-4px] hover:shadow-xl transition-all duration-300 h-full border border-transparent hover:border-[#FF4444]/20"
+                    >
+                      <div className="flex items-start justify-between mb-6">
+                        <div className="w-16 h-16 rounded-2xl flex items-center justify-center overflow-hidden bg-gradient-to-br from-red-200 dark:from-[#FF4444]/20 to-blue-200 dark:to-[#00D9FF]/20">
+                          <img
+                            src={logoUrl}
+                            alt={league.leagueName}
+                            className="w-12 h-12 object-contain"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display =
+                                "none";
+                            }}
+                          />
                         </div>
-                      )}
-                    </div>
-                  </Link>
-                </motion.div>
+                        <span className="px-4 py-1.5 rounded-full bg-blue-100 dark:bg-[#00D9FF]/10 text-[#00D9FF] text-sm font-label font-semibold">
+                          {seasonCfg ? "25/26" : "25/26"}
+                        </span>
+                      </div>
+
+                      <h3 className="font-display font-bold text-2xl mb-2 text-slate-900 dark:text-foreground group-hover:text-[#FF4444] transition-colors">
+                        {league.leagueName}
+                      </h3>
+                      <p className="text-slate-600 dark:text-[#A8A29E] mb-6">
+                        Việt Nam
+                      </p>
+
+                      <div className="grid grid-cols-2 gap-4 pt-6 border-t border-slate-200 dark:border-white/5">
+                        {tournamentId !== 3087 ? (
+                          <>
+                            <div>
+                              <div className="flex items-center gap-2 mb-1">
+                                <Users className="w-4 h-4 text-slate-600 dark:text-[#A8A29E]" />
+                                <span className="font-mono-data text-xl font-bold text-slate-900 dark:text-foreground">
+                                  {standingsData[tournamentId]?.length ||
+                                    dbTeams.filter(
+                                      (t) => t.leagueId === league.leagueId,
+                                    ).length ||
+                                    "-"}
+                                </span>
+                              </div>
+                              <p className="text-xs text-slate-600 dark:text-[#A8A29E]">
+                                Đội
+                              </p>
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2 mb-1">
+                                <Calendar className="w-4 h-4 text-slate-600 dark:text-[#A8A29E]" />
+                                <span className="font-mono-data text-xl font-bold text-slate-900 dark:text-foreground">
+                                  {(() => {
+                                    const rows = standingsData[tournamentId];
+                                    if (rows && rows.length > 0) {
+                                      const total =
+                                        rows.reduce(
+                                          (sum, r) => sum + r.matches,
+                                          0,
+                                        ) / 2;
+                                      return Math.round(total);
+                                    }
+                                    return "-";
+                                  })()}
+                                </span>
+                              </div>
+                              <p className="text-xs text-slate-600 dark:text-[#A8A29E]">
+                                Trận đấu
+                              </p>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="col-span-2 flex flex-col gap-3">
+                            <div className="flex flex-wrap gap-2">
+                              <span className="px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 text-xs font-semibold">
+                                🏆 Knockout
+                              </span>
+                              <div className="flex items-center gap-2">
+                                <Calendar className="w-4 h-4 text-slate-600 dark:text-[#A8A29E]" />
+                                <span className="font-mono-data text-xl font-bold text-slate-900 dark:text-foreground">
+                                  {cupMatchCount ?? "-"}
+                                </span>
+                                <p className="text-xs text-slate-600 dark:text-[#A8A29E]">
+                                  Trận đấu
+                                </p>
+                              </div>
+                            </div>
+                            <p className="text-xs text-slate-500 dark:text-[#A8A29E] leading-relaxed">
+                              Cúp Quốc gia Việt Nam — giải đấu cúp theo thể thức
+                              loại trực tiếp dành cho các CLB chuyên nghiệp.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </Link>
+                  </motion.div>
                 );
               })}
             </div>
@@ -250,7 +305,9 @@ export default function LeaguesPage() {
                     <h2 className="font-display font-extrabold text-2xl text-slate-900 dark:text-foreground">
                       Bảng xếp hạng
                     </h2>
-                    <p className="text-sm text-slate-500 dark:text-[#A8A29E]">Mùa giải 25/26</p>
+                    <p className="text-sm text-slate-500 dark:text-[#A8A29E]">
+                      Mùa giải 25/26
+                    </p>
                   </div>
                 </div>
                 <span className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-blue-500 to-[#00D9FF] text-white text-sm font-bold shadow">
@@ -265,10 +322,10 @@ export default function LeaguesPage() {
                     key={league.tournamentId}
                     onClick={() => setActiveStandingsIndex(index)}
                     className={cn(
-                      'px-4 py-2.5 text-sm font-semibold transition-colors relative whitespace-nowrap',
+                      "px-4 py-2.5 text-sm font-semibold transition-colors relative whitespace-nowrap",
                       activeStandingsIndex === index
-                        ? 'text-[#FF4444]'
-                        : 'text-slate-500 dark:text-[#A8A29E] hover:text-slate-900 dark:hover:text-foreground'
+                        ? "text-[#FF4444]"
+                        : "text-slate-500 dark:text-[#A8A29E] hover:text-slate-900 dark:hover:text-foreground",
                     )}
                   >
                     {league.name}
@@ -290,7 +347,7 @@ export default function LeaguesPage() {
               ) : standingsError || currentRows.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 text-slate-500 dark:text-[#A8A29E]">
                   <Trophy className="w-12 h-12 mb-3 opacity-30" />
-                  <p>{standingsError || 'Chưa có dữ liệu bảng xếp hạng'}</p>
+                  <p>{standingsError || "Chưa có dữ liệu bảng xếp hạng"}</p>
                 </div>
               ) : (
                 <motion.div
@@ -303,12 +360,24 @@ export default function LeaguesPage() {
                     <table className="w-full">
                       <thead>
                         <tr className="border-b-2 border-slate-300 dark:border-white/10">
-                          {['#', 'ĐỘI', 'P', 'T', 'H', 'B', 'BT', 'BB', 'HS', 'Đ', '5 TRẬN'].map((h) => (
+                          {[
+                            "#",
+                            "ĐỘI",
+                            "P",
+                            "T",
+                            "H",
+                            "B",
+                            "BT",
+                            "BB",
+                            "HS",
+                            "Đ",
+                            "5 TRẬN",
+                          ].map((h) => (
                             <th
                               key={h}
                               className={cn(
-                                'py-4 px-3 font-label text-xs text-slate-700 dark:text-[#A8A29E] uppercase tracking-wider font-bold',
-                                h === 'ĐỘI' ? 'text-left' : 'text-center'
+                                "py-4 px-3 font-label text-xs text-slate-700 dark:text-[#A8A29E] uppercase tracking-wider font-bold",
+                                h === "ĐỘI" ? "text-left" : "text-center",
                               )}
                             >
                               {h}
@@ -328,37 +397,63 @@ export default function LeaguesPage() {
                               key={row.id}
                               initial={{ opacity: 0, x: -16 }}
                               animate={{ opacity: 1, x: 0 }}
-                              transition={{ duration: 0.25, delay: index * 0.025 }}
+                              transition={{
+                                duration: 0.25,
+                                delay: index * 0.025,
+                              }}
                               className={cn(
-                                'border-b border-slate-200 dark:border-white/5 transition-colors',
-                                isTop && 'bg-green-50 dark:bg-green-500/5 hover:bg-green-100 dark:hover:bg-green-500/10',
-                                isRel && 'bg-red-50 dark:bg-red-500/5 hover:bg-red-100 dark:hover:bg-red-500/10',
-                                !isTop && !isRel && 'hover:bg-slate-50 dark:hover:bg-white/5'
+                                "border-b border-slate-200 dark:border-white/5 transition-colors",
+                                isTop &&
+                                  "bg-green-50 dark:bg-green-500/5 hover:bg-green-100 dark:hover:bg-green-500/10",
+                                isRel &&
+                                  "bg-red-50 dark:bg-red-500/5 hover:bg-red-100 dark:hover:bg-red-500/10",
+                                !isTop &&
+                                  !isRel &&
+                                  "hover:bg-slate-50 dark:hover:bg-white/5",
                               )}
                             >
                               <td className="py-3 px-3">
                                 <div className="flex items-center gap-1.5">
-                                  <span className={cn(
-                                    'font-mono-data font-bold text-sm',
-                                    isTop && 'text-green-600 dark:text-green-400',
-                                    isRel && 'text-red-600 dark:text-red-400',
-                                    !isTop && !isRel && 'text-slate-700 dark:text-slate-400'
-                                  )}>
+                                  <span
+                                    className={cn(
+                                      "font-mono-data font-bold text-sm",
+                                      isTop &&
+                                        "text-green-600 dark:text-green-400",
+                                      isRel && "text-red-600 dark:text-red-400",
+                                      !isTop &&
+                                        !isRel &&
+                                        "text-slate-700 dark:text-slate-400",
+                                    )}
+                                  >
                                     {pos}
                                   </span>
-                                  {isTop && <TrendingUp className="w-3.5 h-3.5 text-green-500" />}
-                                  {isRel && <TrendingDown className="w-3.5 h-3.5 text-red-500" />}
+                                  {isTop && (
+                                    <TrendingUp className="w-3.5 h-3.5 text-green-500" />
+                                  )}
+                                  {isRel && (
+                                    <TrendingDown className="w-3.5 h-3.5 text-red-500" />
+                                  )}
                                 </div>
                               </td>
                               <td className="py-3 px-3">
                                 <div className="flex items-center gap-2">
                                   {(() => {
-                                    const dbId = row.team.dbTeamId || getDbTeamId(row.team.id);
+                                    const dbId =
+                                      row.team.dbTeamId ||
+                                      getDbTeamId(row.team.id);
                                     const inner = (
                                       <>
                                         {row.team.logo ? (
-                                          <img src={row.team.logo} alt={row.team.name} className="w-7 h-7 object-contain rounded"
-                                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                          <img
+                                            src={row.team.logo}
+                                            alt={row.team.name}
+                                            className="w-7 h-7 object-contain rounded"
+                                            onError={(e) => {
+                                              (
+                                                e.target as HTMLImageElement
+                                              ).style.display = "none";
+                                            }}
+                                          />
                                         ) : (
                                           <div className="w-7 h-7 rounded bg-slate-200 dark:bg-white/10 flex items-center justify-center text-xs font-bold">
                                             {row.team.name.charAt(0)}
@@ -369,23 +464,48 @@ export default function LeaguesPage() {
                                         </span>
                                       </>
                                     );
-                                    return dbId
-                                      ? <Link to={`/teams/${dbId}`} className="flex items-center gap-2">{inner}</Link>
-                                      : <div className="flex items-center gap-2">{inner}</div>;
+                                    return dbId ? (
+                                      <Link
+                                        to={`/teams/${dbId}`}
+                                        className="flex items-center gap-2"
+                                      >
+                                        {inner}
+                                      </Link>
+                                    ) : (
+                                      <div className="flex items-center gap-2">
+                                        {inner}
+                                      </div>
+                                    );
                                   })()}
                                 </div>
                               </td>
-                              {[row.matches, row.wins, row.draws, row.losses, row.scoresFor, row.scoresAgainst].map((val, i) => (
+                              {[
+                                row.matches,
+                                row.wins,
+                                row.draws,
+                                row.losses,
+                                row.scoresFor,
+                                row.scoresAgainst,
+                              ].map((val, i) => (
                                 <td key={i} className="py-3 px-3 text-center">
-                                  <span className="font-mono-data text-sm text-slate-700 dark:text-slate-400">{val}</span>
+                                  <span className="font-mono-data text-sm text-slate-700 dark:text-slate-400">
+                                    {val}
+                                  </span>
                                 </td>
                               ))}
                               <td className="py-3 px-3 text-center">
-                                <span className={cn(
-                                  'font-mono-data text-sm font-semibold',
-                                  gd > 0 ? 'text-green-600 dark:text-green-400' : gd < 0 ? 'text-red-600 dark:text-red-400' : 'text-slate-700 dark:text-slate-400'
-                                )}>
-                                  {gd > 0 ? '+' : ''}{gd}
+                                <span
+                                  className={cn(
+                                    "font-mono-data text-sm font-semibold",
+                                    gd > 0
+                                      ? "text-green-600 dark:text-green-400"
+                                      : gd < 0
+                                        ? "text-red-600 dark:text-red-400"
+                                        : "text-slate-700 dark:text-slate-400",
+                                  )}
+                                >
+                                  {gd > 0 ? "+" : ""}
+                                  {gd}
                                 </span>
                               </td>
                               <td className="py-3 px-3 text-center">
@@ -394,9 +514,16 @@ export default function LeaguesPage() {
                                 </span>
                               </td>
                               <td className="py-3 px-3">
-                                {row.team.id > 0
-                                  ? <FormCell teamId={row.team.id} teamName={row.team.name} />
-                                  : <span className="text-xs text-slate-400">-</span>}
+                                {row.team.id > 0 ? (
+                                  <FormCell
+                                    teamId={row.team.id}
+                                    teamName={row.team.name}
+                                  />
+                                ) : (
+                                  <span className="text-xs text-slate-400">
+                                    -
+                                  </span>
+                                )}
                               </td>
                             </motion.tr>
                           );
@@ -414,7 +541,10 @@ export default function LeaguesPage() {
                       <TrendingDown className="w-3.5 h-3.5 text-red-500" />
                       <span>Xuống hạng</span>
                     </div>
-                    <span className="ml-auto">P: Trận | T: Thắng | H: Hòa | B: Thua | BT/BB: Bàn thắng/thua | HS: Hiệu số | Đ: Điểm</span>
+                    <span className="ml-auto">
+                      P: Trận | T: Thắng | H: Hòa | B: Thua | BT/BB: Bàn
+                      thắng/thua | HS: Hiệu số | Đ: Điểm
+                    </span>
                   </div>
                 </motion.div>
               )}

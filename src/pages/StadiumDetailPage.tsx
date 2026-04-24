@@ -89,16 +89,15 @@ export default function StadiumDetailPage() {
             Promise.allSettled(sofaIds.map((id: number) => leagueService.getTeamNextMatches(id, 0))),
             Promise.allSettled(sofaIds.map((id: number) => leagueService.getTeamLastMatches(id, 0))),
           ]);
-          const ALLOWED = new Set([626, 771, 3087]);
           const sofaIdsSet = new Set(sofaIds);
           const upcoming = upcomingResults
             .flatMap(r => r.status === 'fulfilled' ? r.value : [])
-            .filter((m: any) => ALLOWED.has(m?.tournament?.uniqueTournament?.id) && sofaIdsSet.has(m?.homeTeam?.id))
+            .filter((m: any) => sofaIdsSet.has(m?.homeTeam?.id))
             .sort((a: any, b: any) => a.startTimestamp - b.startTimestamp)
             .slice(0, 5);
           const recent = recentResults
             .flatMap(r => r.status === 'fulfilled' ? r.value : [])
-            .filter((m: any) => ALLOWED.has(m?.tournament?.uniqueTournament?.id) && sofaIdsSet.has(m?.homeTeam?.id))
+            .filter((m: any) => sofaIdsSet.has(m?.homeTeam?.id))
             .sort((a: any, b: any) => b.startTimestamp - a.startTimestamp)
             .slice(0, 5);
           // Deduplicate by id
