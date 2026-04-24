@@ -9,15 +9,20 @@
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '';
 
-// Direct Sofascore URLs — browser load được, server thì không
+// Trên localhost dùng direct URL (không bị block), trên production dùng Vercel proxy
+const isDev = import.meta.env.DEV;
+const sofaBase = isDev
+  ? 'https://api.sofascore.app/api/v1'
+  : '/sofascore-proxy';
+
 export const sofaTeamLogo = (apiTeamId: number | string) =>
-  `https://api.sofascore.app/api/v1/team/${apiTeamId}/image`;
+  `${sofaBase}/team/${apiTeamId}/image`;
 
 export const sofaPlayerPhoto = (apiPlayerId: number | string) =>
-  `https://api.sofascore.app/api/v1/player/${apiPlayerId}/image`;
+  `${sofaBase}/player/${apiPlayerId}/image`;
 
 export const sofaTournamentLogo = (uniqueTournamentId: number | string, theme: 'dark' | 'light' = 'dark') =>
-  `https://api.sofascore.app/api/v1/unique-tournament/${uniqueTournamentId}/image/${theme}`;
+  `${sofaBase}/unique-tournament/${uniqueTournamentId}/image/${theme}`;
 
 // Track which IDs are being cached to avoid duplicate requests
 const cachingInProgress = new Set<string>();
@@ -37,6 +42,7 @@ async function cacheToBackend(type: string, id: string, theme?: string) {
       type === 'player' ? sofaPlayerPhoto(id) :
       sofaTournamentLogo(id, (theme ?? 'dark') as 'dark' | 'light');
 
+    // Dùng no-referrer để tránh bị block khi fetch lại
     const res = await fetch(url, { referrerPolicy: 'no-referrer' });
     if (!res.ok) return;
 
