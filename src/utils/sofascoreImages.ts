@@ -71,9 +71,49 @@ export function cacheSofaImage(type: 'team' | 'player' | 'tournament', id: numbe
 }
 
 /**
- * Global setup — không cần thiết nữa vì đã dùng direct URL,
- * nhưng giữ lại để không break import trong main.tsx.
+ * Global setup — observe DOM để tự động cache ảnh Sofascore lên Cloudinary
+ * khi bất kỳ <img src="https://api.sofascore.app/..."> nào được render.
  */
 export function setupSofascoreImageFallback() {
-  // no-op: direct Sofascore URLs không cần fallback handler
+  if (typeof window === 'undefined') return;
+
+  const SOFA_PATTERN = /api\.sofascore\.app\/api\/v1\/(team|player|unique-tournament)\/(\d+)\/image(?:\/(dark|light))?/;
+
+  function tryCache(img: HTMLImageElement) {
+    const src = img.src;
+    const m = src.match(SOFA_PATTERN);
+    if (!m) return;
+    const rawType = m[1];
+    const id = m[2];
+    const theme = m[3] as 'dark' | 'light' | undefined;
+    const type = rawType === 'unique-tournament' ? 'tournament' : rawType as 'team' | 'player';
+    cacheSofaImage(type, id, theme);
+  }
+
+  // Cache ảnh đã có sẵn trên DOM
+  function scanExisting() {
+    document.querySelectorAll<HTMLImageElement>('img[src*="sofascore"]').forEach(tryCache);
+  }
+
+  // Observe DOM changes để cache ảnh mới được thêm vào
+  const observer = new MutationObserver((mutations) => {
+    for (const mutation of mutations) {
+      for (const node of mutation.addedNodes) {
+        if (node instanceof HTMLImageElement && node.src.includes('sofascore')) {
+          tryCache(node);
+        } else if (node instanceof Element) {
+          node.querySelectorAll<HTMLImageElement>('img[src*="sofascore"]').forEach(tryCache);
+        }
+      }
+    }
+  });
+
+  observer.observe(document.body, { childList: true, subtree: true });
+
+  // Scan sau khi trang load xong
+  if (document.readyState === 'complete') {
+    scanExisting();
+  } else {
+    window.addEventListener('load', scanExisting);
+  }
 }
