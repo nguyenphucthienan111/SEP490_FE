@@ -101,8 +101,38 @@ export default function StadiumDetailPage() {
             .sort((a: any, b: any) => b.startTimestamp - a.startTimestamp)
             .slice(0, 5);
           // Deduplicate by id
-          setUpcomingMatches([...new Map(upcoming.map((m: any) => [m.id, m])).values()]);
-          setRecentMatches([...new Map(recent.map((m: any) => [m.id, m])).values()]);
+          const upcomingDedup = [...new Map(upcoming.map((m: any) => [m.id, m])).values()];
+          const recentDedup = [...new Map(recent.map((m: any) => [m.id, m])).values()];
+          setUpcomingMatches(upcomingDedup);
+          setRecentMatches(recentDedup);
+
+          // Inject round từ DB
+          const LEAGUES = [
+            { tournamentId: 626, seasonId: 78589 },
+            { tournamentId: 771, seasonId: 80926 },
+            { tournamentId: 3087, seasonId: 81023 },
+          ];
+          Promise.all(LEAGUES.map(l => leagueService.getAllMatchesFromDb(l.tournamentId, l.seasonId).catch(() => [])))
+            .then(results => {
+              const roundMap = new Map<number, number>();
+              results.flat().forEach((m: any) => {
+                if (m.apiFixtureId && m.round) roundMap.set(m.apiFixtureId, Number(m.round));
+              });
+              // Also build dbTeamId map: apiTeamId → teamId
+              const dbTeamIdMap = new Map<number, number>();
+              allTeams.forEach((t: any) => {
+                if (t.apiTeamId && t.teamId) dbTeamIdMap.set(t.apiTeamId, t.teamId);
+              });
+              const inject = (matches: any[]) => matches.map(m => ({
+                ...m,
+                roundInfo: m.roundInfo?.round ? m.roundInfo : (roundMap.has(m.id) ? { round: roundMap.get(m.id) } : m.roundInfo),
+                homeTeam: { ...m.homeTeam, dbTeamId: dbTeamIdMap.get(m.homeTeam?.id) },
+                awayTeam: { ...m.awayTeam, dbTeamId: dbTeamIdMap.get(m.awayTeam?.id) },
+              }));
+              setUpcomingMatches(inject(upcomingDedup));
+              setRecentMatches(inject(recentDedup));
+            })
+            .catch(() => {});
         }
       } else {
         // No team found, try direct stadium endpoint
@@ -342,18 +372,33 @@ export default function StadiumDetailPage() {
               <div className="space-y-3">
                 {upcomingMatches.map((match: any) => {
                   const date = new Date(match.startTimestamp * 1000);
+                  const round = match.roundInfo?.round;
                   return (
-                    <div key={match.id} className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10">
+                    <a key={match.id} href={`/matches/${match.id}`}
+                      className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 hover:border-[#00D9FF]/40 hover:bg-slate-100 dark:hover:bg-white/10 transition-all cursor-pointer">
                       <div className="text-center min-w-[56px]">
                         <p className="text-xs text-slate-500 dark:text-[#A8A29E]">{date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })}</p>
                         <p className="font-mono-data text-sm font-bold text-[#00D9FF]">{date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</p>
+                        {round && <p className="text-[10px] text-slate-400 mt-0.5">Vòng {round}</p>}
                       </div>
                       <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <p className="font-semibold text-sm text-slate-900 dark:text-foreground text-right flex-1 truncate">{match.homeTeam.name}</p>
-                        <span className="text-xs text-slate-400 flex-shrink-0">vs</span>
-                        <p className="font-semibold text-sm text-slate-900 dark:text-foreground text-left flex-1 truncate">{match.awayTeam.name}</p>
+                        <div className="flex items-center gap-1.5 flex-1 justify-end min-w-0">
+                          {match.homeTeam.dbTeamId
+                            ? <Link to={`/teams/${match.homeTeam.dbTeamId}`} onClick={e => e.stopPropagation()} className="font-semibold text-sm text-slate-900 dark:text-foreground truncate hover:text-[#00D9FF] transition-colors">{match.homeTeam.name}</Link>
+                            : <p className="font-semibold text-sm text-slate-900 dark:text-foreground truncate">{match.homeTeam.name}</p>
+                          }
+                          <img src={sofaTeamLogo(match.homeTeam.id)} alt="" className="w-6 h-6 object-contain flex-shrink-0" onError={e => (e.target as HTMLImageElement).style.display='none'} />
+                        </div>
+                        <span className="text-xs text-slate-400 flex-shrink-0 px-1">vs</span>
+                        <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                          <img src={sofaTeamLogo(match.awayTeam.id)} alt="" className="w-6 h-6 object-contain flex-shrink-0" onError={e => (e.target as HTMLImageElement).style.display='none'} />
+                          {match.awayTeam.dbTeamId
+                            ? <Link to={`/teams/${match.awayTeam.dbTeamId}`} onClick={e => e.stopPropagation()} className="font-semibold text-sm text-slate-900 dark:text-foreground truncate hover:text-[#00D9FF] transition-colors">{match.awayTeam.name}</Link>
+                            : <p className="font-semibold text-sm text-slate-900 dark:text-foreground truncate">{match.awayTeam.name}</p>
+                          }
+                        </div>
                       </div>
-                    </div>
+                    </a>
                   );
                 })}
               </div>
@@ -384,13 +429,22 @@ export default function StadiumDetailPage() {
                 {recentMatches.map((match: any) => {
                   const date = new Date(match.startTimestamp * 1000);
                   const finished = match.status?.type === 'finished';
+                  const round = match.roundInfo?.round;
                   return (
-                    <div key={match.id} className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10">
+                    <a key={match.id} href={`/matches/${match.id}`}
+                      className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 hover:border-[#FF4444]/40 hover:bg-slate-100 dark:hover:bg-white/10 transition-all cursor-pointer">
                       <div className="text-center min-w-[56px]">
                         <p className="text-xs text-slate-500 dark:text-[#A8A29E]">{date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: '2-digit' })}</p>
+                        {round && <p className="text-[10px] text-slate-400 mt-0.5">Vòng {round}</p>}
                       </div>
                       <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <p className="font-semibold text-sm text-slate-900 dark:text-foreground text-right flex-1 truncate">{match.homeTeam.name}</p>
+                        <div className="flex items-center gap-1.5 flex-1 justify-end min-w-0">
+                          {match.homeTeam.dbTeamId
+                            ? <Link to={`/teams/${match.homeTeam.dbTeamId}`} onClick={e => e.stopPropagation()} className="font-semibold text-sm text-slate-900 dark:text-foreground truncate hover:text-[#00D9FF] transition-colors">{match.homeTeam.name}</Link>
+                            : <p className="font-semibold text-sm text-slate-900 dark:text-foreground truncate">{match.homeTeam.name}</p>
+                          }
+                          <img src={sofaTeamLogo(match.homeTeam.id)} alt="" className="w-6 h-6 object-contain flex-shrink-0" onError={e => (e.target as HTMLImageElement).style.display='none'} />
+                        </div>
                         {finished ? (
                           <span className="font-mono-data font-bold text-sm text-slate-900 dark:text-foreground flex-shrink-0 px-2">
                             {match.homeScore?.current ?? 0} - {match.awayScore?.current ?? 0}
@@ -398,9 +452,15 @@ export default function StadiumDetailPage() {
                         ) : (
                           <span className="text-xs text-slate-400 flex-shrink-0 px-2">vs</span>
                         )}
-                        <p className="font-semibold text-sm text-slate-900 dark:text-foreground text-left flex-1 truncate">{match.awayTeam.name}</p>
+                        <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                          <img src={sofaTeamLogo(match.awayTeam.id)} alt="" className="w-6 h-6 object-contain flex-shrink-0" onError={e => (e.target as HTMLImageElement).style.display='none'} />
+                          {match.awayTeam.dbTeamId
+                            ? <Link to={`/teams/${match.awayTeam.dbTeamId}`} onClick={e => e.stopPropagation()} className="font-semibold text-sm text-slate-900 dark:text-foreground truncate hover:text-[#00D9FF] transition-colors">{match.awayTeam.name}</Link>
+                            : <p className="font-semibold text-sm text-slate-900 dark:text-foreground truncate">{match.awayTeam.name}</p>
+                          }
+                        </div>
                       </div>
-                    </div>
+                    </a>
                   );
                 })}
               </div>
