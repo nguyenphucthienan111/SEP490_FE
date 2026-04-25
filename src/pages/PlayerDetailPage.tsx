@@ -13,6 +13,57 @@ import { PremiumGate } from '@/components/subscription/PremiumGate';
 import { favoriteService } from '@/services/favoriteService';
 import { authService } from '@/services/authService';
 import { sofaTeamLogo } from '@/utils/sofascoreImages';
+
+// Convert country name → ISO 2-letter code for flag image
+function countryToISO(country: string | null | undefined): string {
+  if (!country) return '';
+  const map: Record<string, string> = {
+    'Vietnam': 'vn', 'Viet Nam': 'vn',
+    'Brazil': 'br', 'Argentina': 'ar', 'France': 'fr',
+    'Spain': 'es', 'Germany': 'de', 'Italy': 'it',
+    'England': 'gb-eng', 'Portugal': 'pt', 'Netherlands': 'nl',
+    'Belgium': 'be', 'Croatia': 'hr', 'Uruguay': 'uy',
+    'Colombia': 'co', 'Mexico': 'mx', 'Japan': 'jp',
+    'South Korea': 'kr', 'Korea Republic': 'kr',
+    'Australia': 'au', 'China': 'cn', 'Thailand': 'th',
+    'Indonesia': 'id', 'Malaysia': 'my', 'Philippines': 'ph',
+    'Cambodia': 'kh', 'Laos': 'la', 'Myanmar': 'mm',
+    'Singapore': 'sg', 'Senegal': 'sn', 'Nigeria': 'ng',
+    'Ghana': 'gh', 'Ivory Coast': 'ci', "Côte d'Ivoire": 'ci',
+    'Morocco': 'ma', 'Egypt': 'eg', 'Cameroon': 'cm',
+    'United States': 'us', 'USA': 'us', 'Canada': 'ca',
+    'Russia': 'ru', 'Ukraine': 'ua', 'Poland': 'pl',
+    'Czech Republic': 'cz', 'Sweden': 'se', 'Denmark': 'dk',
+    'Norway': 'no', 'Switzerland': 'ch', 'Austria': 'at',
+    'Turkey': 'tr', 'Greece': 'gr', 'Serbia': 'rs',
+    'Romania': 'ro', 'Hungary': 'hu', 'Slovakia': 'sk',
+    'Scotland': 'gb-sct', 'Wales': 'gb-wls', 'Ireland': 'ie',
+    'Chile': 'cl', 'Peru': 'pe', 'Ecuador': 'ec',
+    'Paraguay': 'py', 'Bolivia': 'bo', 'Venezuela': 've',
+    'Costa Rica': 'cr', 'Panama': 'pa', 'Honduras': 'hn',
+    'Jamaica': 'jm', 'Saudi Arabia': 'sa', 'Iran': 'ir',
+    'Iraq': 'iq', 'Qatar': 'qa', 'UAE': 'ae', 'Jordan': 'jo',
+    'India': 'in', 'New Zealand': 'nz', 'Finland': 'fi',
+    'Bulgaria': 'bg', 'Slovenia': 'si', 'Albania': 'al',
+    'Montenegro': 'me', 'Belarus': 'by', 'Lithuania': 'lt',
+    'Latvia': 'lv', 'Estonia': 'ee', 'Georgia': 'ge',
+    'Armenia': 'am', 'Azerbaijan': 'az', 'Kazakhstan': 'kz',
+  };
+  return map[country] ?? '';
+}
+
+function FlagIcon({ country, className }: { country: string | null | undefined; className?: string }) {
+  const iso = countryToISO(country);
+  if (!iso) return null;
+  return (
+    <img
+      src={`https://flagcdn.com/w40/${iso}.png`}
+      alt={country ?? ''}
+      className={className ?? 'w-5 h-3.5 object-cover rounded-sm inline-block'}
+      onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+    />
+  );
+}
 import {
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
   ResponsiveContainer, LineChart, Line, BarChart, Bar,
@@ -488,13 +539,19 @@ export default function PlayerDetailPage() {
                   {player && !apiPlayer && <p className="text-sm text-slate-500 dark:text-[#A8A29E] mb-3">{player.team}</p>}
                   <div className="flex flex-wrap gap-x-4 gap-y-1">
                     {([
-                      { label: 'Quốc tịch', value: playerNationality },
-                      playerAge    ? { label: 'Tuổi', value: String(playerAge) }    : null,
-                      playerHeight ? { label: 'Cao',  value: `${playerHeight} cm` } : null,
-                    ] as ({ label: string; value: string | null | undefined } | null)[]).filter(Boolean).map(item => (
+                      { label: 'Quốc tịch', value: playerNationality, isNationality: true },
+                      playerAge    ? { label: 'Tuổi', value: String(playerAge), isNationality: false }    : null,
+                      playerHeight ? { label: 'Cao',  value: `${playerHeight} cm`, isNationality: false } : null,
+                    ] as ({ label: string; value: string | null | undefined; isNationality: boolean } | null)[]).filter(Boolean).map(item => (
                       <div key={item!.label} className="flex items-center gap-1 text-xs">
                         <span className="text-slate-400 dark:text-[#A8A29E]">{item!.label}</span>
-                        <span className="font-semibold text-slate-700 dark:text-foreground">{item!.value || 'N/A'}</span>
+                        {item!.isNationality && item!.value ? (
+                          <span className="font-semibold text-slate-700 dark:text-foreground flex items-center gap-1.5">
+                            <FlagIcon country={item!.value} />
+                          </span>
+                        ) : (
+                          <span className="font-semibold text-slate-700 dark:text-foreground">{item!.value || 'N/A'}</span>
+                        )}
                       </div>
                     ))}
                   </div>

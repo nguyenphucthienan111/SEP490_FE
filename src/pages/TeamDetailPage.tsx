@@ -9,6 +9,51 @@ import { Team, PlayerFromAPI, SofascoreTeamMatch, leagueService } from '@/servic
 import { toast } from 'sonner';
 import { sofaTeamLogo, sofaPlayerPhoto } from '@/utils/sofascoreImages';
 
+function countryToISO(country: string | null | undefined): string {
+  if (!country) return '';
+  const map: Record<string, string> = {
+    'Vietnam': 'vn', 'Viet Nam': 'vn',
+    'Brazil': 'br', 'Argentina': 'ar', 'France': 'fr',
+    'Spain': 'es', 'Germany': 'de', 'Italy': 'it',
+    'England': 'gb-eng', 'Portugal': 'pt', 'Netherlands': 'nl',
+    'Belgium': 'be', 'Croatia': 'hr', 'Uruguay': 'uy',
+    'Colombia': 'co', 'Mexico': 'mx', 'Japan': 'jp',
+    'South Korea': 'kr', 'Korea Republic': 'kr',
+    'Australia': 'au', 'China': 'cn', 'Thailand': 'th',
+    'Indonesia': 'id', 'Malaysia': 'my', 'Philippines': 'ph',
+    'Cambodia': 'kh', 'Laos': 'la', 'Myanmar': 'mm',
+    'Singapore': 'sg', 'Senegal': 'sn', 'Nigeria': 'ng',
+    'Ghana': 'gh', 'Ivory Coast': 'ci', "Côte d'Ivoire": 'ci',
+    'Morocco': 'ma', 'Egypt': 'eg', 'Cameroon': 'cm',
+    'United States': 'us', 'USA': 'us', 'Canada': 'ca',
+    'Russia': 'ru', 'Ukraine': 'ua', 'Poland': 'pl',
+    'Czech Republic': 'cz', 'Sweden': 'se', 'Denmark': 'dk',
+    'Norway': 'no', 'Switzerland': 'ch', 'Austria': 'at',
+    'Turkey': 'tr', 'Greece': 'gr', 'Serbia': 'rs',
+    'Romania': 'ro', 'Hungary': 'hu', 'Slovakia': 'sk',
+    'Scotland': 'gb-sct', 'Wales': 'gb-wls', 'Ireland': 'ie',
+    'Chile': 'cl', 'Peru': 'pe', 'Ecuador': 'ec',
+    'Saudi Arabia': 'sa', 'Iran': 'ir', 'Iraq': 'iq',
+    'Qatar': 'qa', 'UAE': 'ae', 'India': 'in',
+    'Finland': 'fi', 'Bulgaria': 'bg', 'Albania': 'al',
+    'Montenegro': 'me', 'Georgia': 'ge', 'Armenia': 'am',
+  };
+  return map[country] ?? '';
+}
+
+function FlagIcon({ country }: { country: string | null | undefined }) {
+  const iso = countryToISO(country);
+  if (!iso) return null;
+  return (
+    <img
+      src={`https://flagcdn.com/w40/${iso}.png`}
+      alt={country ?? ''}
+      className="w-5 h-3.5 object-cover rounded-sm flex-shrink-0"
+      onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+    />
+  );
+}
+
 const ALLOWED = new Set([626, 771, 3087]);
 const TABS = ['Tổng quan', 'Đội hình', 'Lịch thi đấu', 'Kết quả'] as const;
 type Tab = typeof TABS[number];
@@ -611,13 +656,7 @@ export default function TeamDetailPage() {
                                             {/* Nationality */}
                                             <div className="w-24 flex items-center justify-center flex-shrink-0">
                                               {p.nationality ? (
-                                                <span className={cn('px-2 py-0.5 rounded-md text-xs font-medium text-center',
-                                                  isForeign
-                                                    ? 'bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300'
-                                                    : 'bg-slate-100 text-slate-600 dark:bg-white/5 dark:text-[#A8A29E]'
-                                                )}>
-                                                  {p.nationality}
-                                                </span>
+                                                <FlagIcon country={p.nationality} />
                                               ) : <span className="text-xs text-slate-300 dark:text-white/20">—</span>}
                                             </div>
                                             {/* Height */}
