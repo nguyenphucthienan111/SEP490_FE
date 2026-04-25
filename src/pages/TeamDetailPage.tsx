@@ -83,7 +83,8 @@ function MatchRow({ match, sofaId, dbTeams }: { match: SofascoreTeamMatch; sofaI
   const result = finished ? (my > op ? 'W' : my < op ? 'L' : 'D') : null;
   const date = new Date(match.startTimestamp * 1000);
   const tournament = (match as any).tournament?.uniqueTournament?.name ?? '';
-  const round = (match.roundInfo as any)?.name ?? `Vòng ${match.roundInfo?.round ?? ''}`;
+  const roundNum = match.roundInfo?.round;
+  const round = (match.roundInfo as any)?.name ?? (roundNum ? `Vòng ${roundNum}` : '');
   const oppDbTeamId = dbTeams.find(t => t.apiTeamId === opp.id)?.teamId;
 
   const oppInner = (
@@ -93,7 +94,7 @@ function MatchRow({ match, sofaId, dbTeams }: { match: SofascoreTeamMatch; sofaI
         onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
       <div className="flex-1 min-w-0">
         <p className="font-semibold text-sm text-slate-900 dark:text-foreground truncate group-hover:text-[#00D9FF] transition-colors">{opp.name}</p>
-        <p className="text-xs text-slate-400 dark:text-[#A8A29E] truncate">{isHome ? 'Sân nhà' : 'Sân khách'} · {tournament} · {round}</p>
+        <p className="text-xs text-slate-400 dark:text-[#A8A29E] truncate">{isHome ? 'Sân nhà' : 'Sân khách'}{tournament ? ` · ${tournament}` : ''}{round ? ` · ${round}` : ''}</p>
       </div>
     </>
   );
@@ -290,7 +291,7 @@ export default function TeamDetailPage() {
     setLoading(true);
 
     // Check session cache trước
-    const cacheKey = `team-detail-v2-${teamId}`;
+    const cacheKey = `team-detail-v3-${teamId}`;  // bump version để invalidate cache cũ
     try {
       const cached = sessionStorage.getItem(cacheKey);
       if (cached) {
@@ -338,6 +339,38 @@ export default function TeamDetailPage() {
         .sort((a, b) => b.startTimestamp - a.startTimestamp);
       setRecentMatches(recent);
       setRecentHasMore(r0val.length >= 10);
+
+      // Inject round từ DB vào matches
+      const LEAGUE_TOURNAMENT: Record<number, { tournamentId: number; seasonId: number }> = {
+        1: { tournamentId: 626, seasonId: 78589 },
+        2: { tournamentId: 771, seasonId: 80926 },
+        3: { tournamentId: 3087, seasonId: 81023 },
+      };
+      const mapping = LEAGUE_TOURNAMENT[team.leagueId];
+      if (mapping) {
+        leagueService.getAllMatchesFromDb(mapping.tournamentId, mapping.seasonId)
+          .then((dbMatches: any[]) => {
+            const roundMap = new Map<number, number>();
+            dbMatches.forEach((m: any) => {
+              if (m.apiFixtureId && m.round) roundMap.set(m.apiFixtureId, Number(m.round));
+            });
+            const injectRound = (matches: SofascoreTeamMatch[]) =>
+              matches.map(m => {
+                const r = roundMap.get(m.id);
+                if (r && !m.roundInfo?.round) return { ...m, roundInfo: { round: r } };
+                return m;
+              });
+            const updatedRecent = injectRound(recent);
+            const updatedUpcoming = injectRound(upcoming);
+            setRecentMatches(updatedRecent);
+            setUpcomingMatches(updatedUpcoming);
+            // Update cache với round data mới
+            try {
+              sessionStorage.setItem(cacheKey, JSON.stringify({ team, recent: updatedRecent, upcoming: updatedUpcoming, recentHasMore: r0val.length >= 10 }));
+            } catch (e) {}
+          })
+          .catch(() => {});
+      }
 
       // Lưu cache (không cache players vì hay thay đổi)
       try {
