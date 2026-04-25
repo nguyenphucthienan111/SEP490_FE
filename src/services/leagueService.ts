@@ -479,7 +479,7 @@ export interface SofascoreLeague {
 
 export const leagueService = {
   async getLineups(eventId: number): Promise<MatchLineups> {
-    return await apiClient.get<MatchLineups>(`/api/Sofascore/lineups?eventId=${eventId}`);
+    return await apiClient.get<MatchLineups>(`/api/SofascoreHybrid/match-lineups?apiFixtureId=${eventId}`);
   },
 
   async getPlayerMatchStatistics(eventId: number, playerId: number): Promise<any> {
@@ -494,7 +494,7 @@ export const leagueService = {
   },
 
   async getIncidents(eventId: number): Promise<any> {
-    return await apiClient.get<any>(`/api/Sofascore/incidents?eventId=${eventId}`);
+    return await apiClient.get<any>(`/api/SofascoreHybrid/match-incidents?apiFixtureId=${eventId}`);
   },
 
   async getVietnameseLeagues(): Promise<SofascoreLeague[]> {
