@@ -39,13 +39,17 @@ function buildEntityMap(ctx: any): Map<string, string> {
 
   // Players list from match context
   if (Array.isArray(ctx.players)) {
+    const allNames = ctx.players.map((p: any) => p.fullName?.trim()).filter(Boolean);
     for (const p of ctx.players) {
       if (p.fullName && p.playerId) {
-        map.set(p.fullName.trim(), `/players/${p.playerId}`);
-        // Also add short name (last 2 words) for partial matches like "Đình Bắc"
-        const parts = p.fullName.trim().split(' ');
+        const full = p.fullName.trim();
+        map.set(full, `/players/${p.playerId}`);
+        // Add short name (last 2 words) only if it won't conflict with another full name
+        const parts = full.split(' ');
         if (parts.length >= 3) {
-          map.set(parts.slice(-2).join(' '), `/players/${p.playerId}`);
+          const short = parts.slice(-2).join(' ');
+          const conflictsWithOther = allNames.some((n: string) => n !== full && n.includes(short));
+          if (!conflictsWithOther) map.set(short, `/players/${p.playerId}`);
         }
       }
     }
@@ -56,7 +60,8 @@ function buildEntityMap(ctx: any): Map<string, string> {
   if (ctx.player?.fullName && ctx.player?.playerId) {
     const parts = ctx.player.fullName.trim().split(' ');
     if (parts.length >= 3) {
-      map.set(parts.slice(-2).join(' '), `/players/${ctx.player.playerId}`);
+      const short = parts.slice(-2).join(' ');
+      map.set(short, `/players/${ctx.player.playerId}`);
     }
   }
   addTeam(ctx.player?.teamName, ctx.player?.teamId);
@@ -74,11 +79,17 @@ function applyEntityLinks(html: string, entityMap: Map<string, string>): string 
   let result = html;
   for (const [name, url] of entries) {
     const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    // Use lookahead/lookbehind that works with Unicode Vietnamese characters
-    // Don't match if already inside an <a> tag or HTML attribute
+    // Skip if already wrapped in an <a> tag, and don't match partial inside existing links
     result = result.replace(
-      new RegExp(`(?<!href="|>|[\\w\\u00C0-\\u024F])(${escaped})(?![\\w\\u00C0-\\u024F]|[^<]*>)`, 'g'),
-      `<a href="${url}" class="text-blue-500 dark:text-blue-400 hover:underline font-medium" onclick="event.stopPropagation()">$1</a>`
+      new RegExp(`(?<!href="|>|[\\w\\u00C0-\\u024F\\u1EA0-\\u1EF9])(${escaped})(?![\\w\\u00C0-\\u024F\\u1EA0-\\u1EF9]|[^<]*>|[^<]*</a>)`, 'g'),
+      (match, p1, offset, str) => {
+        // Check if this match is already inside an <a> tag
+        const before = str.slice(0, offset);
+        const openA = (before.match(/<a /g) || []).length;
+        const closeA = (before.match(/<\/a>/g) || []).length;
+        if (openA > closeA) return match; // already inside <a>
+        return `<a href="${url}" class="text-blue-500 dark:text-blue-400 hover:underline font-medium" onclick="event.stopPropagation()">${p1}</a>`;
+      }
     );
   }
   return result;
