@@ -11,6 +11,7 @@ export interface SubscriptionStatus {
   aiVideoCreditsRemaining: number;
   forumPostCreditsRemaining: number;
   aiMatchAnalysisRemaining: number;
+  aiArticleCreditsRemaining: number;
 }
 
 export interface PaymentInfo {
@@ -59,5 +60,9 @@ export const subscriptionService = {
 
   async getMyPayments(): Promise<PaymentInfo[]> {
     return await apiClient.get<PaymentInfo[]>('/api/subscriptions/payments/my');
+  },
+
+  async getDailyAiAnalysisLimit(): Promise<{ limit: number; used: number; remaining: number }> {
+    return await apiClient.get('/api/ai-analysis/daily-limit');
   },
 };

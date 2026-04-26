@@ -99,9 +99,9 @@ export function AIChatBubble() {
     const userId = getUserId();
     if (!userId) return;
 
-    // Load chat limit
-    apiClient.get<{ limit: number; used: number; remaining: number }>('/api/Chat/chat-limit')
-      .then(setChatLimit).catch(() => {});
+    // Chat is now unlimited — no need to fetch chat-limit
+    // apiClient.get<{ limit: number; used: number; remaining: number }>('/api/Chat/chat-limit')
+    //   .then(setChatLimit).catch(() => {});
 
     (async () => {
       try {
@@ -272,13 +272,7 @@ export function AIChatBubble() {
 
             {/* Input */}
             <div className="p-3 border-t border-slate-200 dark:border-white/10">
-              {/* Limit indicator */}
-              {chatLimit && (
-                <div className={`flex items-center justify-between text-xs mb-2 px-1 ${chatLimit.remaining <= 1 ? 'text-red-500' : 'text-slate-400'}`}>
-                  <span>Còn <span className="font-bold">{chatLimit.remaining}</span>/{chatLimit.limit} lượt hôm nay</span>
-                  {chatLimit.remaining === 0 && <a href="/pricing" className="text-[#00D9FF] hover:underline font-medium">Nâng cấp</a>}
-                </div>
-              )}
+              {/* Chat is unlimited — no limit indicator needed */}
               <div className="flex gap-2">
                 <input
                   ref={inputRef}
@@ -286,13 +280,13 @@ export function AIChatBubble() {
                   value={input}
                   onChange={e => setInput(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()}
-                  placeholder={chatLimit?.remaining === 0 ? 'Hết lượt hôm nay...' : 'Hỏi về cầu thủ, trận đấu...'}
-                  disabled={chatLimit?.remaining === 0}
+                  placeholder="Hỏi về cầu thủ, trận đấu..."
+                  disabled={false}
                   className="flex-1 h-9 px-3 rounded-xl bg-slate-100 dark:bg-white/5 text-sm text-foreground placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#00D9FF]/30 border border-slate-200 dark:border-white/10 disabled:opacity-50"
                 />
                 <button
                   onClick={send}
-                  disabled={!input.trim() || loading || chatLimit?.remaining === 0}
+                  disabled={!input.trim() || loading}
                   className="w-9 h-9 rounded-xl bg-[#00D9FF] flex items-center justify-center disabled:opacity-40 hover:bg-[#00E8FF] transition-colors flex-shrink-0"
                 >
                   {loading ? <Loader2 className="w-4 h-4 text-white animate-spin" /> : <Send className="w-4 h-4 text-white" />}

@@ -16,7 +16,62 @@ interface HistoryItem { id: string; analysisType: string; matchId: number; playe
 type AnalysisMode = 'match' | 'player';
 type Step = 'league' | 'season' | 'round' | 'match' | 'player' | 'result';
 
-function renderMarkdown(text: string) {
+// Build a map of entity name → link URL from context object
+function buildEntityMap(ctx: any): Map<string, string> {
+  const map = new Map<string, string>();
+  if (!ctx) return map;
+
+  const addTeam = (name: string, id: number | string) => {
+    if (name && id) map.set(name.trim(), `/teams/${id}`);
+  };
+  const addPlayer = (name: string, id: number | string) => {
+    if (name && id) map.set(name.trim(), `/players/${id}`);
+  };
+
+  // Match context — prefer apiFixtureId for URL
+  const apiFixtureId = ctx.match?.apiFixtureId ?? ctx.apiFixtureId;
+  const matchId = ctx.match?.matchId ?? ctx.matchId;
+  const matchUrlId = apiFixtureId ?? matchId;
+  if (matchUrlId) map.set('__matchUrl__', `/matches/${matchUrlId}`);
+
+  addTeam(ctx.homeTeam?.name, ctx.homeTeam?.teamId);
+  addTeam(ctx.awayTeam?.name, ctx.awayTeam?.teamId);
+
+  // Players list from match context
+  if (Array.isArray(ctx.players)) {
+    for (const p of ctx.players) {
+      if (p.fullName && p.playerId) map.set(p.fullName.trim(), `/players/${p.playerId}`);
+    }
+  }
+
+  // Single player from player-rating context
+  addPlayer(ctx.player?.fullName, ctx.player?.playerId);
+  addTeam(ctx.player?.teamName, ctx.player?.teamId);
+
+  return map;
+}
+
+// Apply entity links to a piece of HTML text
+function applyEntityLinks(html: string, entityMap: Map<string, string>): string {
+  if (entityMap.size === 0) return html;
+  // Sort by length descending to match longer names first
+  const entries = [...entityMap.entries()]
+    .filter(([name]) => !name.startsWith('__'))
+    .sort((a, b) => b[0].length - a[0].length);
+  let result = html;
+  for (const [name, url] of entries) {
+    // Escape special regex chars in name
+    const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // Only replace text nodes (not inside existing tags/attributes)
+    result = result.replace(
+      new RegExp(`(?<!href="|>)\\b(${escaped})\\b(?![^<]*>)`, 'g'),
+      `<a href="${url}" class="text-blue-500 dark:text-blue-400 hover:underline font-medium" onclick="event.stopPropagation()">$1</a>`
+    );
+  }
+  return result;
+}
+
+function renderMarkdown(text: string, entityMap?: Map<string, string>) {
   const sectionIcons: Record<string, string> = {
     'tổng quan': '📋',
     'phân tích chi tiết': '🔍',
@@ -127,14 +182,16 @@ function renderMarkdown(text: string) {
 
   flushTable();
   if (inList) result.push('</ul>');
-  return result.join('\n');
+  const html = result.join('\n');
+  return entityMap && entityMap.size > 0 ? applyEntityLinks(html, entityMap) : html;
 }
 
 const POSITION_MAP: Record<string, string> = { F: 'Tiền đạo', M: 'Tiền vệ', D: 'Hậu vệ', G: 'Thủ môn' };
 
 export function AIMatchAnalysis() {
-  const { isPremium, aiMatchCredits, refresh: refreshSub } = useSubscription();
-  const [creditsRemaining, setCreditsRemaining] = useState<number | null>(null);
+  const { isPremium, dailyAi, refresh: refreshSub } = useSubscription();
+  const [dailyRemaining, setDailyRemaining] = useState<number | null>(null);
+  const [dailyLimit, setDailyLimit] = useState<number | null>(null);
   const [mode, setMode] = useState<AnalysisMode>('match');
 
   // Selection state
@@ -161,6 +218,7 @@ export function AIMatchAnalysis() {
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState('');
   const [resultTitle, setResultTitle] = useState('');
+  const [resultContext, setResultContext] = useState<any>(null);
   const [fromCache, setFromCache] = useState(false);
   const [error, setError] = useState('');
 
@@ -283,8 +341,12 @@ export function AIMatchAnalysis() {
       setResultTitle(mode === 'match'
         ? `${getHomeName(selectedMatch)} vs ${getAwayName(selectedMatch)}`
         : (selectedPlayer?.fullName ?? 'Cầu thủ'));
+      setResultContext(res?.context ?? res?.Context ?? null);
       setFromCache(res?.warning === 'Kết quả từ cache');
-      if (res?.creditsRemaining != null) setCreditsRemaining(res.creditsRemaining);
+      if (res?.dailyUsed != null && res?.dailyLimit != null) {
+        setDailyRemaining(res.dailyLimit - res.dailyUsed);
+        setDailyLimit(res.dailyLimit);
+      }
       refreshSub();
     } catch (e: any) {
       const msg = e.message ?? '';
@@ -294,7 +356,14 @@ export function AIMatchAnalysis() {
     }
   };
 
-  const reset = () => { setResult(''); setResultTitle(''); setError(''); setFromCache(false); };
+  const reset = () => { setResult(''); setResultTitle(''); setResultContext(null); setError(''); setFromCache(false); };
+
+  const resetAll = () => {
+    reset();
+    setSelectedLeague(null); setSelectedSeason(null); setSelectedRound(null);
+    setSelectedMatch(null); setSelectedPlayer(null); setPlayerSearch('');
+    setSeasons([]); setRounds([]); setMatches([]); setPlayers([]);
+  };
 
   const getHomeName = (m: MatchItem) => m.homeTeam?.teamName ?? m.homeTeamName ?? '?';
   const getAwayName = (m: MatchItem) => m.awayTeam?.teamName ?? m.awayTeamName ?? '?';
@@ -354,13 +423,14 @@ export function AIMatchAnalysis() {
       {/* Credit indicator - always visible */}
       {isPremium && (
         <div className={cn('flex items-center justify-between px-4 py-2.5 rounded-xl text-sm',
-          (creditsRemaining ?? aiMatchCredits) <= 3
+          (dailyRemaining ?? dailyAi?.remaining ?? 0) <= 3
             ? 'bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20'
             : 'bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10')}>
-          <span className="text-slate-500 dark:text-slate-400">Lượt AI Phân tích còn lại</span>
-          <span className={cn('font-bold text-base', (creditsRemaining ?? aiMatchCredits) <= 3 ? 'text-red-500' : 'text-[#FF4444]')}>
-            {creditsRemaining ?? aiMatchCredits}
-            {(creditsRemaining ?? aiMatchCredits) <= 3 && <span className="text-xs font-normal ml-1">· <Link to="/pricing" className="underline">Nạp thêm</Link></span>}
+          <span className="text-slate-500 dark:text-slate-400">Lượt AI Phân tích hôm nay</span>
+          <span className={cn('font-bold text-base', (dailyRemaining ?? dailyAi?.remaining ?? 0) <= 3 ? 'text-red-500' : 'text-[#FF4444]')}>
+            {dailyRemaining ?? dailyAi?.remaining ?? 0}
+            <span className="text-xs font-normal text-slate-400">/{dailyLimit ?? dailyAi?.limit ?? 0}</span>
+            {(dailyRemaining ?? dailyAi?.remaining ?? 0) <= 3 && <span className="text-xs font-normal ml-1">· <Link to="/pricing" className="underline">Nâng cấp</Link></span>}
           </span>
         </div>
       )}
@@ -377,19 +447,88 @@ export function AIMatchAnalysis() {
           <Breadcrumb />
           <div className="glass-card rounded-2xl overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-white/5 bg-gradient-to-r from-[#FF4444]/10 to-transparent">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <Sparkles className="w-5 h-5 text-[#FF4444]" />
-                <span className="font-bold text-sm text-foreground">
-                  {`Phân tích: ${resultTitle}`}
-                </span>
+                {/* Match/Player title as clickable link */}
+                {mode === 'match' && selectedMatch ? (
+                  <Link to={`/matches/${selectedMatch.matchId}`}
+                    className="font-bold text-sm text-[#FF4444] hover:underline flex items-center gap-1">
+                    {resultTitle}
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </Link>
+                ) : mode === 'player' && selectedPlayer ? (
+                  <Link to={`/players/${selectedPlayer.playerId}`}
+                    className="font-bold text-sm text-[#FF4444] hover:underline flex items-center gap-1">
+                    {resultTitle}
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </Link>
+                ) : (
+                  <span className="font-bold text-sm text-foreground">{`Phân tích: ${resultTitle}`}</span>
+                )}
                 {fromCache && <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-white/10 text-slate-400">Cache</span>}
               </div>
               <button onClick={reset} className="flex items-center gap-1 text-xs text-slate-400 hover:text-foreground transition-colors">
                 <RefreshCw className="w-3.5 h-3.5" />Phân tích lại
               </button>
             </div>
+
+            {/* Entity chips — quick links to related entities */}
+            {resultContext && (() => {
+              const ctx = resultContext;
+              const entityMap = buildEntityMap(ctx);
+              const chips: { label: string; to: string; color: string }[] = [];
+
+              // Match link — use __matchUrl__ which has apiFixtureId
+              const matchUrl = entityMap.get('__matchUrl__');
+              const home = ctx.homeTeam?.name ?? '';
+              const away = ctx.awayTeam?.name ?? '';
+              if (matchUrl && home && away)
+                chips.push({ label: `⚽ ${home} vs ${away}`, to: matchUrl, color: 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-500/20' });
+
+              // Home team
+              const homeTeamId = ctx.homeTeam?.teamId ?? ctx.match?.homeTeamId;
+              const homeTeamName = ctx.homeTeam?.name ?? ctx.match?.homeTeamName;
+              if (homeTeamId && homeTeamName)
+                chips.push({ label: `🏟️ ${homeTeamName}`, to: `/teams/${homeTeamId}`, color: 'bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 border-green-200 dark:border-green-500/20' });
+
+              // Away team
+              const awayTeamId = ctx.awayTeam?.teamId ?? ctx.match?.awayTeamId;
+              const awayTeamName = ctx.awayTeam?.name ?? ctx.match?.awayTeamName;
+              if (awayTeamId && awayTeamName && awayTeamId !== homeTeamId)
+                chips.push({ label: `🏟️ ${awayTeamName}`, to: `/teams/${awayTeamId}`, color: 'bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 border-green-200 dark:border-green-500/20' });
+
+              // Player (player-rating mode)
+              const playerId = ctx.player?.playerId ?? ctx.playerId;
+              const playerName = ctx.player?.fullName ?? ctx.playerName;
+              if (playerId && playerName)
+                chips.push({ label: `👤 ${playerName}`, to: `/players/${playerId}`, color: 'bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-500/20' });
+
+              if (chips.length === 0) return null;
+              return (
+                <div className="flex flex-wrap gap-2 px-5 py-3 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02]">
+                  {chips.map(c => (
+                    <Link key={c.to} to={c.to}
+                      className={`inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full border transition-opacity hover:opacity-80 ${c.color}`}>
+                      {c.label}
+                      <ChevronRight className="w-3 h-3" />
+                    </Link>
+                  ))}
+                </div>
+              );
+            })()}
+
             <div className="p-5 text-sm text-slate-900 dark:text-foreground leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: renderMarkdown(result) }} />
+              dangerouslySetInnerHTML={{ __html: renderMarkdown(result, buildEntityMap(resultContext)) }} />
+
+            {/* Bottom action bar */}
+            <div className="flex items-center justify-between px-5 py-3 border-t border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02]">
+              <button onClick={reset} className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-foreground transition-colors">
+                <RefreshCw className="w-3.5 h-3.5" />Phân tích lại trận này
+              </button>
+              <button onClick={resetAll} className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#FF4444]/10 text-[#FF4444] hover:bg-[#FF4444]/20 transition-colors">
+                <Sparkles className="w-3.5 h-3.5" />Phân tích trận/cầu thủ khác
+              </button>
+            </div>
           </div>
         </motion.div>
       ) : (
@@ -554,14 +693,14 @@ export function AIMatchAnalysis() {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-end gap-2">
               {/* Credit indicator */}
               {isPremium && (
-                <p className={`text-xs ${(creditsRemaining ?? aiMatchCredits) <= 3 ? 'text-red-500' : 'text-slate-400'}`}>
-                  Còn <span className="font-bold">{creditsRemaining ?? aiMatchCredits}</span> lượt phân tích
+                <p className={`text-xs ${(dailyRemaining ?? dailyAi?.remaining ?? 0) <= 3 ? 'text-red-500' : 'text-slate-400'}`}>
+                  Còn <span className="font-bold">{dailyRemaining ?? dailyAi?.remaining ?? 0}</span>/{dailyLimit ?? dailyAi?.limit ?? 0} lượt hôm nay
                 </p>
               )}
-              <button onClick={analyze} disabled={analyzing || !isPremium || (creditsRemaining ?? aiMatchCredits) <= 0}
+              <button onClick={analyze} disabled={analyzing || !isPremium || (dailyRemaining ?? dailyAi?.remaining ?? 0) <= 0}
                 className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm bg-gradient-to-r from-[#FF4444] to-[#FF6666] text-white disabled:opacity-40 hover:opacity-90 transition-opacity shadow-lg shadow-[#FF4444]/20">
                 {analyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                {analyzing ? 'Đang phân tích...' : !isPremium ? 'Cần Premium' : (creditsRemaining ?? aiMatchCredits) <= 0 ? 'Hết lượt' : mode === 'match' ? 'Phân tích trận đấu' : 'Phân tích cầu thủ'}
+                {analyzing ? 'Đang phân tích...' : !isPremium ? 'Cần Premium' : (dailyRemaining ?? dailyAi?.remaining ?? 0) <= 0 ? 'Hết lượt hôm nay' : mode === 'match' ? 'Phân tích trận đấu' : 'Phân tích cầu thủ'}
               </button>
               {!isPremium && <p className="text-xs text-slate-400"><Link to="/pricing" className="text-[#FF4444] hover:underline font-medium">Nâng cấp Premium</Link> để dùng tính năng này</p>}
             </motion.div>
@@ -599,7 +738,10 @@ export function AIMatchAnalysis() {
                     </button>
                     {expandedId === item.id && (
                       <div className="px-4 pb-4 pt-2 border-t border-slate-100 dark:border-white/5 text-sm text-slate-900 dark:text-foreground leading-relaxed"
-                        dangerouslySetInnerHTML={{ __html: renderMarkdown(item.analysisVi) }} />
+                        dangerouslySetInnerHTML={{ __html: renderMarkdown(item.analysisVi, (() => {
+                          try { return item.contextJson ? buildEntityMap(JSON.parse(item.contextJson)) : undefined; }
+                          catch { return undefined; }
+                        })()) }} />
                     )}
                   </div>
                 ))}

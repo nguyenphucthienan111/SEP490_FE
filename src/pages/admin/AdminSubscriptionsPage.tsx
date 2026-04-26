@@ -72,7 +72,7 @@ const PLAN_NAME_VI: Record<string, string> = {
   QUARTERLY:        'Gói quý',
   TOPUP_AI_VIDEO:   'Nạp AI Video',
   TOPUP_FORUM_POST: 'Nạp bài đăng',
-  TOPUP_AI_MATCH:   'Nạp AI Phân tích',
+  TOPUP_AI_ARTICLE: 'Nạp AI Bài viết',
 };
 
 // ─── Stat card ────────────────────────────────────────────────────────────────
@@ -472,7 +472,7 @@ export default function AdminSubscriptionsPage() {
                 <option value="QUARTERLY">Gói Quý</option>
                 <option value="TOPUP_AI_VIDEO">Nạp thêm AI Video</option>
                 <option value="TOPUP_FORUM_POST">Nạp thêm bài đăng</option>
-                <option value="TOPUP_AI_MATCH">Nạp thêm AI Phân tích</option>
+                <option value="TOPUP_AI_ARTICLE">Nạp thêm AI Phân tích bài viết</option>
               </select>
               <div className="flex items-center gap-2 px-3 h-10 rounded-lg bg-card border border-slate-200 dark:border-white/10">
                 <Calendar className="w-4 h-4 text-slate-400 flex-shrink-0" />
