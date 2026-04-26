@@ -168,11 +168,14 @@ function AdminLeaderboardTab({ onReward }: { onReward: () => void }) {
                 ⏳ Chưa trao thưởng
               </span>
             )}
-            <Button onClick={onReward} size="sm"
-              disabled={allZero}
-              className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
-              <Gift className="w-3.5 h-3.5" /> {isRewarded ? 'Trao lại' : 'Trao thưởng'}
-            </Button>
+            {!isRewarded && (
+              <Button onClick={onReward} size="sm"
+                disabled={allZero}
+                title="Chỉ dùng khi job tự động bị lỗi. Hệ thống tự chạy lúc 00:10 mỗi đầu tháng."
+                className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
+                <Gift className="w-3.5 h-3.5" /> Trao thưởng (thủ công)
+              </Button>
+            )}
           </div>
         )}
         {!isPrevMonth && !isCurrentMonth && (
@@ -281,7 +284,7 @@ export default function AdminPredictionsPage() {
       const res = await apiClient.post<any>('/api/admin/leaderboard/predictions/monthly/reward-previous-month');
       setRewardResult(res);
       // Lưu trạng thái đã trao vào localStorage
-      if (!res?.skippedBecauseAlreadyRewarded && res?.rewardedUsers >= 0) {
+      if (res?.rewardedUsers >= 0) {
         const key = `rewarded-${res.year}-${res.month}`;
         localStorage.setItem(key, new Date().toISOString());
       }
@@ -812,7 +815,8 @@ export default function AdminPredictionsPage() {
               </div>
 
               <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-xs text-amber-700 dark:text-amber-400">
-                ⚠️ Thao tác trao thưởng chỉ thực hiện được <strong>một lần</strong> cho mỗi tháng.
+                ⚠️ Thao tác trao thưởng chỉ thực hiện được <strong>một lần</strong> cho mỗi tháng.<br/>
+                <span className="text-slate-500 dark:text-slate-400 mt-1 block">💡 Hệ thống tự động trao thưởng lúc 00:10 đầu tháng. Chỉ dùng nút này khi job tự động bị lỗi.</span>
               </div>
               <div className="flex gap-3 justify-end">
                 <Button variant="outline" onClick={() => setShowRewardDialog(false)}>Hủy</Button>

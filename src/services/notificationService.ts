@@ -54,6 +54,7 @@ export const NOTIFICATION_ICONS: Record<string, string> = {
   checkin_streak:       '🔥',
   points_milestone:     '⭐',
   admin_warning:        '📢',
+  monthly_leaderboard_reward: '🏆',
   new_feature:          '🆕',
   password_changed:     '🔐',
   email_verified:       '✅',
