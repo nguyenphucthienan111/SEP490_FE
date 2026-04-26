@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { AdminLayout } from './AdminLayout';
-import { Plus, Trophy, Star, Target, Award, Crown, Loader2, Check } from 'lucide-react';
+import { Plus, Trophy, Star, Target, Award, Crown, Loader2, Check, Gift } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,6 +9,7 @@ import { contestService, ContestDto, ContestType, CreateContestRequest, TeamPick
 import { leagueService, League, Season } from '@/services/leagueService';
 import { toast } from 'sonner';
 import { sofaTeamLogo, sofaPlayerPhoto } from '@/utils/sofascoreImages';
+import { apiClient } from '@/services/api';
 
 const CONTEST_TYPES: { value: ContestType; label: string; icon: React.ReactNode; desc: string; defaultExact: number; defaultPartial: number }[] = [
   { value: 'TOP4',       label: 'Top 4 vòng đấu', icon: <Trophy className="w-4 h-4" />,  desc: 'Dự đoán 4 đội dẫn đầu theo thứ tự',    defaultExact: 5, defaultPartial: 2 },
@@ -90,10 +91,207 @@ function Top4RankPicker({ rank, teams, selected, otherSelected, onChange, onClea
   );
 }
 
+function AdminLeaderboardTab({ onReward }: { onReward: () => void }) {
+  const now = new Date();
+  const [year, setYear] = useState(now.getFullYear());
+  const [month, setMonth] = useState(now.getMonth() + 1);
+  const [data, setData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const MONTH_NAMES = ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
+
+  const prevMonth = now.getMonth() === 0 ? 12 : now.getMonth();
+  const prevYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+  const isCurrentMonth = year === now.getFullYear() && month === now.getMonth() + 1;
+  const isPrevMonth = year === prevYear && month === prevMonth;
+
+  useEffect(() => {
+    setLoading(true);
+    apiClient.get<any>(`/api/leaderboard/predictions/monthly?year=${year}&month=${month}`)
+      .then(res => setData(res?.rankings ?? []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [year, month]);
+
+  const goBack = () => {
+    if (month === 1) { setMonth(12); setYear(y => y - 1); }
+    else setMonth(m => m - 1);
+  };
+  const goNext = () => {
+    if (isCurrentMonth) return;
+    if (month === 12) { setMonth(1); setYear(y => y + 1); }
+    else setMonth(m => m + 1);
+  };
+
+  const rewardMap: Record<number, { pts: number; color: string }> = {
+    1: { pts: 200, color: 'text-amber-500' },
+    2: { pts: 150, color: 'text-slate-400' },
+    3: { pts: 100, color: 'text-orange-400' },
+  };
+  const medalMap: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' };
+
+  // Check localStorage xem tháng này đã trao chưa
+  const rewardedAt = localStorage.getItem(`rewarded-${year}-${month}`);
+  const isRewarded = !!rewardedAt;
+  const allZero = data.length > 0 && data.every(e => e.totalPoints === 0);
+
+  return (
+    <div className="p-6 space-y-5">
+      {/* Month nav */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <button onClick={goBack} className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-white/5 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-white/10 transition-colors">
+            <span className="text-sm">‹</span>
+          </button>
+          <span className="font-bold text-slate-900 dark:text-white min-w-[130px] text-center">
+            {MONTH_NAMES[month - 1]} {year}
+            {isCurrentMonth && <span className="ml-2 text-xs text-[#00D9FF] font-normal">Tháng này</span>}
+            {isPrevMonth && <span className="ml-2 text-xs text-amber-500 font-normal">Tháng trước</span>}
+          </span>
+          <button onClick={goNext} disabled={isCurrentMonth}
+            className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-white/5 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-white/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
+            <span className="text-sm">›</span>
+          </button>
+        </div>
+        {isPrevMonth && (
+          <div className="flex items-center gap-3">
+            {isRewarded ? (
+              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400 text-xs font-semibold">
+                ✅ Đã trao thưởng · {new Date(rewardedAt!).toLocaleDateString('vi-VN')}
+              </span>
+            ) : allZero ? (
+              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400 text-xs font-semibold">
+                ⚠️ Không có điểm để trao thưởng
+              </span>
+            ) : (
+              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 text-xs font-semibold">
+                ⏳ Chưa trao thưởng
+              </span>
+            )}
+            <Button onClick={onReward} size="sm"
+              disabled={allZero}
+              className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
+              <Gift className="w-3.5 h-3.5" /> {isRewarded ? 'Trao lại' : 'Trao thưởng'}
+            </Button>
+          </div>
+        )}
+        {!isPrevMonth && !isCurrentMonth && (
+          <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold ${
+            isRewarded
+              ? 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400'
+              : allZero
+              ? 'bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400'
+              : 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400'
+          }`}>
+            {isRewarded
+              ? `✅ Đã trao · ${new Date(rewardedAt!).toLocaleDateString('vi-VN')}`
+              : allZero
+              ? '⚠️ Không có điểm để trao thưởng'
+              : '⏳ Chưa trao thưởng'
+            }
+          </span>
+        )}
+      </div>
+
+      {/* Table */}
+      {loading ? (
+        <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-[#00D9FF]" /></div>
+      ) : data.length === 0 ? (
+        <div className="text-center py-12 text-slate-400">Chưa có dữ liệu BXH tháng này.</div>
+      ) : (
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-slate-200 dark:border-white/10">
+              {['#', 'Người dùng', 'Dự đoán trận', 'Dự đoán đặc biệt', 'Tổng điểm', 'Thưởng'].map(h => (
+                <th key={h} className="text-left py-3 px-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+            {data.map(entry => (
+              <tr key={entry.userId} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                <td className="py-3 px-4">
+                  <span className="text-base">{medalMap[entry.rank] ?? <span className="text-xs font-bold text-slate-400">#{entry.rank}</span>}</span>
+                </td>
+                <td className="py-3 px-4">
+                  <div className="flex items-center gap-2">
+                    {entry.avatarUrl
+                      ? <img src={entry.avatarUrl} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+                      : <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-400 to-slate-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">{entry.fullName?.charAt(0)}</div>
+                    }
+                    <div>
+                      <p className="font-semibold text-slate-900 dark:text-white">{entry.fullName}</p>
+                      <p className="text-xs text-slate-400">@{entry.username}</p>
+                    </div>
+                  </div>
+                </td>
+                <td className="py-3 px-4 font-mono-data text-slate-700 dark:text-slate-300">{entry.matchPredictionPoints}đ</td>
+                <td className="py-3 px-4 font-mono-data text-slate-700 dark:text-slate-300">{entry.specialPredictionPoints}đ</td>
+                <td className="py-3 px-4 font-mono-data font-bold text-slate-900 dark:text-white">{entry.totalPoints}đ</td>
+                <td className="py-3 px-4">
+                  {rewardMap[entry.rank]
+                    ? <span className={`font-bold text-sm ${rewardMap[entry.rank].color}`}>+{rewardMap[entry.rank].pts} pts</span>
+                    : <span className="text-slate-300 dark:text-white/20 text-xs">—</span>
+                  }
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}
+
 export default function AdminPredictionsPage() {
   const [contests, setContests] = useState<ContestDto[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'active' | 'settled'>('active');
+  const [activeTab, setActiveTab] = useState<'active' | 'settled' | 'leaderboard'>('active');
+  const [rewarding, setRewarding] = useState(false);
+  const [showRewardDialog, setShowRewardDialog] = useState(false);
+  const [rewardResult, setRewardResult] = useState<{ year: number; month: number; rewardedUsers: number; skippedBecauseAlreadyRewarded: boolean } | null>(null);
+  const [prevMonthStatus, setPrevMonthStatus] = useState<{ loading: boolean; hasData: boolean; topUser: string | null; year: number; month: number; rankings: any[] } | null>(null);
+
+  const openRewardDialog = async () => {
+    setRewardResult(null);
+    setShowRewardDialog(true);
+    const now = new Date();
+    const prevMonth = now.getMonth() === 0 ? 12 : now.getMonth();
+    const prevYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+    setPrevMonthStatus({ loading: true, hasData: false, topUser: null, year: prevYear, month: prevMonth, rankings: [] });
+    try {
+      const res = await apiClient.get<any>(`/api/leaderboard/predictions/monthly?year=${prevYear}&month=${prevMonth}`);
+      const rankings = res?.rankings ?? [];
+      setPrevMonthStatus({
+        loading: false,
+        hasData: rankings.length > 0,
+        topUser: rankings[0]?.fullName ?? null,
+        year: prevYear,
+        month: prevMonth,
+        rankings,
+      });
+    } catch {
+      setPrevMonthStatus({ loading: false, hasData: false, topUser: null, year: prevYear, month: prevMonth, rankings: [] });
+    }
+  };
+
+  const handleRewardPreviousMonth = async () => {
+    setRewarding(true);
+    try {
+      const res = await apiClient.post<any>('/api/admin/leaderboard/predictions/monthly/reward-previous-month');
+      setRewardResult(res);
+      // Lưu trạng thái đã trao vào localStorage
+      if (!res?.skippedBecauseAlreadyRewarded && res?.rewardedUsers >= 0) {
+        const key = `rewarded-${res.year}-${res.month}`;
+        localStorage.setItem(key, new Date().toISOString());
+      }
+      toast.success('Đã xử lý trao thưởng!');
+    } catch (e: any) {
+      toast.error(e.message || 'Trao thưởng thất bại');
+    } finally {
+      setRewarding(false);
+    }
+  };
 
   // Create modal
   const [showCreate, setShowCreate] = useState(false);
@@ -254,9 +452,17 @@ export default function AdminPredictionsPage() {
             >
               Đã kết thúc ({settled.length})
             </button>
+            <button
+              onClick={() => setActiveTab('leaderboard')}
+              className={`px-6 py-3 text-sm font-semibold transition-colors ${activeTab === 'leaderboard' ? 'border-b-2 border-[#FF4444] text-[#FF4444]' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              🏆 Bảng xếp hạng
+            </button>
           </div>
 
-          {loading ? (
+          {activeTab === 'leaderboard' ? (
+            <AdminLeaderboardTab onReward={openRewardDialog} />
+          ) : loading ? (
             <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-[#00D9FF]" /></div>
           ) : displayed.length === 0 ? (
             <div className="text-center py-12 text-slate-400">Chưa có contest nào.</div>
@@ -538,6 +744,112 @@ export default function AdminPredictionsPage() {
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Reward Dialog */}
+      <Dialog open={showRewardDialog} onOpenChange={setShowRewardDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-lg">
+              <Gift className="w-5 h-5 text-amber-500" />
+              Trao thưởng tháng trước
+            </DialogTitle>
+          </DialogHeader>
+
+          {!rewardResult ? (
+            <div className="space-y-4 pt-2">
+              {/* BXH tháng trước */}
+              <div className="rounded-xl border border-slate-200 dark:border-white/10 overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-3 bg-slate-50 dark:bg-white/5 border-b border-slate-200 dark:border-white/10">
+                  <p className="text-sm font-bold text-slate-700 dark:text-white">
+                    BXH Tháng {prevMonthStatus?.month}/{prevMonthStatus?.year}
+                  </p>
+                  {!prevMonthStatus?.loading && (
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${prevMonthStatus?.hasData ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400' : 'bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-slate-400'}`}>
+                      {prevMonthStatus?.hasData ? `${prevMonthStatus.rankings.length} người` : 'Chưa có data'}
+                    </span>
+                  )}
+                </div>
+                {prevMonthStatus?.loading ? (
+                  <div className="flex items-center justify-center py-8 gap-2 text-slate-400 text-sm">
+                    <Loader2 className="w-4 h-4 animate-spin" /> Đang tải...
+                  </div>
+                ) : !prevMonthStatus?.hasData ? (
+                  <div className="py-6 text-center text-sm text-slate-400">Chưa có dữ liệu BXH tháng này</div>
+                ) : (
+                  <div className="max-h-52 overflow-y-auto divide-y divide-slate-100 dark:divide-white/5">
+                    {prevMonthStatus.rankings.map((entry: any) => {
+                      const medalMap: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' };
+                      const rewardMap: Record<number, number> = { 1: 200, 2: 150, 3: 100 };
+                      return (
+                        <div key={entry.userId} className="flex items-center gap-3 px-4 py-2.5">
+                          <span className="w-7 text-center text-sm flex-shrink-0">
+                            {medalMap[entry.rank] ?? <span className="text-xs text-slate-400 font-bold">#{entry.rank}</span>}
+                          </span>
+                          {entry.avatarUrl
+                            ? <img src={entry.avatarUrl} className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
+                            : <div className="w-7 h-7 rounded-full bg-gradient-to-br from-slate-400 to-slate-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">{entry.fullName?.charAt(0)}</div>
+                          }
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{entry.fullName}</p>
+                            <p className="text-xs text-slate-400">@{entry.username}</p>
+                          </div>
+                          <div className="text-right flex-shrink-0">
+                            <p className="text-sm font-bold text-slate-900 dark:text-white">{entry.totalPoints}đ</p>
+                            {rewardMap[entry.rank] && (
+                              <p className="text-xs text-amber-500 font-semibold">+{rewardMap[entry.rank]} pts</p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-xs text-amber-700 dark:text-amber-400">
+                ⚠️ Thao tác trao thưởng chỉ thực hiện được <strong>một lần</strong> cho mỗi tháng.
+              </div>
+              <div className="flex gap-3 justify-end">
+                <Button variant="outline" onClick={() => setShowRewardDialog(false)}>Hủy</Button>
+                <Button
+                  onClick={handleRewardPreviousMonth}
+                  disabled={rewarding || prevMonthStatus?.loading}
+                  className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold"
+                >
+                  {rewarding ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />Đang xử lý...</> : <><Gift className="w-4 h-4 mr-2" />Xác nhận trao thưởng</>}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4 pt-2">
+              <div className={`p-4 rounded-xl border ${rewardResult.skippedBecauseAlreadyRewarded ? 'bg-yellow-50 dark:bg-yellow-500/10 border-yellow-200 dark:border-yellow-500/20' : 'bg-green-50 dark:bg-green-500/10 border-green-200 dark:border-green-500/20'}`}>
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-2xl">{rewardResult.skippedBecauseAlreadyRewarded ? '⚠️' : '✅'}</span>
+                  <p className="font-semibold text-slate-900 dark:text-white">
+                    {rewardResult.skippedBecauseAlreadyRewarded ? 'Đã trao thưởng trước đó' : 'Trao thưởng thành công!'}
+                  </p>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Tháng xử lý</span>
+                    <span className="font-semibold text-slate-900 dark:text-white">Tháng {rewardResult.month}/{rewardResult.year}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Người được thưởng</span>
+                    <span className="font-bold text-amber-600 dark:text-amber-400 text-base">{rewardResult.rewardedUsers} người</span>
+                  </div>
+                  {rewardResult.skippedBecauseAlreadyRewarded && (
+                    <p className="text-xs text-yellow-700 dark:text-yellow-400 mt-1">Tháng này đã được trao thưởng rồi, không thể thực hiện lại.</p>
+                  )}
+                </div>
+              </div>
+              <div className="flex justify-end">
+                <Button onClick={() => setShowRewardDialog(false)}>Đóng</Button>
               </div>
             </div>
           )}

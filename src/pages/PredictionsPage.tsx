@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, Target, Award, Star, Check, Lock, Clock, Crown, Loader2, Swords, Plus, Minus, User, BarChart2, Flame } from "lucide-react";
+import { Trophy, Target, Award, Star, Check, Lock, Clock, Crown, Loader2, Swords, Plus, Minus, User, BarChart2, Flame, Medal, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { contestService, ContestDto, ContestPickDto, TeamPickerDto, PlayerPickerDto } from "@/services/contestService";
@@ -14,6 +14,7 @@ import { userService } from "@/services/userService";
 import { toast } from "sonner";
 import { DateRangePicker } from "@/components/ui/DateRangePicker";
 import { sofaTeamLogo, sofaPlayerPhoto } from "@/utils/sofascoreImages";
+import { apiClient } from "@/services/api";
 
 const LEAGUES_CONFIG = [
   { tournamentId: 626, seasonId: 78589, name: "V-League 1" },
@@ -66,8 +67,213 @@ function toVNDateStr(iso: string): string {
 
 type MatchWithDbId = SofascoreTeamMatch & { _leagueName?: string; _dbMatchId?: number };
 
+interface LeaderboardEntry {
+  rank: number;
+  userId: string;
+  username: string;
+  fullName: string;
+  avatarUrl: string | null;
+  matchPredictionPoints: number;
+  specialPredictionPoints: number;
+  totalPoints: number;
+}
+
+function LeaderboardTab() {
+  const now = new Date();
+  const [year, setYear] = useState(now.getFullYear());
+  const [month, setMonth] = useState(now.getMonth() + 1);
+  const [data, setData] = useState<LeaderboardEntry[]>([]);
+  const [loading, setLoading] = useState(false);
+  const currentUserId = (authService.getCurrentUser() as any)?.userId ?? (authService.getCurrentUser() as any)?.id;
+
+  const MONTH_NAMES = ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
+
+  useEffect(() => {
+    setLoading(true);
+    apiClient.get<any>(`/api/leaderboard/predictions/monthly?year=${year}&month=${month}`)
+      .then(res => setData((res?.rankings ?? []).slice(0, 10)))
+      .catch(() => toast.error('Không thể tải bảng xếp hạng'))
+      .finally(() => setLoading(false));
+  }, [year, month]);
+
+  const prevMonth = () => {
+    if (month === 1) { setMonth(12); setYear(y => y - 1); }
+    else setMonth(m => m - 1);
+  };
+  const nextMonth = () => {
+    const isCurrentMonth = year === now.getFullYear() && month === now.getMonth() + 1;
+    if (isCurrentMonth) return;
+    if (month === 12) { setMonth(1); setYear(y => y + 1); }
+    else setMonth(m => m + 1);
+  };
+
+  const rankStyle = (rank: number) => {
+    if (rank === 1) return { bg: 'bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/30', badge: 'bg-amber-400 text-white', icon: '🥇' };
+    if (rank === 2) return { bg: 'bg-slate-50 dark:bg-slate-500/10 border-slate-200 dark:border-slate-500/30', badge: 'bg-slate-400 text-white', icon: '🥈' };
+    if (rank === 3) return { bg: 'bg-orange-50 dark:bg-orange-500/10 border-orange-200 dark:border-orange-500/30', badge: 'bg-orange-400 text-white', icon: '🥉' };
+    return { bg: 'bg-white dark:bg-card border-slate-200 dark:border-border', badge: 'bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-400', icon: '' };
+  };
+
+  const isCurrentMonth = year === now.getFullYear() && month === now.getMonth() + 1;
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
+      {/* Info banner */}
+      <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-500/10 dark:to-orange-500/10 border border-amber-200 dark:border-amber-500/20">
+        <div className="flex items-start gap-3">
+          <span className="text-2xl flex-shrink-0">🏆</span>
+          <div className="space-y-1.5 text-sm">
+            <p className="font-semibold text-slate-900 dark:text-white">Bảng xếp hạng dự đoán tháng</p>
+            <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed">
+              Dành cho thành viên gói <span className="font-semibold text-amber-600 dark:text-amber-400">Monthly</span> & <span className="font-semibold text-amber-600 dark:text-amber-400">Quarterly</span>. Điểm được tính từ dự đoán trận đấu + dự đoán đặc biệt trong tháng. Reset về 0 vào đầu tháng mới.
+            </p>
+            <div className="flex flex-wrap gap-3 pt-1">
+              {[
+                { rank: '🥇 Top 1', pts: '+200 điểm', color: 'text-amber-600 dark:text-amber-400' },
+                { rank: '🥈 Top 2', pts: '+150 điểm', color: 'text-slate-500 dark:text-slate-400' },
+                { rank: '🥉 Top 3', pts: '+100 điểm', color: 'text-orange-600 dark:text-orange-400' },
+              ].map(item => (
+                <div key={item.rank} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-white/5 border border-amber-200 dark:border-amber-500/20">
+                  <span className="text-xs font-medium text-slate-700 dark:text-slate-300">{item.rank}</span>
+                  <span className={`text-xs font-bold ${item.color}`}>{item.pts}</span>
+                  <span className="text-[10px] text-slate-400">để đổi item</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+      {/* Month selector */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <button onClick={prevMonth} className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-white/5 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-white/10 transition-colors">
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <span className="font-semibold text-slate-900 dark:text-white min-w-[120px] text-center">
+            {MONTH_NAMES[month - 1]} {year}
+          </span>
+          <button onClick={nextMonth} disabled={isCurrentMonth}
+            className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-white/5 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-white/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="flex items-center gap-2 text-xs text-slate-500">
+          <Trophy className="w-3.5 h-3.5 text-amber-500" />
+          <span>Top dự đoán tháng</span>
+        </div>
+      </div>
+
+      {/* Top 3 podium */}
+      {!loading && data.length >= 3 && (
+        <div className="relative flex items-end justify-center gap-3 pt-6 pb-2">
+          {/* #2 */}
+          <div className="flex flex-col items-center gap-2 flex-1">
+            <div className="relative">
+              {data[1].avatarUrl
+                ? <img src={data[1].avatarUrl} alt={data[1].fullName} className="w-14 h-14 rounded-full object-cover border-3 border-slate-300 shadow-lg" />
+                : <div className="w-14 h-14 rounded-full bg-gradient-to-br from-slate-400 to-slate-500 flex items-center justify-center text-white font-bold text-xl shadow-lg">{data[1].fullName.charAt(0)}</div>
+              }
+              <span className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-slate-400 border-2 border-white dark:border-slate-800 flex items-center justify-center text-white text-xs font-black">2</span>
+            </div>
+            <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate max-w-[80px] text-center">{data[1].fullName}</p>
+            <div className="w-full bg-gradient-to-t from-slate-300 to-slate-200 dark:from-slate-600 dark:to-slate-500 rounded-t-2xl h-20 flex flex-col items-center justify-center gap-1 shadow-inner">
+              <span className="text-2xl">🥈</span>
+              <span className="text-sm font-bold text-slate-700 dark:text-white">{data[1].totalPoints}đ</span>
+            </div>
+          </div>
+
+          {/* #1 */}
+          <div className="flex flex-col items-center gap-2 flex-1 -mt-4">
+            <div className="relative">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 text-xl">👑</div>
+              {data[0].avatarUrl
+                ? <img src={data[0].avatarUrl} alt={data[0].fullName} className="w-18 h-18 rounded-full object-cover border-4 border-amber-400 shadow-xl w-[72px] h-[72px]" />
+                : <div className="w-[72px] h-[72px] rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-bold text-2xl shadow-xl border-4 border-amber-300">{data[0].fullName.charAt(0)}</div>
+              }
+              <span className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-amber-400 border-2 border-white dark:border-slate-800 flex items-center justify-center text-white text-xs font-black">1</span>
+            </div>
+            <p className="text-xs font-bold text-slate-900 dark:text-white truncate max-w-[90px] text-center">{data[0].fullName}</p>
+            <div className="w-full bg-gradient-to-t from-amber-400 to-yellow-300 rounded-t-2xl h-28 flex flex-col items-center justify-center gap-1 shadow-lg shadow-amber-200/50 dark:shadow-amber-500/20">
+              <span className="text-2xl">🥇</span>
+              <span className="text-base font-black text-amber-900">{data[0].totalPoints}đ</span>
+            </div>
+          </div>
+
+          {/* #3 */}
+          <div className="flex flex-col items-center gap-2 flex-1">
+            <div className="relative">
+              {data[2].avatarUrl
+                ? <img src={data[2].avatarUrl} alt={data[2].fullName} className="w-14 h-14 rounded-full object-cover border-3 border-orange-300 shadow-lg" />
+                : <div className="w-14 h-14 rounded-full bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center text-white font-bold text-xl shadow-lg">{data[2].fullName.charAt(0)}</div>
+              }
+              <span className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-orange-400 border-2 border-white dark:border-slate-800 flex items-center justify-center text-white text-xs font-black">3</span>
+            </div>
+            <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate max-w-[80px] text-center">{data[2].fullName}</p>
+            <div className="w-full bg-gradient-to-t from-orange-400 to-orange-300 rounded-t-2xl h-14 flex flex-col items-center justify-center gap-1 shadow-inner">
+              <span className="text-2xl">🥉</span>
+              <span className="text-sm font-bold text-orange-900">{data[2].totalPoints}đ</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Full list */}
+      {loading ? (
+        <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-[#00D9FF]" /></div>
+      ) : data.length === 0 ? (
+        <div className="text-center py-16 text-slate-500">Chưa có dữ liệu tháng này.</div>
+      ) : (
+        <div className="space-y-2">
+          {data.map((entry, i) => {
+            const style = rankStyle(entry.rank);
+            const isMe = entry.userId === currentUserId;
+            return (
+              <motion.div key={entry.userId} initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.03 }}
+                className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${style.bg} ${isMe ? 'ring-2 ring-[#00D9FF]/50' : ''}`}>
+                {/* Rank */}
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold flex-shrink-0 ${style.badge}`}>
+                  {entry.rank <= 3 ? style.icon : `#${entry.rank}`}
+                </div>
+                {/* Avatar */}
+                {entry.avatarUrl
+                  ? <img src={entry.avatarUrl} alt={entry.fullName} className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
+                  : <div className="w-9 h-9 rounded-full bg-gradient-to-br from-slate-400 to-slate-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                      {entry.fullName.charAt(0)}
+                    </div>
+                }
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{entry.fullName}</p>
+                    {isMe && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#00D9FF]/20 text-[#00D9FF] font-semibold flex-shrink-0">Bạn</span>}
+                  </div>
+                  <p className="text-xs text-slate-400">@{entry.username}</p>
+                </div>
+                {/* Points breakdown */}
+                <div className="text-right flex-shrink-0">
+                  <p className="font-bold text-base text-slate-900 dark:text-white">{entry.totalPoints}<span className="text-xs font-normal text-slate-400 ml-0.5">đ</span></p>
+                  <div className="flex items-center gap-2 text-[10px] text-slate-400 justify-end">
+                    <span className="flex items-center gap-0.5"><Swords className="w-2.5 h-2.5" />{entry.matchPredictionPoints}</span>
+                    <span className="flex items-center gap-0.5"><Trophy className="w-2.5 h-2.5" />{entry.specialPredictionPoints}</span>
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Legend */}
+      <div className="flex items-center gap-4 text-xs text-slate-400 pt-2 border-t border-slate-200 dark:border-white/10">
+        <span className="flex items-center gap-1"><Swords className="w-3 h-3" /> Dự đoán trận</span>
+        <span className="flex items-center gap-1"><Trophy className="w-3 h-3" /> Dự đoán đặc biệt</span>
+      </div>
+    </motion.div>
+  );
+}
+
 export default function PredictionsPage() {
-  const [tab, setTab] = useState<"special" | "match" | "mine">("special");
+  const [tab, setTab] = useState<"special" | "match" | "mine" | "leaderboard">("special");
   const isLoggedIn = authService.isAuthenticated();
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -375,6 +581,9 @@ export default function PredictionsPage() {
               <User className="w-4 h-4" /> Dự đoán của tôi
             </button>
           )}
+          <button onClick={() => setTab("leaderboard")} className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold border-b-2 transition-colors ${tab === "leaderboard" ? "border-[#FF4444] text-[#FF4444]" : "border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"}`}>
+            <Medal className="w-4 h-4" /> Bảng xếp hạng
+          </button>
         </div>
 
         {tab === "special" && (
@@ -490,6 +699,8 @@ export default function PredictionsPage() {
               }
             </div>
         )}
+
+        {tab === "leaderboard" && <LeaderboardTab />}
 
         {tab === "mine" && (
           !isLoggedIn
