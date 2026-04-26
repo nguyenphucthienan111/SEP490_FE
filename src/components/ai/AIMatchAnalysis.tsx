@@ -11,7 +11,7 @@ interface League { leagueId: number; leagueName: string; logoUrl?: string; }
 interface Season { seasonId: number; year: string; }
 interface MatchItem { matchId: number; homeTeam?: { teamName: string }; awayTeam?: { teamName: string }; homeTeamName?: string; awayTeamName?: string; matchDate: string; round: string; homeGoals?: number; awayGoals?: number; status?: string; homeApiTeamId?: number; awayApiTeamId?: number; }
 interface PlayerItem { playerId: number; fullName: string; position: string; teamName: string; photoUrl?: string; }
-interface HistoryItem { id: string; analysisType: string; matchId: number; playerId?: number; analysisVi: string; createdAt: string; }
+interface HistoryItem { id: string; analysisType: string; matchId: number; playerId?: number; analysisVi: string; contextJson?: string; createdAt: string; }
 
 type AnalysisMode = 'match' | 'player';
 type Step = 'league' | 'season' | 'round' | 'match' | 'player' | 'result';
