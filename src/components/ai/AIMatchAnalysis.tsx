@@ -40,12 +40,25 @@ function buildEntityMap(ctx: any): Map<string, string> {
   // Players list from match context
   if (Array.isArray(ctx.players)) {
     for (const p of ctx.players) {
-      if (p.fullName && p.playerId) map.set(p.fullName.trim(), `/players/${p.playerId}`);
+      if (p.fullName && p.playerId) {
+        map.set(p.fullName.trim(), `/players/${p.playerId}`);
+        // Also add short name (last 2 words) for partial matches like "Đình Bắc"
+        const parts = p.fullName.trim().split(' ');
+        if (parts.length >= 3) {
+          map.set(parts.slice(-2).join(' '), `/players/${p.playerId}`);
+        }
+      }
     }
   }
 
   // Single player from player-rating context
   addPlayer(ctx.player?.fullName, ctx.player?.playerId);
+  if (ctx.player?.fullName && ctx.player?.playerId) {
+    const parts = ctx.player.fullName.trim().split(' ');
+    if (parts.length >= 3) {
+      map.set(parts.slice(-2).join(' '), `/players/${ctx.player.playerId}`);
+    }
+  }
   addTeam(ctx.player?.teamName, ctx.player?.teamId);
 
   return map;
@@ -60,11 +73,11 @@ function applyEntityLinks(html: string, entityMap: Map<string, string>): string 
     .sort((a, b) => b[0].length - a[0].length);
   let result = html;
   for (const [name, url] of entries) {
-    // Escape special regex chars in name
     const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    // Only replace text nodes (not inside existing tags/attributes)
+    // Use lookahead/lookbehind that works with Unicode Vietnamese characters
+    // Don't match if already inside an <a> tag or HTML attribute
     result = result.replace(
-      new RegExp(`(?<!href="|>)\\b(${escaped})\\b(?![^<]*>)`, 'g'),
+      new RegExp(`(?<!href="|>|[\\w\\u00C0-\\u024F])(${escaped})(?![\\w\\u00C0-\\u024F]|[^<]*>)`, 'g'),
       `<a href="${url}" class="text-blue-500 dark:text-blue-400 hover:underline font-medium" onclick="event.stopPropagation()">$1</a>`
     );
   }
