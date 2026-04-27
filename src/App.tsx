@@ -15,6 +15,7 @@ const LeagueDetailPage = lazy(() => import("@/pages/LeagueDetailPage"));
 const ComparePage = lazy(() => import("@/pages/ComparePage"));
 const PredictionsPage = lazy(() => import("@/pages/PredictionsPage"));
 const PricingPage = lazy(() => import("@/pages/PricingPage"));
+const PrivacyPage = lazy(() => import("@/pages/PrivacyPage"));
 const PaymentPage = lazy(() => import("@/pages/PaymentPage"));
 
 // Auth pages
@@ -83,6 +84,7 @@ function App() {
         <Route path="/ai-video" element={<VideoAnalysisPage />} />
         <Route path="/predictions" element={<PredictionsPage />} />
         <Route path="/pricing" element={<PricingPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/payment/:paymentCode" element={<PaymentPage />} />
 
         {/* Auth Routes */}
