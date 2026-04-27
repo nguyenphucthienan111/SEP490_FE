@@ -9,9 +9,11 @@ import { useState, useEffect } from "react";
 import {
   BarChart2, Users, Trophy, Zap, ArrowRight,
   MessageCircle, ThumbsUp, Eye, Flame, Star, Hash,
-  GitCompare, TrendingUp, Target, Award,
+  GitCompare, TrendingUp, Target, Award, Puzzle, Sparkles, Chrome,
 } from "lucide-react";
 import { forumService, PostSummary } from "@/services/forumService";
+
+const CHROME_STORE_URL = 'https://chrome.google.com/webstore'; // TODO: replace with actual store URL
 
 const FEATURES = [
   { icon: BarChart2, title: 'Phân tích chuyên sâu', desc: 'Chỉ số chi tiết cho từng cầu thủ và đội bóng', color: '#FF4444', to: '/analytics' },
@@ -50,6 +52,72 @@ function FeatureBanner() {
             </motion.div>
           ))}
         </div>
+      </div>
+    </section>
+  );
+}
+
+function ExtensionBanner() {
+  return (
+    <section className="py-12 relative overflow-hidden">
+      <div className="container mx-auto px-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }} transition={{ duration: 0.5 }}
+          className="relative rounded-3xl overflow-hidden border border-[#00D9FF]/30 bg-gradient-to-r from-[#00D9FF]/8 via-card to-[#FF4444]/8 p-8 md:p-10">
+          {/* Background glow */}
+          <div className="absolute top-0 left-1/4 w-64 h-64 bg-[#00D9FF]/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-[#FF4444]/8 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="relative flex flex-col md:flex-row items-center gap-8">
+            {/* Icon */}
+            <div className="flex-shrink-0 w-20 h-20 rounded-2xl bg-[#00D9FF]/15 border border-[#00D9FF]/25 flex items-center justify-center">
+              <Puzzle className="w-10 h-10 text-[#00D9FF]" />
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 text-center md:text-left">
+              <div className="flex items-center gap-2 justify-center md:justify-start mb-2">
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[#00D9FF]/15 text-[#00D9FF] border border-[#00D9FF]/25">
+                  Chrome Extension
+                </span>
+                <span className="text-xs text-muted-foreground">Miễn phí cài đặt</span>
+              </div>
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
+                Phân tích bài viết bóng đá <span className="text-[#00D9FF]">ngay trên trình duyệt</span>
+              </h2>
+              <p className="text-muted-foreground text-sm md:text-base max-w-xl">
+                Cài extension VN Football Analytics để phân tích bất kỳ bài viết bóng đá Việt Nam nào bằng AI — ngay khi đang đọc báo, không cần chuyển tab.
+              </p>
+
+              {/* Features */}
+              <div className="flex flex-wrap gap-3 mt-4 justify-center md:justify-start">
+                {[
+                  { icon: Sparkles, text: 'Phân tích AI tức thì' },
+                  { icon: Users, text: 'Nhận diện cầu thủ & CLB' },
+                  { icon: BarChart2, text: 'Link nhanh đến thống kê' },
+                ].map(f => (
+                  <div key={f.text} className="flex items-center gap-1.5 text-xs text-foreground/70 bg-muted px-3 py-1.5 rounded-full border border-border">
+                    <f.icon className="w-3.5 h-3.5 text-[#00D9FF]" />
+                    {f.text}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* CTA */}
+            <div className="flex-shrink-0 flex flex-col gap-3 items-center">
+              <a href={CHROME_STORE_URL} target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm bg-gradient-to-r from-[#00D9FF] to-[#0099bb] text-white hover:opacity-90 transition-opacity shadow-lg shadow-[#00D9FF]/20 whitespace-nowrap">
+                <Chrome className="w-4 h-4" />
+                Cài trên Chrome
+              </a>
+              <Link to="/pricing" className="text-xs text-muted-foreground hover:text-[#00D9FF] transition-colors">
+                Xem gói Premium →
+              </Link>
+            </div>
+          </div>
+        </motion.div>
       </div>
     </section>
   );
@@ -281,6 +349,7 @@ export default function HomePage() {
     <MainLayout>
       <HeroSection />
       <FeatureBanner />
+      <ExtensionBanner />
       <LeagueGrid />
       <MatchCenter />
       <FeaturedPlayers />

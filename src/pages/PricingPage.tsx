@@ -458,8 +458,28 @@ export default function PricingPage() {
             </motion.div>
           )}
 
+          {/* Extension promo */}
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
+            className="rounded-2xl overflow-hidden border border-[#00D9FF]/20 bg-gradient-to-r from-[#00D9FF]/5 to-transparent p-6">
+            <div className="flex flex-col sm:flex-row items-center gap-5">
+              <div className="w-14 h-14 rounded-2xl bg-[#00D9FF]/10 border border-[#00D9FF]/20 flex items-center justify-center flex-shrink-0">
+                <span className="text-2xl">🧩</span>
+              </div>
+              <div className="flex-1 text-center sm:text-left">
+                <p className="font-bold text-foreground mb-1">Kèm theo Chrome Extension miễn phí</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  Mọi gói Premium đều bao gồm quyền dùng extension để phân tích bài viết bóng đá ngay trên trình duyệt.
+                </p>
+              </div>
+              <a href="https://chrome.google.com/webstore" target="_blank" rel="noopener noreferrer"
+                className="flex-shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold bg-[#00D9FF]/10 text-[#00D9FF] border border-[#00D9FF]/20 hover:bg-[#00D9FF]/20 transition-colors whitespace-nowrap">
+                Cài Extension →
+              </a>
+            </div>
+          </motion.div>
+
           {/* FAQ / Trust */}
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}
             className="glass-card rounded-2xl p-6 text-center">
             <p className="text-sm text-slate-500 dark:text-[#A8A29E]">
               Thanh toán an toàn · Hủy bất cứ lúc nào · Hỗ trợ 24/7
