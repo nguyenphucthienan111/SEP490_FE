@@ -39,7 +39,7 @@ export function Footer() {
               </p>
               <div className="flex items-center gap-2 mt-4 px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 w-fit">
                 <Star className="w-3.5 h-3.5 text-amber-400" />
-                <span className="text-xs text-slate-300 font-medium">Powered by Gemini AI</span>
+                <span className="text-xs text-slate-300 font-medium">Powered by SEP490_GSP58 </span>
               </div>
             </div>
 
