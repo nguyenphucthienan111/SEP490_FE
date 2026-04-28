@@ -79,7 +79,7 @@ function ExtensionBanner() {
             <div className="flex-1 text-center md:text-left">
               <div className="flex items-center gap-2 justify-center md:justify-start mb-2">
                 <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[#00D9FF]/15 text-[#00D9FF] border border-[#00D9FF]/25">
-                  Chrome Extension
+                  Browser Extension
                 </span>
                 <span className="text-xs text-muted-foreground">Miễn phí cài đặt</span>
               </div>
@@ -111,6 +111,11 @@ function ExtensionBanner() {
                 className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm bg-gradient-to-r from-[#00D9FF] to-[#0099bb] text-white hover:opacity-90 transition-opacity shadow-lg shadow-[#00D9FF]/20 whitespace-nowrap">
                 <Chrome className="w-4 h-4" />
                 Cài trên Chrome
+              </a>
+              <a href="https://microsoftedge.microsoft.com/addons" target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm bg-gradient-to-r from-[#0078d4] to-[#005a9e] text-white hover:opacity-90 transition-opacity shadow-lg shadow-[#0078d4]/20 whitespace-nowrap">
+                <span className="text-base leading-none">🌐</span>
+                Cài trên Edge
               </a>
               <Link to="/pricing" className="text-xs text-muted-foreground hover:text-[#00D9FF] transition-colors">
                 Xem gói Premium →

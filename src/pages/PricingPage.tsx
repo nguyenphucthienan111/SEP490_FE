@@ -466,15 +466,21 @@ export default function PricingPage() {
                 <span className="text-2xl">🧩</span>
               </div>
               <div className="flex-1 text-center sm:text-left">
-                <p className="font-bold text-foreground mb-1">Kèm theo Chrome Extension miễn phí</p>
+                <p className="font-bold text-foreground mb-1">Kèm theo Browser Extension miễn phí</p>
                 <p className="text-sm text-slate-500 dark:text-slate-400">
                   Mọi gói Premium đều bao gồm quyền dùng extension để phân tích bài viết bóng đá ngay trên trình duyệt.
                 </p>
               </div>
-              <a href="https://chrome.google.com/webstore" target="_blank" rel="noopener noreferrer"
-                className="flex-shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold bg-[#00D9FF]/10 text-[#00D9FF] border border-[#00D9FF]/20 hover:bg-[#00D9FF]/20 transition-colors whitespace-nowrap">
-                Cài Extension →
-              </a>
+              <div className="flex-shrink-0 flex flex-col sm:flex-row gap-2 items-center">
+                <a href="https://chrome.google.com/webstore" target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-gradient-to-r from-[#00D9FF] to-[#0099bb] text-white hover:opacity-90 transition-opacity whitespace-nowrap">
+                  🌐 Cài trên Chrome
+                </a>
+                <a href="https://microsoftedge.microsoft.com/addons" target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-gradient-to-r from-[#0078d4] to-[#005a9e] text-white hover:opacity-90 transition-opacity whitespace-nowrap">
+                  🌐 Cài trên Edge
+                </a>
+              </div>
             </div>
           </motion.div>
 
