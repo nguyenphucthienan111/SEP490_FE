@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock, User, ArrowRight, Check, ArrowLeft, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -65,6 +65,12 @@ export default function RegisterPage() {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+      if (authService.isAuthenticated()) {
+        navigate('/', { replace: true });
+      }
+    }, [navigate]);
 
   return (
     <div className="min-h-screen bg-background flex relative">
