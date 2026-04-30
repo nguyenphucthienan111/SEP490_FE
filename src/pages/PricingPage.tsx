@@ -472,7 +472,7 @@ export default function PricingPage() {
                 </p>
               </div>
               <div className="flex-shrink-0 flex flex-col sm:flex-row gap-2 items-center">
-                <a href="https://chrome.google.com/webstore" target="_blank" rel="noopener noreferrer"
+                <a href="https://chromewebstore.google.com/detail/VN%20Football/ggdbpkdphapeckchnakjifbinabfeloa" target="_blank" rel="noopener noreferrer"
                   className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-gradient-to-r from-[#00D9FF] to-[#0099bb] text-white hover:opacity-90 transition-opacity whitespace-nowrap">
                   🌐 Cài trên Chrome
                 </a>

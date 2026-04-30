@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { forumService, PostSummary } from "@/services/forumService";
 
-const CHROME_STORE_URL = 'https://chrome.google.com/webstore'; // TODO: replace with actual store URL
+const CHROME_STORE_URL = 'https://chromewebstore.google.com/detail/VN%20Football/ggdbpkdphapeckchnakjifbinabfeloa';
 
 const FEATURES = [
   { icon: BarChart2, title: 'Phân tích chuyên sâu', desc: 'Chỉ số chi tiết cho từng cầu thủ và đội bóng', color: '#FF4444', to: '/analytics' },
