@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { motion } from "framer-motion";
 import { MessageSquare, Plus, Loader2, Lock, Eye, Pencil, Trash2, Upload, X } from "lucide-react";
+import { Skeleton } from 'boneyard-js/react';
+import forumCardBones from '@/bones/forum-card.bones.json';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { forumService, PostSummary, PostDetail } from "@/services/forumService";
@@ -193,7 +195,13 @@ export default function ForumPage() {
 
         {/* Posts */}
         {loading
-          ? <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-[#00D9FF]" /></div>
+          ? <div className="space-y-3">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} loading initialBones={forumCardBones as any} animate="shimmer" color="#e2e8f0" darkColor="#1e293b">
+                  <div style={{ height: 100 }} />
+                </Skeleton>
+              ))}
+            </div>
           : tab === "mine"
           ? myPosts.length === 0
             ? <div className="text-center py-16 text-slate-500">Bạn chưa đăng bài nào.</div>

@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Calendar, Radio, Loader2, Trophy, ChevronLeft, ChevronRight } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { Skeleton } from 'boneyard-js/react';
+import matchCardBones from '@/bones/match-card.bones.json';
 import { cn } from '@/lib/utils';
 import { leagueService, SofascoreTeamMatch } from '@/services/leagueService';
 import { useLiveMatch, LiveMatchUpdate } from '@/hooks/useLiveMatch';
@@ -351,8 +353,14 @@ export default function MatchesPage() {
 
           {/* Content */}
           {isLoading ? (
-            <div className="glass-card rounded-2xl flex items-center justify-center py-20">
-              <Loader2 className="w-8 h-8 text-[#00D9FF] animate-spin" />
+            <div className="glass-card rounded-2xl overflow-hidden">
+              <div className="divide-y divide-slate-100 dark:divide-white/5">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <Skeleton key={i} loading initialBones={matchCardBones as any} animate="shimmer" color="#e2e8f0" darkColor="#1e293b">
+                    <div style={{ height: 72 }} />
+                  </Skeleton>
+                ))}
+              </div>
             </div>
           ) : filtered.length === 0 ? (
             <div className="glass-card rounded-2xl p-12 text-center">

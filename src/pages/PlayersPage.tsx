@@ -5,6 +5,8 @@ import { Link } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { cn } from '@/lib/utils';
 import { PlayerFromAPI, Team, leagueService } from '@/services/leagueService';
+import { Skeleton } from 'boneyard-js/react';
+import playerCardBones from '@/bones/player-card.bones.json';
 
 // V-League 1 = leagueId 1, V-League 2 = leagueId 2, Cup = leagueId 3 (adjust if needed)
 const LEAGUES = [
@@ -128,7 +130,11 @@ export default function PlayersPage() {
   const [posFilter, setPosFilter] = useState('all');
   const [allPlayers, setAllPlayers] = useState<(PlayerFromAPI & { teamName?: string })[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
-  const [loading, setLoading] = useState(true);
+  // true khi chưa có data lần đầu (cache chưa load xong), false sau đó
+  const [loading, setLoading] = useState(() => {
+    // Nếu đã có cache thì vẫn show skeleton 1 tick để tránh flash
+    return true;
+  });
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 24;
   const [ratings, setRatings] = useState<Record<number, number>>({});
@@ -140,6 +146,7 @@ export default function PlayersPage() {
 
   const loadData = async (forceRefresh = false) => {
     setLoading(true);
+    let fromCache = true;
     try {
       // Load teams
       let allTeams: Team[] = [];
@@ -150,6 +157,7 @@ export default function PlayersPage() {
           const data = parsed?.data ?? parsed;
           allTeams = Array.isArray(data) ? data : ((data as any)?.$values ?? []);
         } else {
+          fromCache = false;
           const raw = await leagueService.getTeams();
           allTeams = Array.isArray(raw) ? raw : ((raw as any)?.$values ?? []);
           localStorage.setItem('teams', JSON.stringify(allTeams));
@@ -167,11 +175,13 @@ export default function PlayersPage() {
           // Invalidate cache if photoUrl still points to old BE proxy
           if (arr.length > 0 && arr[0].photoUrl?.includes('/api/ImageProxy/')) {
             sessionStorage.removeItem('all-players');
+            fromCache = false;
           } else {
             players = arr;
           }
         }
         if (players.length === 0) {
+          fromCache = false;
           const raw = await leagueService.getAllPlayers();
           players = Array.isArray(raw) ? raw : ((raw as any)?.$values ?? []);
           sessionStorage.setItem('all-players', JSON.stringify(players));
@@ -200,10 +210,10 @@ export default function PlayersPage() {
       // Load ratings in background
       leagueService.getAllPlayerSeasonRatings().then(setRatings).catch(() => {});
     } catch (e) {}
+    // Nếu data từ cache (đồng bộ), delay nhỏ để skeleton kịp hiển thị ít nhất 1 frame
+    if (fromCache) await new Promise(r => setTimeout(r, 400));
     setLoading(false);
   };
-
-  // Teams filtered by selected league
   const teamsInLeague = (Array.isArray(teams) ? teams : []).filter(t =>
     leagueFilter === 'all' || t.leagueId === leagueFilter
   );
@@ -306,8 +316,20 @@ export default function PlayersPage() {
 
           {/* Grid */}
           {loading ? (
-            <div className="flex items-center justify-center py-20">
-              <div className="w-10 h-10 border-4 border-[#00D9FF] border-t-transparent rounded-full animate-spin" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+              {Array.from({ length: 12 }).map((_, i) => (
+                <Skeleton
+                  key={i}
+                  loading
+                  initialBones={playerCardBones as any}
+                  animate="shimmer"
+                  color="#e2e8f0"
+                  darkColor="#1e293b"
+                >
+                  {/* placeholder để boneyard biết container */}
+                  <div style={{ height: 80 }} />
+                </Skeleton>
+              ))}
             </div>
           ) : filtered.length === 0 ? (
             <div className="text-center py-20 text-slate-400 dark:text-[#A8A29E]">

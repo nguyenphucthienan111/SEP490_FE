@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { AIChatBubble } from "@/components/ai/AIChatBubble";
 import { SupportChatBubble } from "@/components/support/SupportChatBubble";
 import { setupSofascoreImageFallback } from "@/utils/sofascoreImages";
+import "@/bones/registry";
 
 // Global fallback: khi ảnh từ BE proxy bị 403, tự fetch từ Sofascore trực tiếp + cache Cloudinary
 setupSofascoreImageFallback();

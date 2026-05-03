@@ -3,6 +3,8 @@ import { Trophy, ArrowLeft } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import React from 'react';
+import { Skeleton } from 'boneyard-js/react';
+import teamCardBones from '@/bones/team-card.bones.json';
 import { leagueService, SofascoreLeague, Team, SofascoreTeamMatch } from '@/services/leagueService';
 import { cn } from '@/lib/utils';
 import { KnockoutBracket } from '@/components/standings/KnockoutBracket';
@@ -210,8 +212,12 @@ export default function LeagueDetailPage() {
           </Link>
 
           {loading ? (
-            <div className="flex items-center justify-center py-24">
-              <div className="w-12 h-12 border-4 border-[#FF4444] border-t-transparent rounded-full animate-spin" />
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {Array.from({ length: 10 }).map((_, i) => (
+                <Skeleton key={i} loading initialBones={teamCardBones as any} animate="shimmer" color="#e2e8f0" darkColor="#1e293b">
+                  <div style={{ height: 100 }} />
+                </Skeleton>
+              ))}
             </div>
           ) : error ? (
             <div className="flex flex-col items-center justify-center py-24 text-slate-500 dark:text-[#A8A29E]">
@@ -397,8 +403,12 @@ export default function LeagueDetailPage() {
                     Các đội tham dự {!teamsLoading && teams.length > 0 && `(${teams.length})`}
                   </h2>
                   {teamsLoading ? (
-                    <div className="flex items-center justify-center py-16">
-                      <div className="w-8 h-8 border-4 border-[#FF4444] border-t-transparent rounded-full animate-spin" />
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                      {Array.from({ length: 10 }).map((_, i) => (
+                        <Skeleton key={i} loading initialBones={teamCardBones as any} animate="shimmer" color="#e2e8f0" darkColor="#1e293b">
+                          <div style={{ height: 100 }} />
+                        </Skeleton>
+                      ))}
                     </div>
                   ) : teams.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-16 text-slate-500 dark:text-[#A8A29E]">

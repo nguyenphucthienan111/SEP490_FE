@@ -10,6 +10,8 @@ import { Link } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { cn } from "@/lib/utils";
 import React from "react";
+import { Skeleton } from 'boneyard-js/react';
+import leagueCardBones from '@/bones/league-card.bones.json';
 import {
   leagueService,
   SofascoreStandingRow,
@@ -163,13 +165,12 @@ export default function LeaguesPage() {
 
           {/* Leagues Grid */}
           {isLoading ? (
-            <div className="flex items-center justify-center py-12 mb-16">
-              <div className="text-center">
-                <div className="w-12 h-12 border-4 border-[#00D9FF] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                <p className="text-slate-600 dark:text-[#A8A29E]">
-                  Đang tải dữ liệu...
-                </p>
-              </div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} loading initialBones={leagueCardBones as any} animate="shimmer" color="#e2e8f0" darkColor="#1e293b">
+                  <div style={{ height: 180 }} />
+                </Skeleton>
+              ))}
             </div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
