@@ -143,7 +143,18 @@ export function NotificationBell() {
               <p className="text-xs text-slate-400 text-center mb-4">{selectedNotif.createdAt}</p>
               <div className="flex gap-3">
                 {selectedNotif.link && (
-                  <button onClick={() => { setSelectedNotif(null); setOpen(false); navigate(selectedNotif.link!); }}
+                  <button onClick={() => {
+                    setSelectedNotif(null);
+                    setOpen(false);
+                    if (selectedNotif.link?.includes('predictions')) {
+                      // Extract month/year from message e.g. "tháng 04/2026"
+                      const match = selectedNotif.message?.match(/(\d{2})\/(\d{4})/);
+                      const monthParam = match ? `&month=${parseInt(match[1])}&year=${match[2]}` : '';
+                      navigate(`/predictions?tab=leaderboard${monthParam}`);
+                    } else {
+                      navigate(selectedNotif.link!);
+                    }
+                  }}
                     className="flex-1 py-2 rounded-xl bg-gradient-to-r from-[#FF4444] to-[#FF6B6B] text-white text-sm font-medium">
                     Xem chi tiết
                   </button>

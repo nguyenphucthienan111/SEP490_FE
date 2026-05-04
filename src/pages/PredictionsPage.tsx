@@ -78,10 +78,10 @@ interface LeaderboardEntry {
   totalPoints: number;
 }
 
-function LeaderboardTab() {
+function LeaderboardTab({ initialMonth, initialYear }: { initialMonth?: number; initialYear?: number }) {
   const now = new Date();
-  const [year, setYear] = useState(now.getFullYear());
-  const [month, setMonth] = useState(now.getMonth() + 1);
+  const [year, setYear] = useState(initialYear ?? now.getFullYear());
+  const [month, setMonth] = useState(initialMonth ?? now.getMonth() + 1);
   const [data, setData] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const currentUserId = (authService.getCurrentUser() as any)?.userId ?? (authService.getCurrentUser() as any)?.id;
@@ -115,6 +115,18 @@ function LeaderboardTab() {
   };
 
   const isCurrentMonth = year === now.getFullYear() && month === now.getMonth() + 1;
+
+  // Fetch reward status
+  const [rewardStatus, setRewardStatus] = useState<{ isRewarded: boolean; rewardedAt: string | null } | null>(null);
+  const [rewardStatusLoading, setRewardStatusLoading] = useState(false);
+
+  useEffect(() => {
+    setRewardStatusLoading(true);
+    apiClient.get<any>(`/api/admin/leaderboard/predictions/monthly/reward-status?year=${year}&month=${month}`)
+      .then(res => setRewardStatus({ isRewarded: res?.isRewarded ?? false, rewardedAt: res?.rewardedAt ?? null }))
+      .catch(() => setRewardStatus(null))
+      .finally(() => setRewardStatusLoading(false));
+  }, [year, month]);
 
   return (
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
@@ -158,64 +170,62 @@ function LeaderboardTab() {
           </button>
         </div>
         <div className="flex items-center gap-2 text-xs text-slate-500">
+          {!rewardStatusLoading && rewardStatus?.isRewarded && (
+            <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400 font-semibold">
+              ✅ Đã trao thưởng
+            </span>
+          )}
           <Trophy className="w-3.5 h-3.5 text-amber-500" />
           <span>Top dự đoán tháng</span>
         </div>
       </div>
 
       {/* Top 3 podium */}
-      {!loading && data.length >= 3 && (
-        <div className="relative flex items-end justify-center gap-3 pt-6 pb-2">
-          {/* #2 */}
-          <div className="flex flex-col items-center gap-2 flex-1">
-            <div className="relative">
-              {data[1].avatarUrl
-                ? <img src={data[1].avatarUrl} alt={data[1].fullName} className="w-14 h-14 rounded-full object-cover border-3 border-slate-300 shadow-lg" />
-                : <div className="w-14 h-14 rounded-full bg-gradient-to-br from-slate-400 to-slate-500 flex items-center justify-center text-white font-bold text-xl shadow-lg">{data[1].fullName.charAt(0)}</div>
-              }
-              <span className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-slate-400 border-2 border-white dark:border-slate-800 flex items-center justify-center text-white text-xs font-black">2</span>
-            </div>
-            <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate max-w-[80px] text-center">{data[1].fullName}</p>
-            <div className="w-full bg-gradient-to-t from-slate-300 to-slate-200 dark:from-slate-600 dark:to-slate-500 rounded-t-2xl h-20 flex flex-col items-center justify-center gap-1 shadow-inner">
-              <span className="text-2xl">🥈</span>
-              <span className="text-sm font-bold text-slate-700 dark:text-white">{data[1].totalPoints}đ</span>
-            </div>
+      {!loading && (() => {
+        const podiumData = data.filter(e => e.totalPoints > 0).slice(0, 3);
+        if (podiumData.length === 0) return null;
+        // Sắp xếp: #2 trái, #1 giữa, #3 phải (chỉ khi đủ 3)
+        const ordered = podiumData.length >= 3
+          ? [podiumData[1], podiumData[0], podiumData[2]]
+          : podiumData.length === 2
+          ? [podiumData[1], podiumData[0]]
+          : [podiumData[0]];
+        const heights = podiumData.length >= 3 ? ['h-20', 'h-28', 'h-14'] : podiumData.length === 2 ? ['h-20', 'h-28'] : ['h-28'];
+        const podiumColors = ['bg-gradient-to-t from-amber-400 to-yellow-300', 'bg-gradient-to-t from-slate-300 to-slate-200 dark:from-slate-600 dark:to-slate-500', 'bg-gradient-to-t from-orange-400 to-orange-300'];
+        const medals = ['🥇', '🥈', '🥉'];
+        const textColors = ['text-amber-900', 'text-slate-700 dark:text-white', 'text-orange-900'];
+        const borders = ['border-amber-400', 'border-slate-300', 'border-orange-300'];
+        const podiumHeights = ['h-28', 'h-20', 'h-14'];
+        const avatarSizes = ['w-[72px] h-[72px]', 'w-14 h-14', 'w-14 h-14'];
+        const badgeColors = ['bg-amber-400', 'bg-slate-400', 'bg-orange-400'];
+        return (
+          <div className="relative flex items-end justify-center gap-3 pt-6 pb-2">
+            {ordered.map((entry, i) => {
+              // rankIdx: 0=top1(vàng), 1=top2(bạc), 2=top3(cam)
+              const rankIdx = podiumData.length >= 3 ? [1, 0, 2][i]
+                : podiumData.length === 2 ? [1, 0][i]
+                : 0; // 1 người → luôn là top1
+              return (
+                <div key={entry.userId} className={`flex flex-col items-center gap-2 ${podiumData.length >= 3 ? 'flex-1' : 'w-40'}`}>
+                  <div className="relative">
+                    {rankIdx === 0 && <div className="absolute -top-3 left-1/2 -translate-x-1/2 text-xl">👑</div>}
+                    {entry.avatarUrl
+                      ? <img src={entry.avatarUrl} alt={entry.fullName} className={`${avatarSizes[rankIdx]} rounded-full object-cover border-4 ${borders[rankIdx]} shadow-xl`} />
+                      : <div className={`${avatarSizes[rankIdx]} rounded-full bg-gradient-to-br from-slate-400 to-slate-500 flex items-center justify-center text-white font-bold text-xl shadow-xl border-4 ${borders[rankIdx]}`}>{entry.fullName.charAt(0)}</div>
+                    }
+                    <span className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-2 border-white dark:border-slate-800 flex items-center justify-center text-white text-xs font-black ${badgeColors[rankIdx]}`}>{entry.rank}</span>
+                  </div>
+                  <p className="text-xs font-bold text-slate-900 dark:text-white truncate max-w-[90px] text-center">{entry.fullName}</p>
+                  <div className={`w-full ${podiumHeights[rankIdx]} ${podiumColors[rankIdx]} rounded-t-2xl flex flex-col items-center justify-center gap-1 shadow-lg`}>
+                    <span className="text-2xl">{medals[rankIdx]}</span>
+                    <span className={`text-sm font-black ${textColors[rankIdx]}`}>{entry.totalPoints}đ</span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-
-          {/* #1 */}
-          <div className="flex flex-col items-center gap-2 flex-1 -mt-4">
-            <div className="relative">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 text-xl">👑</div>
-              {data[0].avatarUrl
-                ? <img src={data[0].avatarUrl} alt={data[0].fullName} className="w-18 h-18 rounded-full object-cover border-4 border-amber-400 shadow-xl w-[72px] h-[72px]" />
-                : <div className="w-[72px] h-[72px] rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-bold text-2xl shadow-xl border-4 border-amber-300">{data[0].fullName.charAt(0)}</div>
-              }
-              <span className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-amber-400 border-2 border-white dark:border-slate-800 flex items-center justify-center text-white text-xs font-black">1</span>
-            </div>
-            <p className="text-xs font-bold text-slate-900 dark:text-white truncate max-w-[90px] text-center">{data[0].fullName}</p>
-            <div className="w-full bg-gradient-to-t from-amber-400 to-yellow-300 rounded-t-2xl h-28 flex flex-col items-center justify-center gap-1 shadow-lg shadow-amber-200/50 dark:shadow-amber-500/20">
-              <span className="text-2xl">🥇</span>
-              <span className="text-base font-black text-amber-900">{data[0].totalPoints}đ</span>
-            </div>
-          </div>
-
-          {/* #3 */}
-          <div className="flex flex-col items-center gap-2 flex-1">
-            <div className="relative">
-              {data[2].avatarUrl
-                ? <img src={data[2].avatarUrl} alt={data[2].fullName} className="w-14 h-14 rounded-full object-cover border-3 border-orange-300 shadow-lg" />
-                : <div className="w-14 h-14 rounded-full bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center text-white font-bold text-xl shadow-lg">{data[2].fullName.charAt(0)}</div>
-              }
-              <span className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-orange-400 border-2 border-white dark:border-slate-800 flex items-center justify-center text-white text-xs font-black">3</span>
-            </div>
-            <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate max-w-[80px] text-center">{data[2].fullName}</p>
-            <div className="w-full bg-gradient-to-t from-orange-400 to-orange-300 rounded-t-2xl h-14 flex flex-col items-center justify-center gap-1 shadow-inner">
-              <span className="text-2xl">🥉</span>
-              <span className="text-sm font-bold text-orange-900">{data[2].totalPoints}đ</span>
-            </div>
-          </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Full list */}
       {loading ? (
@@ -227,12 +237,13 @@ function LeaderboardTab() {
           {data.map((entry, i) => {
             const style = rankStyle(entry.rank);
             const isMe = entry.userId === currentUserId;
+            const hasPoints = entry.totalPoints > 0;
             return (
               <motion.div key={entry.userId} initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.03 }}
-                className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${style.bg} ${isMe ? 'ring-2 ring-[#00D9FF]/50' : ''}`}>
+                className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${hasPoints ? style.bg : 'bg-white dark:bg-card border-slate-100 dark:border-border opacity-50'} ${isMe ? 'ring-2 ring-[#00D9FF]/50' : ''}`}>
                 {/* Rank */}
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold flex-shrink-0 ${style.badge}`}>
-                  {entry.rank <= 3 ? style.icon : `#${entry.rank}`}
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold flex-shrink-0 ${hasPoints ? style.badge : 'bg-slate-100 dark:bg-white/5 text-slate-400'}`}>
+                  {hasPoints && entry.rank <= 3 ? style.icon : `#${entry.rank}`}
                 </div>
                 {/* Avatar */}
                 {entry.avatarUrl
@@ -276,6 +287,13 @@ export default function PredictionsPage() {
   const [tab, setTab] = useState<"special" | "match" | "mine" | "leaderboard">("special");
   const isLoggedIn = authService.isAuthenticated();
   const [isAdmin, setIsAdmin] = useState(false);
+
+  // Auto-switch tab from URL query param
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get('tab');
+    if (tabParam === 'leaderboard') setTab('leaderboard');
+  }, []);
 
   useEffect(() => {
     if (isLoggedIn) {
@@ -700,7 +718,7 @@ export default function PredictionsPage() {
             </div>
         )}
 
-        {tab === "leaderboard" && <LeaderboardTab />}
+        {tab === "leaderboard" && <LeaderboardTab initialMonth={(() => { const p = new URLSearchParams(window.location.search); const m = p.get('month'); return m ? parseInt(m) : undefined; })()} initialYear={(() => { const p = new URLSearchParams(window.location.search); const y = p.get('year'); return y ? parseInt(y) : undefined; })()} />}
 
         {tab === "mine" && (
           !isLoggedIn

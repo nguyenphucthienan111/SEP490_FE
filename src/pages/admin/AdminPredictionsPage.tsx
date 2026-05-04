@@ -91,7 +91,7 @@ function Top4RankPicker({ rank, teams, selected, otherSelected, onChange, onClea
   );
 }
 
-function AdminLeaderboardTab({ onReward }: { onReward: () => void }) {
+function AdminLeaderboardTab({ onReward }: { onReward: (onDone: () => void) => void }) {
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
@@ -113,12 +113,26 @@ function AdminLeaderboardTab({ onReward }: { onReward: () => void }) {
       .finally(() => setLoading(false));
   }, [year, month]);
 
+  // Check trạng thái trao thưởng từ API
+  const [rewardStatus, setRewardStatus] = useState<{ isRewarded: boolean; rewardedAt: string | null } | null>(null);
+  const [rewardStatusLoading, setRewardStatusLoading] = useState(false);
+
+  useEffect(() => {
+    setRewardStatusLoading(true);
+    apiClient.get<any>(`/api/admin/leaderboard/predictions/monthly/reward-status?year=${year}&month=${month}`)
+      .then(res => setRewardStatus({ isRewarded: res?.isRewarded ?? false, rewardedAt: res?.rewardedAt ?? null }))
+      .catch(() => setRewardStatus({ isRewarded: false, rewardedAt: null }))
+      .finally(() => setRewardStatusLoading(false));
+  }, [year, month]);
+
   const goBack = () => {
+    setRewardStatusLoading(true);
     if (month === 1) { setMonth(12); setYear(y => y - 1); }
     else setMonth(m => m - 1);
   };
   const goNext = () => {
     if (isCurrentMonth) return;
+    setRewardStatusLoading(true);
     if (month === 12) { setMonth(1); setYear(y => y + 1); }
     else setMonth(m => m + 1);
   };
@@ -130,9 +144,9 @@ function AdminLeaderboardTab({ onReward }: { onReward: () => void }) {
   };
   const medalMap: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' };
 
-  // Check localStorage xem tháng này đã trao chưa
-  const rewardedAt = localStorage.getItem(`rewarded-${year}-${month}`);
-  const isRewarded = !!rewardedAt;
+  // Check trạng thái từ API
+  const isRewarded = rewardStatus?.isRewarded ?? false;
+  const rewardedAt = rewardStatus?.rewardedAt ?? null;
   const allZero = data.length > 0 && data.every(e => e.totalPoints === 0);
 
   return (
@@ -155,9 +169,13 @@ function AdminLeaderboardTab({ onReward }: { onReward: () => void }) {
         </div>
         {isPrevMonth && (
           <div className="flex items-center gap-3">
-            {isRewarded ? (
+            {rewardStatusLoading ? (
+              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-white/10 text-slate-400 text-xs font-semibold animate-pulse">
+                Đang kiểm tra...
+              </span>
+            ) : isRewarded ? (
               <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400 text-xs font-semibold">
-                ✅ Đã trao thưởng · {new Date(rewardedAt!).toLocaleDateString('vi-VN')}
+                ✅ Đã trao thưởng · {rewardedAt ? new Date(rewardedAt.endsWith('Z') ? rewardedAt : rewardedAt + 'Z').toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
               </span>
             ) : allZero ? (
               <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400 text-xs font-semibold">
@@ -169,7 +187,14 @@ function AdminLeaderboardTab({ onReward }: { onReward: () => void }) {
               </span>
             )}
             {!isRewarded && (
-              <Button onClick={onReward} size="sm"
+              <Button onClick={() => onReward(() => {
+                // Refresh status sau khi trao xong
+                setRewardStatusLoading(true);
+                apiClient.get<any>(`/api/admin/leaderboard/predictions/monthly/reward-status?year=${year}&month=${month}`)
+                  .then(res => setRewardStatus({ isRewarded: res?.isRewarded ?? false, rewardedAt: res?.rewardedAt ?? null }))
+                  .catch(() => {})
+                  .finally(() => setRewardStatusLoading(false));
+              })} size="sm"
                 disabled={allZero}
                 title="Chỉ dùng khi job tự động bị lỗi. Hệ thống tự chạy lúc 00:10 mỗi đầu tháng."
                 className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
@@ -180,14 +205,18 @@ function AdminLeaderboardTab({ onReward }: { onReward: () => void }) {
         )}
         {!isPrevMonth && !isCurrentMonth && (
           <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold ${
-            isRewarded
+            rewardStatusLoading
+              ? 'bg-slate-100 dark:bg-white/10 text-slate-400 animate-pulse'
+              : isRewarded
               ? 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400'
               : allZero
               ? 'bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400'
               : 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400'
           }`}>
-            {isRewarded
-              ? `✅ Đã trao · ${new Date(rewardedAt!).toLocaleDateString('vi-VN')}`
+            {rewardStatusLoading
+              ? '...'
+              : isRewarded
+              ? `✅ Đã trao · ${rewardedAt ? new Date(rewardedAt.endsWith('Z') ? rewardedAt : rewardedAt + 'Z').toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', day: '2-digit', month: '2-digit', year: 'numeric' }) : ''}`
               : allZero
               ? '⚠️ Không có điểm để trao thưởng'
               : '⏳ Chưa trao thưởng'
@@ -205,16 +234,18 @@ function AdminLeaderboardTab({ onReward }: { onReward: () => void }) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-200 dark:border-white/10">
-              {['#', 'Người dùng', 'Dự đoán trận', 'Dự đoán đặc biệt', 'Tổng điểm', 'Thưởng'].map(h => (
+              {['#', 'Người dùng', 'Dự đoán trận', 'Dự đoán đặc biệt', 'Tổng điểm', ...(!allZero ? ['Thưởng'] : [])].map(h => (
                 <th key={h} className="text-left py-3 px-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{h}</th>
               ))}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-            {data.map(entry => (
-              <tr key={entry.userId} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+            {data.map(entry => {
+              const hasPoints = entry.totalPoints > 0;
+              return (
+              <tr key={entry.userId} className={`border-b border-slate-100 dark:border-white/5 transition-colors ${hasPoints ? 'hover:bg-slate-50 dark:hover:bg-white/5' : 'opacity-40'}`}>
                 <td className="py-3 px-4">
-                  <span className="text-base">{medalMap[entry.rank] ?? <span className="text-xs font-bold text-slate-400">#{entry.rank}</span>}</span>
+                  <span className="text-base">{hasPoints ? (medalMap[entry.rank] ?? <span className="text-xs font-bold text-slate-400">#{entry.rank}</span>) : <span className="text-xs text-slate-400">—</span>}</span>
                 </td>
                 <td className="py-3 px-4">
                   <div className="flex items-center gap-2">
@@ -232,13 +263,14 @@ function AdminLeaderboardTab({ onReward }: { onReward: () => void }) {
                 <td className="py-3 px-4 font-mono-data text-slate-700 dark:text-slate-300">{entry.specialPredictionPoints}đ</td>
                 <td className="py-3 px-4 font-mono-data font-bold text-slate-900 dark:text-white">{entry.totalPoints}đ</td>
                 <td className="py-3 px-4">
-                  {rewardMap[entry.rank]
+                  {!allZero && (rewardMap[entry.rank]
                     ? <span className={`font-bold text-sm ${rewardMap[entry.rank].color}`}>+{rewardMap[entry.rank].pts} pts</span>
                     : <span className="text-slate-300 dark:text-white/20 text-xs">—</span>
-                  }
+                  )}
                 </td>
               </tr>
-            ))}
+            );
+          })}
           </tbody>
         </table>
       )}
@@ -283,11 +315,6 @@ export default function AdminPredictionsPage() {
     try {
       const res = await apiClient.post<any>('/api/admin/leaderboard/predictions/monthly/reward-previous-month');
       setRewardResult(res);
-      // Lưu trạng thái đã trao vào localStorage
-      if (res?.rewardedUsers >= 0) {
-        const key = `rewarded-${res.year}-${res.month}`;
-        localStorage.setItem(key, new Date().toISOString());
-      }
       toast.success('Đã xử lý trao thưởng!');
     } catch (e: any) {
       toast.error(e.message || 'Trao thưởng thất bại');
@@ -464,7 +491,7 @@ export default function AdminPredictionsPage() {
           </div>
 
           {activeTab === 'leaderboard' ? (
-            <AdminLeaderboardTab onReward={openRewardDialog} />
+            <AdminLeaderboardTab onReward={(onDone) => { openRewardDialog(); }} />
           ) : loading ? (
             <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-[#00D9FF]" /></div>
           ) : displayed.length === 0 ? (
