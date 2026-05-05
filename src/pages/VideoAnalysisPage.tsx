@@ -8,6 +8,8 @@ import { Link } from 'react-router-dom';
 import { authService } from '@/services/authService';
 import { useSubscription } from '@/hooks/useSubscription';
 import { AIMatchAnalysis } from '@/components/ai/AIMatchAnalysis';
+import { renderMarkdown, buildEntityMapFromLists } from '@/utils/aiMarkdown';
+import { leagueService } from '@/services/leagueService';
 
 const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME ?? 'your_cloud_name';
 const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET ?? 'football_videos';
@@ -36,6 +38,8 @@ export default function VideoAnalysisPage() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [result, setResult] = useState('');
   const [error, setError] = useState('');
+  const [entityPlayers, setEntityPlayers] = useState<{ playerId: number; fullName: string }[]>([]);
+  const [entityTeams, setEntityTeams] = useState<{ teamId: number; teamName: string }[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const getUserId = () => {
@@ -51,6 +55,16 @@ export default function VideoAnalysisPage() {
       .then(data => setHistory(Array.isArray(data) ? data : []))
       .catch(() => {})
       .finally(() => setHistoryLoading(false));
+  }, []);
+
+  // Load players and teams for entity linking in analysis results
+  useEffect(() => {
+    leagueService.getAllPlayers().then(players => {
+      setEntityPlayers(players.map((p: any) => ({ playerId: p.playerId, fullName: p.fullName })));
+    }).catch(() => {});
+    leagueService.getAllTeams().then(teams => {
+      setEntityTeams(teams.map((t: any) => ({ teamId: t.teamId, teamName: t.teamName })));
+    }).catch(() => {});
   }, []);
 
   const reset = () => {
@@ -329,9 +343,9 @@ export default function VideoAnalysisPage() {
                     <Sparkles className="w-5 h-5 text-[#FF4444]" />
                     <span className="font-bold text-sm text-slate-900 dark:text-foreground">Kết quả phân tích từ Gemini</span>
                   </div>
-                  <div className="p-5 text-sm text-slate-900 dark:text-foreground leading-relaxed whitespace-pre-wrap">
-                    {result}
-                  </div>
+                  <div className="p-5 text-sm text-slate-900 dark:text-foreground leading-relaxed"
+                    dangerouslySetInnerHTML={{ __html: renderMarkdown(result, buildEntityMapFromLists(entityPlayers, entityTeams)) }}
+                  />
                 </div>
                 <button
                   onClick={reset}
@@ -410,7 +424,9 @@ export default function VideoAnalysisPage() {
                         <div className="px-4 pb-4 space-y-3 border-t border-slate-100 dark:border-white/5 pt-3">
                           <video src={item.videoUrl} controls className="w-full rounded-xl max-h-48 bg-black" />
                           {item.prompt && <p className="text-xs text-slate-500 italic">"{item.prompt}"</p>}
-                          <p className="text-sm text-slate-900 dark:text-foreground leading-relaxed whitespace-pre-wrap">{item.result}</p>
+                          <div className="text-sm text-slate-900 dark:text-foreground leading-relaxed"
+                            dangerouslySetInnerHTML={{ __html: renderMarkdown(item.result, buildEntityMapFromLists(entityPlayers, entityTeams)) }}
+                          />
                         </div>
                       )}
                     </div>
