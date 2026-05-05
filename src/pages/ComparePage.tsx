@@ -362,10 +362,26 @@ export default function ComparePage() {
     (async () => {
       try {
         setPlayersLoading(true);
+
+        const CACHE_TTL = 5 * 60 * 1000;
+        const now = Date.now();
+        function getCache<T>(key: string): T | null {
+          try {
+            const raw = localStorage.getItem(key);
+            if (!raw) return null;
+            const parsed = JSON.parse(raw);
+            if (now - parsed.ts > CACHE_TTL) { localStorage.removeItem(key); return null; }
+            return parsed.data as T;
+          } catch { return null; }
+        }
+        function setCache(key: string, data: unknown) {
+          try { localStorage.setItem(key, JSON.stringify({ data, ts: now })); } catch { /* quota */ }
+        }
+
         const [players, allTeams, ratingsMap] = await Promise.all([
-          leagueService.getAllPlayers(),
-          leagueService.getAllTeams(),
-          leagueService.getAllPlayerSeasonRatings(),
+          (async () => { const c = getCache<any[]>('compare-players'); if (c) return c; const d = await leagueService.getAllPlayers(); setCache('compare-players', d); return d; })(),
+          (async () => { const c = getCache<any[]>('compare-teams'); if (c) return c; const d = await leagueService.getAllTeams(); setCache('compare-teams', d); return d; })(),
+          (async () => { const c = getCache<any>('compare-ratings'); if (c) return c; const d = await leagueService.getAllPlayerSeasonRatings(); setCache('compare-ratings', d); return d; })(),
         ]);
         setTeams(allTeams);
         const teamMap = new Map(allTeams.map(t => [t.teamId, t.teamName]));
