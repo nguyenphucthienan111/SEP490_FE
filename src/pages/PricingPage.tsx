@@ -476,10 +476,10 @@ export default function PricingPage() {
                   className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-gradient-to-r from-[#00D9FF] to-[#0099bb] text-white hover:opacity-90 transition-opacity whitespace-nowrap">
                   🌐 Cài trên Chrome
                 </a>
-                <a href="https://microsoftedge.microsoft.com/addons" target="_blank" rel="noopener noreferrer"
+                {/* <a href="https://microsoftedge.microsoft.com/addons" target="_blank" rel="noopener noreferrer"
                   className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-gradient-to-r from-[#0078d4] to-[#005a9e] text-white hover:opacity-90 transition-opacity whitespace-nowrap">
                   🌐 Cài trên Edge
-                </a>
+                </a> */}
               </div>
             </div>
           </motion.div>
