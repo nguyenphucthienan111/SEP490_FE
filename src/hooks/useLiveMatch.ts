@@ -25,30 +25,75 @@ export function useLiveMatch() {
   const [updates, setUpdates] = useState<Record<number, LiveMatchUpdate>>({});
   const [connected, setConnected] = useState(false);
   const connectionRef = useRef<signalR.HubConnection | null>(null);
+  const reconnectTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
-    const connection = new signalR.HubConnectionBuilder()
-      .withUrl(HUB_URL, { withCredentials: true })
-      .withAutomaticReconnect()
-      .configureLogging(signalR.LogLevel.Warning)
-      .build();
+    let isMounted = true;
 
-    connection.on('ReceiveMatchUpdate', (update: LiveMatchUpdate) => {
-      console.log('[SignalR] Received update:', update);
-      setUpdates(prev => ({ ...prev, [update.eventId]: update }));
-    });
+    const startConnection = () => {
+      if (!isMounted) return;
 
-    connection.onclose(() => { console.log('[SignalR] Disconnected'); setConnected(false); });
-    connection.onreconnected(() => { console.log('[SignalR] Reconnected'); setConnected(true); });
+      const connection = new signalR.HubConnectionBuilder()
+        .withUrl(HUB_URL, { withCredentials: true })
+        .withAutomaticReconnect()
+        .configureLogging(signalR.LogLevel.Warning)
+        .build();
 
-    connection.start()
-      .then(() => { console.log('[SignalR] Connected to', HUB_URL); setConnected(true); })
-      .catch(err => console.warn('[SignalR] Connection failed:', err));
+      connection.on('ReceiveMatchUpdate', (update: LiveMatchUpdate) => {
+        console.log('[SignalR] Received update:', update);
+        setUpdates(prev => ({ ...prev, [update.eventId]: update }));
+      });
 
-    connectionRef.current = connection;
+      connection.onreconnected(() => {
+        console.log('[SignalR] Reconnected');
+        setConnected(true);
+      });
+
+      connection.onclose((error) => {
+        console.log('[SignalR] Disconnected', error);
+        setConnected(false);
+        
+        // Retry connection after 5 seconds if still mounted
+        // This handles server restarts where the connection ID becomes invalid
+        if (isMounted && !reconnectTimeoutRef.current) {
+          reconnectTimeoutRef.current = window.setTimeout(() => {
+            reconnectTimeoutRef.current = null;
+            console.log('[SignalR] Attempting to reconnect...');
+            startConnection();
+          }, 5000);
+        }
+      });
+
+      connection.start()
+        .then(() => {
+          if (isMounted) {
+            console.log('[SignalR] Connected to', HUB_URL);
+            setConnected(true);
+          }
+        })
+        .catch(err => {
+          console.warn('[SignalR] Connection failed:', err);
+          // Retry after 10 seconds on initial connection failure
+          if (isMounted && !reconnectTimeoutRef.current) {
+            reconnectTimeoutRef.current = window.setTimeout(() => {
+              reconnectTimeoutRef.current = null;
+              startConnection();
+            }, 10000);
+          }
+        });
+
+      connectionRef.current = connection;
+    };
+
+    startConnection();
 
     return () => {
-      connection.stop();
+      isMounted = false;
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
+      connectionRef.current?.stop();
     };
   }, []);
 
