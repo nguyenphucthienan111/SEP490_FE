@@ -689,15 +689,24 @@ function StatBar({ label, home, away, isPercent = false }: {
   );
 }
 
-function OverviewTab({ home, away, homeTeamName, awayTeamName, homeTeamId, awayTeamId }: {
+function OverviewTab({ home, away, liveStats, homeTeamName, awayTeamName, homeTeamId, awayTeamId }: {
   home: MatchStat | null;
   away: MatchStat | null;
+  liveStats?: { home: any; away: any } | null;
   homeTeamName: string;
   awayTeamName: string;
   homeTeamId: number;
   awayTeamId: number;
 }) {
-  if (!home && !away) {
+  // Helper: get value from DB stats first, fallback to liveStats
+  const h = (dbKey: keyof MatchStat, liveKey: string) =>
+    home?.[dbKey] ?? (liveStats?.home?.[liveKey] != null ? Number(liveStats.home[liveKey]) : null);
+  const a = (dbKey: keyof MatchStat, liveKey: string) =>
+    away?.[dbKey] ?? (liveStats?.away?.[liveKey] != null ? Number(liveStats.away[liveKey]) : null);
+
+  const hasData = home || away || liveStats;
+
+  if (!hasData) {
     return (
       <div className="text-center py-12 text-slate-500 dark:text-[#A8A29E]">
         <BarChart2 className="w-10 h-10 mx-auto mb-3 opacity-40" />
@@ -722,19 +731,17 @@ function OverviewTab({ home, away, homeTeamName, awayTeamName, homeTeamId, awayT
       </div>
 
       {/* Stats */}
-      <StatBar label="Kiểm soát bóng" home={home?.possession ?? null} away={away?.possession ?? null} isPercent />
-      <StatBar label="Cú sút" home={home?.shots ?? null} away={away?.shots ?? null} />
-      <StatBar label="Sút trúng đích" home={home?.shotsOnTarget ?? null} away={away?.shotsOnTarget ?? null} />
-      <StatBar label="Sút trong vòng cấm" home={home?.shotsInsideBox ?? null} away={away?.shotsInsideBox ?? null} />
-      <StatBar label="Sút ngoài vòng cấm" home={home?.shotsOutsideBox ?? null} away={away?.shotsOutsideBox ?? null} />
-      <StatBar label="Sút bị chặn" home={home?.shotsBlocked ?? null} away={away?.shotsBlocked ?? null} />
-      <StatBar label="Cứu thua" home={home?.saves ?? null} away={away?.saves ?? null} />
-      <StatBar label="Phạt góc" home={home?.corners ?? null} away={away?.corners ?? null} />
-      <StatBar label="Phạm lỗi" home={home?.fouls ?? null} away={away?.fouls ?? null} />
-      <StatBar label="Thẻ vàng" home={home?.yellowCards ?? null} away={away?.yellowCards ?? null} />
-      <StatBar label="Thẻ đỏ" home={home?.redCards ?? null} away={away?.redCards ?? null} />
-
-
+      <StatBar label="Kiểm soát bóng" home={h('possession', 'ballPossession')} away={a('possession', 'ballPossession')} isPercent />
+      <StatBar label="Cú sút" home={h('shots', 'totalShotsOnGoal')} away={a('shots', 'totalShotsOnGoal')} />
+      <StatBar label="Sút trúng đích" home={h('shotsOnTarget', 'shotsOnGoal')} away={a('shotsOnTarget', 'shotsOnGoal')} />
+      <StatBar label="Sút trong vòng cấm" home={h('shotsInsideBox', 'totalShotsInsideBox')} away={a('shotsInsideBox', 'totalShotsInsideBox')} />
+      <StatBar label="Sút ngoài vòng cấm" home={h('shotsOutsideBox', 'totalShotsOutsideBox')} away={a('shotsOutsideBox', 'totalShotsOutsideBox')} />
+      <StatBar label="Sút bị chặn" home={h('shotsBlocked', 'blockedScoringAttempt')} away={a('shotsBlocked', 'blockedScoringAttempt')} />
+      <StatBar label="Cứu thua" home={h('saves', 'goalkeeperSaves')} away={a('saves', 'goalkeeperSaves')} />
+      <StatBar label="Phạt góc" home={h('corners', 'cornerKicks')} away={a('corners', 'cornerKicks')} />
+      <StatBar label="Phạm lỗi" home={h('fouls', 'fouls')} away={a('fouls', 'fouls')} />
+      <StatBar label="Thẻ vàng" home={h('yellowCards', 'yellowCards')} away={a('yellowCards', 'yellowCards')} />
+      <StatBar label="Thẻ đỏ" home={h('redCards', 'redCards')} away={a('redCards', 'redCards')} />
     </div>
   );
 }
@@ -821,6 +828,8 @@ export default function MatchDetailPage() {
   const [lineups, setLineups] = useState<MatchLineups | null>(null);
   const [incidents, setIncidents] = useState<any[] | null>(null);
   const [matchStats, setMatchStats] = useState<{ home: MatchStat | null; away: MatchStat | null }>({ home: null, away: null });
+  const [liveStats, setLiveStats] = useState<{ home: any; away: any } | null>(null);
+  const [liveStatsTs, setLiveStatsTs] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [homeDbTeamId, setHomeDbTeamId] = useState<number | null>(null);
   const [awayDbTeamId, setAwayDbTeamId] = useState<number | null>(null);
@@ -927,7 +936,11 @@ export default function MatchDetailPage() {
         const allMatches: SofascoreTeamMatch[] = leagueResults.flatMap(([last, next]) => [...last, ...next]);
         try { sessionStorage.setItem('sofascore-matches', JSON.stringify(allMatches)); } catch { /* ignore */ }
         const found = allMatches.find(m => m.id === eventId);
-        if (found) { setMatch(found); loadMatchStats(found.homeTeam.id, found.awayTeam.id); }
+        if (found) { setMatch(found); loadMatchStats(found.homeTeam.id, found.awayTeam.id); return; }
+
+        // 4. Last resort: fetch match info directly from Sofascore (for non-VLeague matches)
+        const sofaMatch = await leagueService.getMatchDetailsFromSofascore(eventId);
+        if (sofaMatch) { setMatch(sofaMatch); }
       } catch { /* ignore */ }
       setLoading(false);
     };
@@ -1043,10 +1056,20 @@ export default function MatchDetailPage() {
     }
   };
 
+  const loadLiveStats = async (force = false) => {
+    const CACHE_TTL = 2 * 60 * 1000; // 2 phút
+    if (!force && liveStats && Date.now() - liveStatsTs < CACHE_TTL) return;
+    try {
+      const data = await leagueService.getLiveMatchStatistics(eventId);
+      if (data) { setLiveStats(data); setLiveStatsTs(Date.now()); }
+    } catch { /* silent */ }
+  };
+
   const handleTabChange = (tab: TabId) => {
     setActiveTab(tab);
     if (tab === 'lineup') loadLineups();
     if (tab === 'info') loadIncidents();
+    if (tab === 'overview') loadLiveStats();
   };
 
   // Auto-load incidents when match is ready
@@ -1074,8 +1097,8 @@ export default function MatchDetailPage() {
   }, [liveUpdate]);
 
   const isLive = liveUpdate
-    ? liveUpdate.status !== 'finished'
-    : match?.status.type === 'inprogress';
+    ? (liveUpdate.status !== 'finished' && liveUpdate.status !== 'notstarted')
+    : (match?.status.type === 'inprogress' || match?.status.type === 'halftime');
   const isFinished = liveUpdate?.status === 'finished' || match?.status.type === 'finished';
 
   const displayHomeScore = liveUpdate?.homeScore ?? match?.homeScore.current ?? 0;
@@ -1169,8 +1192,21 @@ export default function MatchDetailPage() {
                       <span className="text-slate-400 text-3xl">-</span>
                       <span className="font-mono-data text-5xl sm:text-6xl font-bold text-foreground">{displayAwayScore}</span>
                     </div>
-                    {isLive && currentMinute && (
-                      <span className="text-sm font-bold text-[#FF4444] animate-pulse">{formatMinute(currentMinute)}'</span>
+                    {isLive && (() => {
+                      const status = liveUpdate?.status;
+                      if (status === 'halftime' || status === 'HT') {
+                        return <span className="text-sm font-bold text-amber-400">Nghỉ giữa hiệp</span>;
+                      }
+                      if (status === 'pause') {
+                        return <span className="text-sm font-bold text-amber-400">Tạm dừng</span>;
+                      }
+                      if (currentMinute) {
+                        return <span className="text-sm font-bold text-[#FF4444] animate-pulse">{formatMinute(currentMinute)}'</span>;
+                      }
+                      return null;
+                    })()}
+                    {isFinished && !isLive && (
+                      <span className="text-sm font-bold text-slate-500 dark:text-[#A8A29E]">Kết thúc</span>
                     )}
                     {(match.homeScore.penalties != null || match.awayScore.penalties != null) && (
                       <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-[#A8A29E]">
@@ -1414,6 +1450,7 @@ export default function MatchDetailPage() {
               <OverviewTab
                 home={(isFinished || isLive) ? matchStats.home : null}
                 away={(isFinished || isLive) ? matchStats.away : null}
+                liveStats={liveStats}
                 homeTeamName={match?.homeTeam.name ?? 'Chủ nhà'}
                 awayTeamName={match?.awayTeam.name ?? 'Khách'}
                 homeTeamId={match?.homeTeam.id ?? 0}

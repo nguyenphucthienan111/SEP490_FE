@@ -497,6 +497,52 @@ export const leagueService = {
     return await apiClient.get<any>(`/api/SofascoreHybrid/match-incidents?apiFixtureId=${eventId}`);
   },
 
+  async getMatchDetailsFromSofascore(eventId: number): Promise<SofascoreTeamMatch | null> {
+    try {
+      const data = await apiClient.get<any>(`/api/Sofascore/match-details?eventId=${eventId}`);
+      const e = data?.event ?? data;
+      if (!e) return null;
+      return {
+        id: e.id,
+        homeTeam: { id: e.homeTeam?.id ?? 0, name: e.homeTeam?.name ?? '' },
+        awayTeam: { id: e.awayTeam?.id ?? 0, name: e.awayTeam?.name ?? '' },
+        homeScore: { current: e.homeScore?.current ?? 0, penalties: e.homeScore?.penalties ?? null },
+        awayScore: { current: e.awayScore?.current ?? 0, penalties: e.awayScore?.penalties ?? null },
+        startTimestamp: e.startTimestamp ?? 0,
+        status: { type: e.status?.type ?? 'notstarted' },
+        roundInfo: { round: e.roundInfo?.round ?? 0 },
+      } as SofascoreTeamMatch;
+    } catch {
+      return null;
+    }
+  },
+
+  async getLiveMatchStatistics(eventId: number): Promise<{ home: any; away: any } | null> {
+    try {
+      const data = await apiClient.get<any>(`/api/SofascoreHybrid/match-statistics-live?apiFixtureId=${eventId}`);
+      const groups: any[] = data?.statistics?.[0]?.groups ?? data?.statistics ?? [];
+      const home: any = {};
+      const away: any = {};
+      const parseVal = (v: any) => {
+        if (v == null) return null;
+        const n = Number(String(v).replace('%', '').trim());
+        return isNaN(n) ? null : n;
+      };
+      for (const group of groups) {
+        for (const item of group.statisticsItems ?? []) {
+          const key = item.key;
+          if (key) {
+            home[key] = parseVal(item.home);
+            away[key] = parseVal(item.away);
+          }
+        }
+      }
+      return { home, away };
+    } catch {
+      return null;
+    }
+  },
+
   async getVietnameseLeagues(): Promise<SofascoreLeague[]> {
     const result = await apiClient.get<any>('/api/Sofascore/vietnamese-leagues');
     const raw: Omit<SofascoreLeague, 'logoUrl'>[] = result?.leagues ?? [];
