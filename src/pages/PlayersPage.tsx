@@ -193,14 +193,23 @@ export default function PlayersPage() {
         // Handle both camelCase and PascalCase from BE
         const id = (t as any).teamId ?? (t as any).TeamId;
         const name = (t as any).teamName ?? (t as any).TeamName ?? '';
-        const logo = (t as any).logoUrl ?? (t as any).LogoUrl ?? '';
+        const apiTeamId = (t as any).apiTeamId ?? (t as any).ApiTeamId;
+        // Prefer proxy URL via apiTeamId over stored Cloudinary URL
+        const logo = apiTeamId
+          ? `${import.meta.env.VITE_API_BASE_URL}/api/ImageProxy/sofascore/team/${apiTeamId}`
+          : ((t as any).logoUrl ?? (t as any).LogoUrl ?? '');
         return [id, { teamName: name, logoUrl: logo }];
       }));
       const enriched = players.map(p => {
         const tid = (p as any).teamId ?? (p as any).TeamId ?? 0;
         const teamInfo = teamMap.get(tid);
+        const apiPlayerId = (p as any).apiPlayerId ?? (p as any).ApiPlayerId;
+        // Use proxy URL if photoUrl is null/empty but apiPlayerId exists
+        const photoUrl = (p as any).photoUrl || (p as any).PhotoUrl ||
+          (apiPlayerId ? `${import.meta.env.VITE_API_BASE_URL}/api/ImageProxy/sofascore/player/${apiPlayerId}` : '');
         return {
           ...p,
+          photoUrl,
           teamName: teamInfo?.teamName ?? '',
           teamLogoUrl: teamInfo?.logoUrl ?? '',
         };

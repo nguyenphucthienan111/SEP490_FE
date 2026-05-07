@@ -1,4 +1,4 @@
-const CLOUD_NAME = "dszpdywpu";
+const CLOUD_NAME = "dujwzskla";
 const UPLOAD_PRESET = "football_videos";
 
 export async function cloudinaryUpload(file: File, folder = "forum"): Promise<string> {
