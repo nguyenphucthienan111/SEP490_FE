@@ -32,6 +32,7 @@ const _cacheQueued = new Set<string>();
 
 /**
  * After an image loads successfully from Sofascore, call this to cache it to Cloudinary.
+ * FE fetches the image (browser not blocked) and sends base64 to BE for Cloudinary upload.
  * Fire-and-forget — won't affect UI.
  */
 export function cacheSofaImage(type: 'team' | 'player' | 'tournament', id: number | string, theme?: 'dark' | 'light') {
@@ -39,11 +40,32 @@ export function cacheSofaImage(type: 'team' | 'player' | 'tournament', id: numbe
   if (_cacheQueued.has(key)) return;
   _cacheQueued.add(key);
 
-  fetch(`${API_BASE}/api/ImageProxy/sofascore/cache-by-id`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ type, id: String(id), theme: theme ?? null }),
-  }).catch(() => { /* silent fail */ });
+  const sofaUrl = type === 'team'
+    ? `https://api.sofascore.app/api/v1/team/${id}/image`
+    : type === 'player'
+    ? `https://api.sofascore.app/api/v1/player/${id}/image`
+    : `https://api.sofascore.app/api/v1/unique-tournament/${id}/image/${theme ?? 'dark'}`;
+
+  // Fetch ảnh từ Sofascore (browser không bị block), convert sang base64, gửi lên BE
+  fetch(sofaUrl)
+    .then(res => {
+      if (!res.ok) return;
+      return res.blob();
+    })
+    .then(blob => {
+      if (!blob) return;
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const dataUrl = reader.result as string;
+        fetch(`${API_BASE}/api/ImageProxy/sofascore/cache`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type, id: String(id), theme: theme ?? null, dataUrl }),
+        }).catch(() => { /* silent fail */ });
+      };
+      reader.readAsDataURL(blob);
+    })
+    .catch(() => { /* silent fail */ });
 }
 
 export function setupSofascoreImageFallback() {
@@ -67,7 +89,7 @@ export function setupSofascoreImageFallback() {
     const img = e.target as HTMLImageElement;
     if (img.tagName !== 'IMG') return;
     const src = img.src ?? '';
-    // Nếu Sofascore bị block → fallback về BE proxy (sẽ dùng Cloudinary nếu đã cache)
+    // Chỉ fallback khi đang load từ Sofascore — nếu đã là BE proxy hoặc Cloudinary thì dừng
     if (!src.includes('api.sofascore.app')) return;
     const match = src.match(/api\.sofascore\.app\/api\/v1\/(team|player|unique-tournament)\/(\d+)\/image\/?(\w+)?/);
     if (!match) return;
@@ -78,6 +100,9 @@ export function setupSofascoreImageFallback() {
     const fallbackUrl = theme
       ? `${API_BASE}/api/ImageProxy/sofascore/${proxyType}/${id}/${theme}`
       : `${API_BASE}/api/ImageProxy/sofascore/${proxyType}/${id}`;
+    // Đánh dấu để tránh loop: nếu BE proxy cũng fail thì img sẽ ẩn đi
+    img.dataset.fallbackAttempted = '1';
+    img.onerror = () => { img.style.display = 'none'; };
     img.src = fallbackUrl;
   }, true);
 }
