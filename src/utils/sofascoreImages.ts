@@ -1,34 +1,100 @@
 /**
  * Sofascore image URL helpers.
  *
- * Use backend proxy to fetch images from Sofascore and cache to Cloudinary.
- * The proxy handles Sofascore's blocking and caches images automatically.
+ * Browser fetches directly from Sofascore (server IPs are blocked, browsers are not).
+ * After successful load, images are cached to Cloudinary as backup.
  */
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '';
 
-// Use backend proxy URLs — handles Sofascore fetching + Cloudinary caching
+// Direct Sofascore URLs — browser can access these fine
 export const sofaTeamLogo = (apiTeamId: number | string) =>
-  `${API_BASE}/api/ImageProxy/sofascore/team/${apiTeamId}`;
+  `https://api.sofascore.app/api/v1/team/${apiTeamId}/image`;
 
 export const sofaPlayerPhoto = (apiPlayerId: number | string) =>
-  `${API_BASE}/api/ImageProxy/sofascore/player/${apiPlayerId}`;
+  `https://api.sofascore.app/api/v1/player/${apiPlayerId}/image`;
 
 export const sofaTournamentLogo = (uniqueTournamentId: number | string, theme: 'dark' | 'light' = 'dark') =>
+  `https://api.sofascore.app/api/v1/unique-tournament/${uniqueTournamentId}/image/${theme}`;
+
+// Cloudinary fallback URLs (used when Sofascore is blocked)
+export const cloudinaryTeamLogo = (apiTeamId: number | string) =>
+  `${API_BASE}/api/ImageProxy/sofascore/team/${apiTeamId}`;
+
+export const cloudinaryPlayerPhoto = (apiPlayerId: number | string) =>
+  `${API_BASE}/api/ImageProxy/sofascore/player/${apiPlayerId}`;
+
+export const cloudinaryTournamentLogo = (uniqueTournamentId: number | string, theme: 'dark' | 'light' = 'dark') =>
   `${API_BASE}/api/ImageProxy/sofascore/tournament/${uniqueTournamentId}/${theme}`;
 
+// Track which IDs have already been queued for caching (avoid duplicate calls)
+const _cacheQueued = new Set<string>();
+
 /**
- * No-op function for backward compatibility.
- * Caching is now handled automatically by the backend proxy.
+ * After an image loads successfully from Sofascore, call this to cache it to Cloudinary.
+ * Fire-and-forget — won't affect UI.
  */
-export function cacheSofaImage(_type: 'team' | 'player' | 'tournament', _id: number | string, _theme?: 'dark' | 'light') {
-  // Backend proxy handles caching automatically
+export function cacheSofaImage(type: 'team' | 'player' | 'tournament', id: number | string, theme?: 'dark' | 'light') {
+  const key = theme ? `${type}/${id}/${theme}` : `${type}/${id}`;
+  if (_cacheQueued.has(key)) return;
+  _cacheQueued.add(key);
+
+  fetch(`${API_BASE}/api/ImageProxy/sofascore/cache-by-id`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ type, id: String(id), theme: theme ?? null }),
+  }).catch(() => { /* silent fail */ });
+}
+
+export function setupSofascoreImageFallback() {
+  // Capture phase — bắt tất cả load/error của <img> trong toàn app
+  document.addEventListener('load', (e) => {
+    const img = e.target as HTMLImageElement;
+    if (img.tagName !== 'IMG') return;
+    const src = img.src ?? '';
+    if (!src.includes('api.sofascore.app')) return;
+    const match = src.match(/api\.sofascore\.app\/api\/v1\/(team|player|unique-tournament)\/(\d+)\/image\/?(\w+)?/);
+    if (!match) return;
+    const rawType = match[1];
+    const id = match[2];
+    const theme = match[3] as 'dark' | 'light' | undefined;
+    const type = rawType === 'unique-tournament' ? 'tournament' : rawType as 'team' | 'player';
+    // Cache lên Cloudinary sau khi load thành công
+    cacheSofaImage(type, id, theme);
+  }, true);
+
+  document.addEventListener('error', (e) => {
+    const img = e.target as HTMLImageElement;
+    if (img.tagName !== 'IMG') return;
+    const src = img.src ?? '';
+    // Nếu Sofascore bị block → fallback về BE proxy (sẽ dùng Cloudinary nếu đã cache)
+    if (!src.includes('api.sofascore.app')) return;
+    const match = src.match(/api\.sofascore\.app\/api\/v1\/(team|player|unique-tournament)\/(\d+)\/image\/?(\w+)?/);
+    if (!match) return;
+    const rawType = match[1];
+    const id = match[2];
+    const theme = match[3];
+    const proxyType = rawType === 'unique-tournament' ? 'tournament' : rawType;
+    const fallbackUrl = theme
+      ? `${API_BASE}/api/ImageProxy/sofascore/${proxyType}/${id}/${theme}`
+      : `${API_BASE}/api/ImageProxy/sofascore/${proxyType}/${id}`;
+    img.src = fallbackUrl;
+  }, true);
 }
 
 /**
- * No-op function for backward compatibility.
- * No need for browser-side fallback since we use the backend proxy.
+ * Helper để dùng inline trong onLoad của <img>.
+ * Tự detect type/id từ src URL của Sofascore.
+ * Usage: <img src={sofaTeamLogo(id)} onLoad={onLoadCache} ... />
  */
-export function setupSofascoreImageFallback() {
-  // Backend proxy handles everything
+export function onLoadCache(e: React.SyntheticEvent<HTMLImageElement>) {
+  const src = e.currentTarget.src;
+  // Match: https://api.sofascore.app/api/v1/{type}/{id}/image[/{theme}]
+  const match = src.match(/api\.sofascore\.app\/api\/v1\/(team|player|unique-tournament)\/(\d+)\/image\/?(\w+)?/);
+  if (!match) return;
+  const rawType = match[1];
+  const id = match[2];
+  const theme = match[3] as 'dark' | 'light' | undefined;
+  const type = rawType === 'unique-tournament' ? 'tournament' : rawType as 'team' | 'player';
+  cacheSofaImage(type, id, theme);
 }

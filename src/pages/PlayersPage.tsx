@@ -71,7 +71,8 @@ function PlayerCard({ player, rating }: { player: PlayerFromAPI & { teamName?: s
         <div className="relative flex-shrink-0">
           <div className="w-14 h-14 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800">
             {player.photoUrl && !imgError
-              ? <img src={player.photoUrl} alt={player.fullName} className="w-full h-full object-cover object-top" onError={() => setImgError(true)} />
+              ? <img key={player.photoUrl} src={player.photoUrl} alt={player.fullName} className="w-full h-full object-cover object-top" 
+                  onError={() => setImgError(true)} />
               : <div className="w-full h-full flex items-center justify-center"><User className="w-7 h-7 text-slate-400" /></div>
             }
           </div>
@@ -196,7 +197,7 @@ export default function PlayersPage() {
         const apiTeamId = (t as any).apiTeamId ?? (t as any).ApiTeamId;
         // Prefer proxy URL via apiTeamId over stored Cloudinary URL
         const logo = apiTeamId
-          ? `${import.meta.env.VITE_API_BASE_URL}/api/ImageProxy/sofascore/team/${apiTeamId}`
+          ? `https://api.sofascore.app/api/v1/team/${apiTeamId}/image`
           : ((t as any).logoUrl ?? (t as any).LogoUrl ?? '');
         return [id, { teamName: name, logoUrl: logo }];
       }));
@@ -206,7 +207,7 @@ export default function PlayersPage() {
         const apiPlayerId = (p as any).apiPlayerId ?? (p as any).ApiPlayerId;
         // Use proxy URL if photoUrl is null/empty but apiPlayerId exists
         const photoUrl = (p as any).photoUrl || (p as any).PhotoUrl ||
-          (apiPlayerId ? `${import.meta.env.VITE_API_BASE_URL}/api/ImageProxy/sofascore/player/${apiPlayerId}` : '');
+          (apiPlayerId ? `https://api.sofascore.app/api/v1/player/${apiPlayerId}/image` : '');
         return {
           ...p,
           photoUrl,
