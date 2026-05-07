@@ -75,13 +75,14 @@ export function setupSofascoreImageFallback() {
     if (img.tagName !== 'IMG') return;
     const src = img.src ?? '';
     if (!src.includes('api.sofascore.app')) return;
+    // Chỉ cache ảnh được đánh dấu data-cache="true" — tránh cache hàng loạt trong dropdown
+    if (img.dataset.cache !== 'true') return;
     const match = src.match(/api\.sofascore\.app\/api\/v1\/(team|player|unique-tournament)\/(\d+)\/image\/?(\w+)?/);
     if (!match) return;
     const rawType = match[1];
     const id = match[2];
     const theme = match[3] as 'dark' | 'light' | undefined;
     const type = rawType === 'unique-tournament' ? 'tournament' : rawType as 'team' | 'player';
-    // Cache lên Cloudinary sau khi load thành công
     cacheSofaImage(type, id, theme);
   }, true);
 

@@ -270,7 +270,7 @@ function PlayerSelector({
                   >
                     <div className="w-8 h-8 rounded-lg overflow-hidden bg-slate-100 dark:bg-white/10 flex-shrink-0">
                       {p.photoUrl
-                        ? <img src={p.photoUrl} alt={p.fullName} className="w-full h-full object-cover" />
+                        ? <img src={p.photoUrl} alt={p.fullName} loading="lazy" className="w-full h-full object-cover" />
                         : <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs font-bold">{p.fullName[0]}</div>
                       }
                     </div>

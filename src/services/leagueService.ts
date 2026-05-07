@@ -808,11 +808,14 @@ export const leagueService = {
 
   async getAllPlayerSeasonRatings(): Promise<Record<number, number>> {
     try {
+      // Check cache v1 trước — nếu có thì dùng luôn, không xóa gì cả
+      const cached = sessionStorage.getItem('player-career-ratings-v1');
+      if (cached) return JSON.parse(cached);
+
+      // Chỉ xóa cache cũ khi cần fetch mới
       sessionStorage.removeItem('player-db-ratings');
       sessionStorage.removeItem('player-season-ratings-v2');
       sessionStorage.removeItem('player-season-ratings-v3');
-      const cached = sessionStorage.getItem('player-career-ratings-v1');
-      if (cached) return JSON.parse(cached);
 
       const raw = await apiClient.get<any[]>('/api/SofascoreHybrid/player-season-statistics');
       if (!Array.isArray(raw)) return {};
