@@ -150,7 +150,7 @@ export function CreatePostModal({ onClose, onCreated }: Props) {
           </div>
 
           <p className="text-xs text-slate-400 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-lg p-3">
-            ⚠️ Bài đăng sẽ được AI và Admin kiểm duyệt trước khi hiển thị công khai. Chỉ chấp nhận nội dung liên quan đến 3 giải bóng đá Việt Nam.
+            ⚠️ Bài đăng sẽ được Admin kiểm duyệt trước khi hiển thị công khai. Chỉ chấp nhận nội dung liên quan đến 3 giải bóng đá Việt Nam.
           </p>
 
           <div className="flex justify-end gap-3">

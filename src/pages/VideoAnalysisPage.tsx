@@ -107,7 +107,14 @@ export default function VideoAnalysisPage() {
       };
       xhr.onload = () => {
         if (xhr.status === 200) resolve(JSON.parse(xhr.responseText).secure_url);
-        else reject(new Error('Upload thất bại'));
+        else {
+          let msg = 'Upload thất bại';
+          try {
+            const errData = JSON.parse(xhr.responseText);
+            msg = errData?.error?.message ?? msg;
+          } catch {}
+          reject(new Error(msg));
+        }
       };
       xhr.onerror = () => reject(new Error('Lỗi kết nối khi upload'));
       xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/video/upload`);

@@ -279,7 +279,7 @@ export default function LeagueDetailPage() {
               {/* Cup Bracket */}
               {!hasStandings && selectedSeason?.cupTreeId && (
                 <div className="mb-10">
-                  <h2 className="font-display font-bold text-xl text-slate-900 dark:text-foreground mb-4">Bracket</h2>
+                  <h2 className="font-display font-bold text-xl text-slate-900 dark:text-foreground mb-4">Nhánh đấu</h2>
 
                   {/* Round labels as a step indicator */}
                   <div className="flex items-center gap-1 mb-4 flex-wrap">
